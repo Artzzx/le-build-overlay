@@ -20,21 +20,33 @@ const { parseBuild, advanceTrack, undoTrack, getCurrentNode, resolveClassName, r
 const SAMPLE_MAXROLL = {
   passives: { history: [1, 1, 1, 6, 6, 6, 6, 6, 4, 4], position: 10 },
   class: 3,
-  mastery: 2,
+  mastery: 7,   // 7 = Void Knight in real classes.json
   skillTrees: {
     fl44: { history: [4, 4, 14, 11, 12], position: 5 },
-    fl22: { history: [3, 3, 7], position: 3 },
+    fi9:  { history: [3, 3, 7], position: 3 },
   },
 };
 
+// Skill DB fixture: uses "id" (not "nodeId") to match real extract.py output.
+// fl44 (Flay) and fi9 (Fireball) are real treeIDs from the actual data.
 const SAMPLE_SKILLS_DB = {
-  fl44: { name: 'Erasing Strike', nodes: { 4: { nodeId: 4, name: 'Crushing Blows', description: '...', maxPoints: 4 }, 14: { nodeId: 14, name: 'Void Spiral', description: '...', maxPoints: 1 } } },
-  fl22: { name: 'Void Cleave', nodes: { 3: { nodeId: 3, name: 'Void Infusion', description: '...', maxPoints: 3 } } },
+  fl44: { name: 'Flay', nodes: {
+    4:  { id: 4,  name: 'Flay Marked For Death And Cull', maxPoints: 4 },
+    14: { id: 14, name: 'Flay Crit Chance And Leech',    maxPoints: 3 },
+    11: { id: 11, name: 'Flay Bleed On Hit',              maxPoints: 4 },
+    12: { id: 12, name: 'Flay Bleed Damage And Armour Shred', maxPoints: 4 },
+  }},
+  fi9: { name: 'Fireball', nodes: {
+    3: { id: 3, name: 'Fireball Chance To Ignite', maxPoints: 3 },
+    7: { id: 7, name: 'Fireball Area Of Effect',   maxPoints: 4 },
+  }},
 };
 
+// Classes DB fixture: includes passiveTreeByClass so lookupNode can resolve passives.
 const SAMPLE_CLASSES_DB = {
   classes: { 3: 'Sentinel' },
-  masteries: { 2: { name: 'Void Knight', classId: 3 } },
+  masteries: { 7: { name: 'Void Knight', classId: 3 } },
+  passiveTreeByClass: { 3: 'kn-1' },
 };
 
 // ─── groupHistory ─────────────────────────────────────────────────────────────
@@ -133,7 +145,7 @@ describe('parseBuild', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB, 'My Build');
     assert.equal(build.name, 'My Build');
     assert.equal(build.classId, 3);
-    assert.equal(build.masteryId, 2);
+    assert.equal(build.masteryId, 7);
     assert.equal(build.tracks.length, 3); // 1 passive + 2 skills
   });
 
@@ -153,7 +165,7 @@ describe('parseBuild', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
     const skill44 = build.tracks.find(t => t.skillKey === 'fl44');
     assert.ok(skill44);
-    assert.equal(skill44.label, 'Erasing Strike');
+    assert.equal(skill44.label, 'Flay');
     assert.deepEqual(skill44.history, SAMPLE_MAXROLL.skillTrees.fl44.history);
   });
 
@@ -227,21 +239,32 @@ describe('undoTrack', () => {
 // ─── getCurrentNode ───────────────────────────────────────────────────────────
 
 describe('getCurrentNode', () => {
-  test('returns node info at step 0', () => {
+  // Build a db object matching the shape that lookupNode() expects
+  const TEST_DB = {
+    passives: { 'kn-1': { name: 'Knight', nodes: {} } }, // empty nodes — passive lookups not tested here
+    skills: SAMPLE_SKILLS_DB,
+    classes: SAMPLE_CLASSES_DB,
+  };
+
+  test('returns node info at step 0 for skill track', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const db = { passives: {}, skills: SAMPLE_SKILLS_DB };
-    const node = getCurrentNode(build, 1, db); // skill track fl44
+    const node = getCurrentNode(build, 1, TEST_DB); // track 1 = fl44 (Flay)
     assert.ok(node);
-    assert.equal(node.name, 'Crushing Blows');
+    assert.equal(node.name, 'Flay Marked For Death And Cull'); // fl44 node 4
   });
 
   test('returns null for completed track', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
     const groups = groupHistory(build.tracks[1].history);
-    let b = build;
-    for (let i = 0; i <= groups.length; i++) b = advanceTrack(b, 1);
-    const db = { passives: {}, skills: SAMPLE_SKILLS_DB };
-    const node = getCurrentNode(b, 1, db);
+    // Directly set currentStep to groups.length (past end) — simulates a completed track
+    // loaded from disk. advanceTrack() stops at groups.length-1 by design.
+    const completedBuild = {
+      ...build,
+      tracks: build.tracks.map((t, i) =>
+        i === 1 ? { ...t, currentStep: groups.length } : t
+      ),
+    };
+    const node = getCurrentNode(completedBuild, 1, TEST_DB);
     assert.equal(node, null);
   });
 });
@@ -250,12 +273,12 @@ describe('getCurrentNode', () => {
 
 describe('resolveClassName', () => {
   test('resolves class and mastery names', () => {
-    const result = resolveClassName(3, 2, SAMPLE_CLASSES_DB);
+    const result = resolveClassName(3, 7, SAMPLE_CLASSES_DB); // masteryId 7 = Void Knight
     assert.equal(result, 'Sentinel — Void Knight');
   });
 
   test('falls back gracefully when DB is null', () => {
-    const result = resolveClassName(3, 2, null);
+    const result = resolveClassName(3, 7, null);
     assert.equal(result, 'Class 3');
   });
 
@@ -267,7 +290,7 @@ describe('resolveClassName', () => {
 
 describe('resolveSkillName', () => {
   test('resolves skill name from DB', () => {
-    assert.equal(resolveSkillName('fl44', SAMPLE_SKILLS_DB), 'Erasing Strike');
+    assert.equal(resolveSkillName('fl44', SAMPLE_SKILLS_DB), 'Flay');
   });
 
   test('falls back to skillKey when not in DB', () => {

@@ -5,16 +5,23 @@
  * Uses Node.js built-in test runner (node:test) — no extra dependencies.
  *
  * Run: npm test
+ *
+ * NOTE: Tests use real db/data/*.json values from extract.py output.
+ * Key facts about the real data schema:
+ *  - Passive nodes use field "id" (not "nodeId") and have NO description field
+ *  - Skill nodes use field "id" (not "nodeId") and have NO description field
+ *  - passives.json is keyed by treeID (e.g. "kn-1"), not flat nodeId
+ *  - "fl44" = Flay, "fi9" = Fireball in real data (fl22 does not exist)
+ *  - getPassive() now requires (classId, nodeId) — classId 3 = Sentinel (kn-1)
  */
 
 'use strict';
 
-const { test, describe, beforeEach } = require('node:test');
+const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-// Force reload of the module between tests to reset internal state
+// Force reload of the module between tests to reset internal singleton state
 function freshDb() {
-  // Clear module cache to reset the singleton state (_loaded, _passives, etc.)
   const dbPath = require.resolve('../db/build-db');
   delete require.cache[dbPath];
   return require('../db/build-db');
@@ -23,15 +30,14 @@ function freshDb() {
 // ─── load + isPopulated ───────────────────────────────────────────────────────
 
 describe('db.load + db.isPopulated', () => {
-  test('loads placeholder data files without crashing', () => {
+  test('loads data files without crashing', () => {
     const db = freshDb();
     assert.doesNotThrow(() => db.load());
   });
 
-  test('isPopulated returns true after loading placeholder data', () => {
+  test('isPopulated returns true after loading real data', () => {
     const db = freshDb();
     db.load();
-    // Placeholder db/data/passives.json and skills.json have sample entries
     assert.equal(db.isPopulated(), true);
   });
 
@@ -54,58 +60,92 @@ describe('db.load + db.isPopulated', () => {
 // ─── getPassive ───────────────────────────────────────────────────────────────
 
 describe('db.getPassive', () => {
-  test('returns passive node for known nodeId (number)', () => {
+  // classId 3 = Sentinel → tree "kn-1"; nodeId 0 = "Knight Strength And Protections"
+  test('returns passive node for known classId + nodeId (numbers)', () => {
     const db = freshDb();
     db.load();
-    const node = db.getPassive(1);
-    assert.ok(node, 'expected node 1 to exist in placeholder DB');
-    assert.equal(node.nodeId, 1);
-    assert.equal(node.name, 'Strength');
+    const node = db.getPassive(3, 0);
+    assert.ok(node, 'expected Sentinel nodeId 0 to exist');
+    assert.equal(node.id, 0);
+    assert.equal(node.name, 'Knight Strength And Protections');
   });
 
-  test('returns passive node for known nodeId (string)', () => {
+  test('returns passive node with string arguments', () => {
     const db = freshDb();
     db.load();
-    const node = db.getPassive('6');
+    const node = db.getPassive('3', '0');
     assert.ok(node);
-    assert.equal(node.name, 'Juggernaut');
+    assert.equal(node.id, 0);
   });
 
   test('returns null for unknown nodeId', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getPassive(9999), null);
+    assert.equal(db.getPassive(3, 999999), null);
+  });
+
+  test('returns null for unknown classId', () => {
+    const db = freshDb();
+    db.load();
+    assert.equal(db.getPassive(99, 0), null);
   });
 
   test('passive node has expected shape', () => {
     const db = freshDb();
     db.load();
-    const node = db.getPassive(1);
+    const node = db.getPassive(3, 0);
+    assert.ok(node);
+    assert.ok(typeof node.id === 'number');
     assert.ok(typeof node.name === 'string');
-    assert.ok(typeof node.description === 'string');
     assert.ok(typeof node.maxPoints === 'number');
-    assert.ok(typeof node.treeId === 'string');
+  });
+});
+
+// ─── getPassiveTreeId ─────────────────────────────────────────────────────────
+
+describe('db.getPassiveTreeId', () => {
+  test('maps classId 3 (Sentinel) to kn-1', () => {
+    const db = freshDb();
+    db.load();
+    assert.equal(db.getPassiveTreeId(3), 'kn-1');
+  });
+
+  test('maps all 5 base classes', () => {
+    const db = freshDb();
+    db.load();
+    const expected = { 1: 'ac-1', 2: 'mg-1', 3: 'kn-1', 4: 'rg-1', 5: 'pr-1' };
+    for (const [classId, treeId] of Object.entries(expected)) {
+      assert.equal(db.getPassiveTreeId(classId), treeId,
+        `classId ${classId} should map to ${treeId}`);
+    }
+  });
+
+  test('returns null for unknown classId', () => {
+    const db = freshDb();
+    db.load();
+    assert.equal(db.getPassiveTreeId(99), null);
   });
 });
 
 // ─── getSkillNode ─────────────────────────────────────────────────────────────
 
 describe('db.getSkillNode', () => {
-  test('returns skill node for known skillKey + nodeId', () => {
+  // fl44 = "Flay" in real data; node 4 = "Flay Marked For Death And Cull"
+  test('returns skill node for known skillKey + nodeId (numbers)', () => {
     const db = freshDb();
     db.load();
     const node = db.getSkillNode('fl44', 4);
     assert.ok(node, 'expected fl44 node 4 to exist');
-    assert.equal(node.nodeId, 4);
-    assert.equal(node.name, 'Crushing Blows');
+    assert.equal(node.id, 4);
+    assert.equal(node.name, 'Flay Marked For Death And Cull');
   });
 
-  test('returns skill node with string nodeId', () => {
+  test('returns skill node with string arguments', () => {
     const db = freshDb();
     db.load();
     const node = db.getSkillNode('fl44', '4');
     assert.ok(node);
-    assert.equal(node.name, 'Crushing Blows');
+    assert.equal(node.name, 'Flay Marked For Death And Cull');
   });
 
   test('returns null for unknown skillKey', () => {
@@ -117,16 +157,17 @@ describe('db.getSkillNode', () => {
   test('returns null for unknown nodeId in a known skill', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getSkillNode('fl44', 9999), null);
+    assert.equal(db.getSkillNode('fl44', 999999), null);
   });
 
   test('skill node has expected shape', () => {
     const db = freshDb();
     db.load();
+    // fl44 node 14 = "Flay Crit Chance And Leech"
     const node = db.getSkillNode('fl44', 14);
     assert.ok(node);
+    assert.ok(typeof node.id === 'number');
     assert.ok(typeof node.name === 'string');
-    assert.ok(typeof node.description === 'string');
     assert.ok(typeof node.maxPoints === 'number');
   });
 });
@@ -134,11 +175,11 @@ describe('db.getSkillNode', () => {
 // ─── getSkillName ─────────────────────────────────────────────────────────────
 
 describe('db.getSkillName', () => {
-  test('returns skill name for known key', () => {
+  test('returns skill name for known treeID keys', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getSkillName('fl44'), 'Erasing Strike');
-    assert.equal(db.getSkillName('fl22'), 'Void Cleave');
+    assert.equal(db.getSkillName('fl44'), 'Flay');
+    assert.equal(db.getSkillName('fi9'), 'Fireball');
   });
 
   test('returns null for unknown key', () => {
@@ -154,8 +195,7 @@ describe('db.getClassName', () => {
   test('returns class name for known ID (number)', () => {
     const db = freshDb();
     db.load();
-    const name = db.getClassName(3);
-    assert.equal(name, 'Sentinel');
+    assert.equal(db.getClassName(3), 'Sentinel');
   });
 
   test('returns class name for known ID (string)', () => {
@@ -198,11 +238,29 @@ describe('db.all', () => {
     assert.ok(result.classes && typeof result.classes === 'object');
   });
 
-  test('passives from all() contains expected nodes', () => {
+  test('passives from all() is keyed by treeID', () => {
     const db = freshDb();
     db.load();
     const { passives } = db.all();
-    assert.ok(passives['1']);
-    assert.ok(passives['6']);
+    // passives.json is keyed by treeID (e.g. "kn-1"), not flat nodeId
+    assert.ok(passives['kn-1'], 'expected kn-1 (Sentinel) tree');
+    assert.ok(passives['ac-1'], 'expected ac-1 (Acolyte) tree');
+    assert.ok(passives['kn-1'].nodes && typeof passives['kn-1'].nodes === 'object');
+  });
+
+  test('skills from all() contains real skill trees', () => {
+    const db = freshDb();
+    db.load();
+    const { skills } = db.all();
+    assert.ok(skills['fl44'], 'expected fl44 (Flay) skill tree');
+    assert.ok(skills['fi9'], 'expected fi9 (Fireball) skill tree');
+  });
+
+  test('classes from all() contains passiveTreeByClass mapping', () => {
+    const db = freshDb();
+    db.load();
+    const { classes } = db.all();
+    assert.ok(classes.passiveTreeByClass, 'expected passiveTreeByClass in classes');
+    assert.equal(classes.passiveTreeByClass['3'], 'kn-1');
   });
 });
