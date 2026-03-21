@@ -1,0 +1,52 @@
+{
+  "_comment": "GENERATED FILE — do not edit manually. Run extractor/extract.py then map-ids.py to regenerate.",
+  "_status": "PLACEHOLDER — contains sample data for development. Keys (fl44 etc.) are Maxroll skill identifiers. Real data requires AssetStudio extraction.",
+  "fl44": {
+    "name": "Erasing Strike",
+    "nodes": {
+      "3": { "nodeId": 3, "name": "Void Infusion", "description": "+15% Void damage", "maxPoints": 3 },
+      "4": { "nodeId": 4, "name": "Crushing Blows", "description": "Hits deal 20% more damage if enemy has no ailments", "maxPoints": 4 },
+      "7": { "nodeId": 7, "name": "Winding Blows", "description": "+1 Melee Range", "maxPoints": 3 },
+      "9": { "nodeId": 9, "name": "Sunder", "description": "Applies 2 stacks of Armour Shred on hit", "maxPoints": 2 },
+      "11": { "nodeId": 11, "name": "Temporal Dilation", "description": "Slows nearby enemies for 2s after use", "maxPoints": 1 },
+      "12": { "nodeId": 12, "name": "Erase", "description": "+15% Void Penetration per point", "maxPoints": 2 },
+      "14": { "nodeId": 14, "name": "Void Spiral", "description": "Fires a void projectile on cast", "maxPoints": 1 }
+    }
+  },
+  "fl22": {
+    "name": "Void Cleave",
+    "nodes": {
+      "2": { "nodeId": 2, "name": "Void Efficiency", "description": "Reduces mana cost by 3", "maxPoints": 2 },
+      "3": { "nodeId": 3, "name": "Cleave Range", "description": "+10% Area of Effect per point", "maxPoints": 3 },
+      "5": { "nodeId": 5, "name": "Frenzied Cleave", "description": "+15% Attack Speed per point", "maxPoints": 3 },
+      "7": { "nodeId": 7, "name": "Shatter", "description": "Shatters armour on hit", "maxPoints": 2 },
+      "9": { "nodeId": 9, "name": "Void Tendrils", "description": "Applies chill to nearby enemies", "maxPoints": 3 }
+    }
+  },
+  "fl33": {
+    "name": "Volatile Reversal",
+    "nodes": {
+      "1": { "nodeId": 1, "name": "Temporal Efficiency", "description": "Reduces cooldown by 1s per point", "maxPoints": 2 },
+      "4": { "nodeId": 4, "name": "Paradox", "description": "+20% damage if you teleported recently", "maxPoints": 1 },
+      "6": { "nodeId": 6, "name": "Residue", "description": "Leaves a void zone at origin point", "maxPoints": 3 },
+      "8": { "nodeId": 8, "name": "Void Blast", "description": "Triggers a void explosion on arrival", "maxPoints": 3 }
+    }
+  },
+  "fl55": {
+    "name": "Anomaly",
+    "nodes": {
+      "2": { "nodeId": 2, "name": "Temporal Bubble", "description": "Anomaly slows time inside its radius", "maxPoints": 2 },
+      "5": { "nodeId": 5, "name": "Void Attunement", "description": "+20% Void damage while Anomaly is active per point", "maxPoints": 3 },
+      "7": { "nodeId": 7, "name": "Singularity", "description": "Anomaly pulls enemies toward its center", "maxPoints": 4 }
+    }
+  },
+  "fl11": {
+    "name": "Shield Rush",
+    "nodes": {
+      "1": { "nodeId": 1, "name": "Momentum", "description": "+10% movement speed for 3s after use", "maxPoints": 2 },
+      "3": { "nodeId": 3, "name": "Impact", "description": "+15% damage per tile traveled per point", "maxPoints": 3 },
+      "4": { "nodeId": 4, "name": "Iron Tide", "description": "Knocks back enemies on hit", "maxPoints": 3 },
+      "6": { "nodeId": 6, "name": "Hardened Shield", "description": "+5% Block Effectiveness per point", "maxPoints": 3 }
+    }
+  }
+}

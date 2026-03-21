@@ -1,0 +1,258 @@
+/*
+ * overlay/style.css
+ * ──────────────────
+ * Dark metallic theme matching Last Epoch's UI palette.
+ *
+ * Design tokens (CSS custom properties):
+ *   --bg             Near-black overlay background with slight transparency
+ *   --border         Metallic gold-tinted border
+ *   --gold           Gold accent for passive nodes
+ *   --blue           Blue accent for skill nodes
+ *   --text           Warm off-white primary text
+ *   --text-dim       Dimmed text for completed/inactive tracks
+ *   --flash-color    Green flash on advance
+ *   --font-mono      Share Tech Mono — numbers, counters
+ *   --font-label     Rajdhani — labels, names
+ *
+ * Layout:
+ *   Width: 240px fixed
+ *   Track rows: 28px collapsed, ~80px expanded
+ *   Minimal border-radius (≤4px) to match LE's angular UI
+ */
+
+/* ─── Reset ──────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
+
+:root {
+  --bg:           rgba(6, 8, 14, 0.88);
+  --bg-hover:     rgba(16, 20, 30, 0.92);
+  --border:       rgba(80, 70, 50, 0.6);
+  --border-bright: rgba(140, 120, 80, 0.8);
+
+  --gold:         #c9a84c;
+  --gold-dim:     rgba(201, 168, 76, 0.4);
+  --blue:         #60a5fa;
+  --blue-dim:     rgba(96, 165, 250, 0.4);
+  --green:        #4ade80;
+
+  --text:         #d0c8b0;
+  --text-muted:   #8a8070;
+  --text-dim:     rgba(208, 200, 176, 0.35);
+
+  --flash-bg:     rgba(74, 222, 128, 0.15);
+  --flash-border: rgba(74, 222, 128, 0.6);
+
+  --font-mono:    'Share Tech Mono', 'Courier New', monospace;
+  --font-label:   'Rajdhani', 'Segoe UI', sans-serif;
+
+  --radius:       3px;
+  --width:        240px;
+  --row-height:   28px;
+  --expanded-height: 84px;
+}
+
+/* ─── Body / window ─────────────────────────────────────────────────────── */
+
+html, body {
+  width: var(--width);
+  background: transparent;  /* Electron transparent window */
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ─── Overlay root ───────────────────────────────────────────────────────── */
+
+#overlay-root {
+  width: var(--width);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 0 2px;
+  font-family: var(--font-label);
+  color: var(--text);
+}
+
+/* ─── No-build message ───────────────────────────────────────────────────── */
+
+.no-build {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.no-build .hint {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ─── Track rows ─────────────────────────────────────────────────────────── */
+
+.track {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: default;
+  transition: background 0.1s ease;
+}
+
+/* Collapsed (default): single-line row */
+.track-header {
+  display: flex;
+  align-items: center;
+  height: var(--row-height);
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Track type badge: [P] or [S] */
+.track-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+.track-badge.passive {
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+}
+.track-badge.skill {
+  color: var(--blue);
+  border: 1px solid var(--blue-dim);
+}
+
+/* Node name (truncated if too long) */
+.track-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+/* Progress counter: e.g. "42/113" */
+.track-progress {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+/* Hotkey number on the right */
+.track-hotkey {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  width: 14px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ─── Expanded track body ────────────────────────────────────────────────── */
+
+.track-body {
+  display: none;  /* shown only on .track.expanded */
+  padding: 2px 0 8px;
+}
+
+.track.expanded .track-body {
+  display: block;
+}
+
+/* Node description text */
+.track-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 5px;
+  font-family: var(--font-label);
+  font-weight: 400;
+}
+
+/* Point dots row: ●●●○○ */
+.track-dots {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+.dot.filled {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.dot.filled.skill {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+.dot.current {
+  background: transparent;
+  border-color: var(--text);
+  box-shadow: 0 0 4px rgba(255,255,255,0.4);
+}
+.dot.empty {
+  background: transparent;
+  border-color: var(--border);
+}
+
+/* ─── Track states ───────────────────────────────────────────────────────── */
+
+/* Completed track — dimmed with checkmark */
+.track.completed .track-header {
+  opacity: 0.4;
+}
+.track.completed .track-name::before {
+  content: '✓ ';
+  color: var(--green);
+  opacity: 1;
+}
+
+/* Flash animation on advance */
+@keyframes flash-advance {
+  0%   { background: var(--flash-bg); border-color: var(--flash-border); }
+  100% { background: transparent;     border-color: transparent; }
+}
+
+.track.flashing {
+  animation: flash-advance 200ms ease-out forwards;
+  border-left: 2px solid var(--flash-border);
+}
+
+/* ─── Hotkey hint bar ────────────────────────────────────────────────────── */
+
+.hotkey-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 4px 8px 3px;
+  letter-spacing: 0.04em;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+
+.hidden {
+  display: none !important;
+}

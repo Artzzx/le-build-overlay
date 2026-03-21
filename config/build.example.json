@@ -1,0 +1,55 @@
+{
+  "_comment": "This is an example build for development/testing. Copy to build.json to use.",
+  "name": "Void Knight Erasing Strike",
+  "classId": 3,
+  "masteryId": 2,
+  "tracks": [
+    {
+      "type": "passive",
+      "label": "Sentinel — Void Knight Passives",
+      "history": [1,1,1,1,1,6,6,6,6,6,4,4,4,4,4,2,2,2,10,10,10,3,3,3,3,8,8,8,8,8],
+      "totalSteps": 30,
+      "currentStep": 0
+    },
+    {
+      "type": "skill",
+      "skillKey": "fl44",
+      "label": "Erasing Strike",
+      "history": [4,4,14,11,12,12,7,7,7,3,3,3,3,9,9],
+      "totalSteps": 15,
+      "currentStep": 0
+    },
+    {
+      "type": "skill",
+      "skillKey": "fl22",
+      "label": "Void Cleave",
+      "history": [3,3,7,7,5,5,5,9,9,9,2,2,2,2],
+      "totalSteps": 14,
+      "currentStep": 0
+    },
+    {
+      "type": "skill",
+      "skillKey": "fl33",
+      "label": "Volatile Reversal",
+      "history": [1,1,6,6,6,4,4,4,8,8,8],
+      "totalSteps": 11,
+      "currentStep": 0
+    },
+    {
+      "type": "skill",
+      "skillKey": "fl55",
+      "label": "Anomaly",
+      "history": [2,2,5,5,5,7,7,7,7],
+      "totalSteps": 9,
+      "currentStep": 0
+    },
+    {
+      "type": "skill",
+      "skillKey": "fl11",
+      "label": "Shield Rush",
+      "history": [4,4,4,3,3,3,6,6,6,1,1],
+      "totalSteps": 11,
+      "currentStep": 0
+    }
+  ]
+}

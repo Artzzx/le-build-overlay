@@ -1,0 +1,76 @@
+{
+  "_comment": "GENERATED FILE — do not edit manually. Run extractor/extract.py to regenerate.",
+  "_status": "PLACEHOLDER — contains sample data for development. Real data requires AssetStudio extraction (see extractor/README.md).",
+  "1": {
+    "nodeId": 1,
+    "name": "Strength",
+    "description": "+4 Strength per point",
+    "maxPoints": 5,
+    "treeId": "sentinel_base",
+    "treeName": "Sentinel",
+    "requires": []
+  },
+  "2": {
+    "nodeId": 2,
+    "name": "Vitality",
+    "description": "+4 Vitality per point",
+    "maxPoints": 5,
+    "treeId": "sentinel_base",
+    "treeName": "Sentinel",
+    "requires": [1]
+  },
+  "3": {
+    "nodeId": 3,
+    "name": "Endurance",
+    "description": "+5% Endurance Threshold per point",
+    "maxPoints": 5,
+    "treeId": "sentinel_base",
+    "treeName": "Sentinel",
+    "requires": [2]
+  },
+  "4": {
+    "nodeId": 4,
+    "name": "Block Chance",
+    "description": "+4% Block Chance per point",
+    "maxPoints": 5,
+    "treeId": "sentinel_base",
+    "treeName": "Sentinel",
+    "requires": [1]
+  },
+  "6": {
+    "nodeId": 6,
+    "name": "Juggernaut",
+    "description": "+1% armour per point of vitality",
+    "maxPoints": 5,
+    "treeId": "sentinel_base",
+    "treeName": "Sentinel",
+    "requires": [1]
+  },
+  "8": {
+    "nodeId": 8,
+    "name": "Void Aegis",
+    "description": "+15 Void Resistance per point",
+    "maxPoints": 5,
+    "treeId": "void_knight",
+    "treeName": "Void Knight",
+    "requires": [3]
+  },
+  "9": {
+    "nodeId": 9,
+    "name": "Time Legion",
+    "description": "Gain Haste for 2s on hit (once per 5s)",
+    "maxPoints": 1,
+    "treeId": "void_knight",
+    "treeName": "Void Knight",
+    "requires": [8]
+  },
+  "10": {
+    "nodeId": 10,
+    "name": "Temporal Mastery",
+    "description": "+10% Cooldown Recovery Speed per point",
+    "maxPoints": 3,
+    "treeId": "void_knight",
+    "treeName": "Void Knight",
+    "requires": [6]
+  }
+}

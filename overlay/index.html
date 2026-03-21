@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<!--
+  overlay/index.html
+  ───────────────────
+  The transparent overlay window rendered by Electron.
+
+  Design constraints:
+  - Background is transparent (Electron BrowserWindow transparent: true)
+  - Window is click-through (setIgnoreMouseEvents in main.js)
+  - Should match Last Epoch's dark metallic UI aesthetic
+  - Minimal DOM — all rendering is done by app.js via direct DOM manipulation
+  - No framework. No bundler. Just HTML + CSS + plain JS.
+
+  Structure:
+  - #overlay-root    — the outer container (can be hidden/shown by F1)
+  - #tracks          — one .track div per build track (passive + skills)
+  - #hotkey-hint     — small bottom bar showing "F1 hide · 1-6 advance"
+  - #no-build-msg    — shown when no build.json is loaded (prompts user to press F5)
+
+  app.js dynamically populates #tracks on load and re-renders on each advance/undo.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LE Build Overlay</title>
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Fonts: load from Google Fonts CDN in production, or bundle locally -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Main container — toggled hidden/visible by F1 hotkey -->
+  <div id="overlay-root">
+
+    <!-- Shown when no build is loaded (no config/build.json or it's empty) -->
+    <div id="no-build-msg" class="no-build hidden">
+      <span>No build loaded</span>
+      <span class="hint">Press F5 to paste a Maxroll build</span>
+    </div>
+
+    <!-- One .track element per track will be injected here by app.js -->
+    <div id="tracks"></div>
+
+    <!-- Bottom hint bar — always visible when overlay is showing -->
+    <div id="hotkey-hint" class="hotkey-hint">
+      F1 hide &middot; 1–6 advance &middot; Shift+N undo
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

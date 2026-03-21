@@ -1,0 +1,28 @@
+{
+  "_comment": "GENERATED FILE — do not edit manually. Run extractor/extract.py to regenerate.",
+  "_status": "PLACEHOLDER — may be mostly complete since class/mastery data is stable across patches.",
+  "classes": {
+    "1": "Acolyte",
+    "2": "Mage",
+    "3": "Sentinel",
+    "4": "Rogue",
+    "5": "Primalist"
+  },
+  "masteries": {
+    "1": { "name": "Lich", "classId": 1 },
+    "2": { "name": "Necromancer", "classId": 1 },
+    "3": { "name": "Warlock", "classId": 1 },
+    "4": { "name": "Sorcerer", "classId": 2 },
+    "5": { "name": "Runemaster", "classId": 2 },
+    "6": { "name": "Spellblade", "classId": 2 },
+    "7": { "name": "Void Knight", "classId": 3 },
+    "8": { "name": "Forge Guard", "classId": 3 },
+    "9": { "name": "Paladin", "classId": 3 },
+    "10": { "name": "Marksman", "classId": 4 },
+    "11": { "name": "Bladedancer", "classId": 4 },
+    "12": { "name": "Falconer", "classId": 4 },
+    "13": { "name": "Beastmaster", "classId": 5 },
+    "14": { "name": "Druid", "classId": 5 },
+    "15": { "name": "Shaman", "classId": 5 }
+  }
+}
