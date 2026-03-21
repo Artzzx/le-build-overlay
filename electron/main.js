@@ -77,17 +77,26 @@ function createOverlayWindow() {
 }
 
 function createConfigWindow() {
-  // TODO: implement config window
-  // This is a separate, focusable BrowserWindow that:
-  //  - Loads overlay/config.html (to be created)
-  //  - Has a textarea for Maxroll JSON paste
-  //  - Has a "Build name" input and a "Load" button
-  //  - On load: calls parser/maxroll.js, saves result to config/build.json,
-  //             sends 'reload-build' IPC to overlay renderer
-  //  - Closes itself after a successful load
-  //
-  // For now, log a placeholder
-  console.log('[main] Config window not yet implemented — use F5 to open when ready');
+  configWin = new BrowserWindow({
+    width: 520,
+    height: 420,
+    title: 'LE Build Overlay — Load Build',
+    transparent: false,
+    frame: true,
+    alwaysOnTop: false,
+    skipTaskbar: false,
+    resizable: false,
+    focusable: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'config-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  configWin.setMenuBarVisibility(false);
+  configWin.loadFile(path.join(__dirname, '..', 'overlay', 'config.html'));
+  configWin.on('closed', () => { configWin = null; });
 }
 
 // ─── Global hotkeys ──────────────────────────────────────────────────────────
@@ -139,6 +148,43 @@ ipcMain.on('save-build', (event, buildJson) => {
     fs.writeFileSync(BUILD_CONFIG_PATH, JSON.stringify(buildJson, null, 2), 'utf-8');
   } catch (err) {
     console.error('[main] Failed to save build.json:', err);
+  }
+});
+
+ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
+  // Config window renderer sends raw Maxroll JSON → parse → save → notify overlay
+  try {
+    const { parseBuild, saveBuild } = require('../parser/maxroll');
+
+    // Load DB files for name resolution (graceful fallback if not yet extracted)
+    let skillsDb = {};
+    let classesDb = { classes: {}, masteries: {} };
+    try {
+      const skillsPath = path.join(__dirname, '..', 'db', 'data', 'skills.json');
+      skillsDb = JSON.parse(fs.readFileSync(skillsPath, 'utf-8'));
+    } catch { /* DB not yet extracted — skill names fall back to skillKey */ }
+    try {
+      const classesPath = path.join(__dirname, '..', 'db', 'data', 'classes.json');
+      classesDb = JSON.parse(fs.readFileSync(classesPath, 'utf-8'));
+    } catch { /* DB not yet extracted — class names fall back to IDs */ }
+
+    const build = parseBuild(jsonString, skillsDb, classesDb, buildName || 'Imported Build');
+    saveBuild(build, BUILD_CONFIG_PATH);
+
+    // Notify overlay renderer to reload from disk
+    if (overlayWin && !overlayWin.isDestroyed()) {
+      overlayWin.webContents.send('reload-build');
+    }
+
+    // Close config window after successful load
+    if (configWin && !configWin.isDestroyed()) {
+      configWin.close();
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('[main] load-build error:', err.message);
+    return { success: false, error: err.message };
   }
 });
 
