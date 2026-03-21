@@ -1,6 +1,5 @@
 {
-  "_comment": "GENERATED FILE — do not edit manually. Run extractor/extract.py to regenerate.",
-  "_status": "PLACEHOLDER — may be mostly complete since class/mastery data is stable across patches.",
+  "_comment": "Manually maintained — class/mastery IDs are stable across patches. passiveTreeByClass maps Maxroll classId to the treeID key in passives.json.",
   "classes": {
     "1": "Acolyte",
     "2": "Mage",
@@ -9,20 +8,27 @@
     "5": "Primalist"
   },
   "masteries": {
-    "1": { "name": "Lich", "classId": 1 },
+    "1": { "name": "Lich",        "classId": 1 },
     "2": { "name": "Necromancer", "classId": 1 },
-    "3": { "name": "Warlock", "classId": 1 },
-    "4": { "name": "Sorcerer", "classId": 2 },
-    "5": { "name": "Runemaster", "classId": 2 },
-    "6": { "name": "Spellblade", "classId": 2 },
+    "3": { "name": "Warlock",     "classId": 1 },
+    "4": { "name": "Sorcerer",    "classId": 2 },
+    "5": { "name": "Runemaster",  "classId": 2 },
+    "6": { "name": "Spellblade",  "classId": 2 },
     "7": { "name": "Void Knight", "classId": 3 },
     "8": { "name": "Forge Guard", "classId": 3 },
-    "9": { "name": "Paladin", "classId": 3 },
-    "10": { "name": "Marksman", "classId": 4 },
-    "11": { "name": "Bladedancer", "classId": 4 },
-    "12": { "name": "Falconer", "classId": 4 },
-    "13": { "name": "Beastmaster", "classId": 5 },
-    "14": { "name": "Druid", "classId": 5 },
-    "15": { "name": "Shaman", "classId": 5 }
+    "9": { "name": "Paladin",     "classId": 3 },
+    "10": { "name": "Marksman",   "classId": 4 },
+    "11": { "name": "Bladedancer","classId": 4 },
+    "12": { "name": "Falconer",   "classId": 4 },
+    "13": { "name": "Beastmaster","classId": 5 },
+    "14": { "name": "Druid",      "classId": 5 },
+    "15": { "name": "Shaman",     "classId": 5 }
+  },
+  "passiveTreeByClass": {
+    "1": "ac-1",
+    "2": "mg-1",
+    "3": "kn-1",
+    "4": "rg-1",
+    "5": "pr-1"
   }
 }

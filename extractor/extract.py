@@ -2,373 +2,283 @@
 """
 extractor/extract.py
 ─────────────────────
-Processes the bulk JSON export from AssetStudio (MonoBehaviour assets) into
-clean, normalized JSON files in db/data/.
+Converts the single "Global Tree Data.json" MonoBehaviour export into the
+clean db/data/*.json files consumed by the overlay at runtime.
 
-This script is run ONCE PER PATCH, not at runtime.
+─── Source file ──────────────────────────────────────────────────────────────
 
-─── Prerequisites ────────────────────────────────────────────────────────────
+  "Global Tree Data.json"  (in project root — exported from AssetStudio)
 
-1. Run Il2CppDumper to generate DummyDll from the game's binaries:
+  Top-level structure:
+    skillTrees   → list of 138 skill tree objects
+    passiveTrees → list of 5 passive tree objects (one per base class)
+    weaverTree   → single weaver tree object (future use)
 
-     Il2CppDumper.exe "Last Epoch/GameAssembly.dll"
-       "Last Epoch/Last Epoch_Data/il2cpp_data/Metadata/global-metadata.dat"
-       D:\\le_dump\\
+─── Key insight: treeID = Maxroll skill key ──────────────────────────────────
 
-2. Open AssetStudio:
-   - File > Load Folder > "Last Epoch/Last Epoch_Data/"
-   - When prompted, point DummyDll folder to D:\\le_dump\\DummyDll
-   - Filter by Type: MonoBehaviour
-   - Export > Filtered Assets (exports ~160k+ JSON files to a folder)
+  Each tree has a "treeID" field (e.g. "es6ai", "fl44", "v01cv").
+  This IS the same key Maxroll uses in its JSON export (skillTrees.es6ai, etc.).
+  No mapping step is required — treeID is used directly as the db key.
 
-3. Run this script:
+─── Node structure (actual fields in source data) ───────────────────────────
 
-     python extractor/extract.py --input D:\\le_export --output db/data
+  {
+    "id":                  int   — node identifier (used in Maxroll history[])
+    "name":                str   — display name (e.g. "Fireball Pierce Chance And Increased Mana Cost")
+    "maxPoints":           int   — max allocatable points (0 = root/connector node)
+    "requiredMastery":     int   — 0 = any mastery, otherwise mastery-gated
+    "masteryRequirement":  int   — minimum points in mastery tree required
+    "requirements":        list  — prerequisite nodes: [{nodeID, requirement}]
+  }
+
+  NOTE: There is NO description field in this data source.
 
 ─── Output ───────────────────────────────────────────────────────────────────
 
-  db/data/passives.json   — { [nodeId]: PassiveNode }
-  db/data/skills.json     — { [skillKey]: { name, nodes: { [nodeId]: SkillNode } } }
-  db/data/classes.json    — { classes: { [id]: name }, masteries: { [id]: { name, classId } } }
+  db/data/skills.json    — { [treeID]: { name, nodes: { [id]: node } } }
+  db/data/passives.json  — { [treeID]: { name, nodes: { [id]: node } } }
+                           (5 trees: kn-1, ac-1, mg-1, pr-1, rg-1)
 
-─── Schema ───────────────────────────────────────────────────────────────────
+  NOTE: passives.json is keyed by treeID (class tree), NOT by a flat nodeId
+  map. This is because the same nodeId can exist in different class trees.
+  build-db.js resolves nodes using classId → treeID → nodeId.
 
-PassiveNode:
-  nodeId:      int
-  name:        str
-  description: str
-  maxPoints:   int
-  treeId:      str    # e.g. "sentinel_base"
-  treeName:    str    # e.g. "Sentinel"
-  requires:    list[int]  # prerequisite nodeIds
+─── Usage ───────────────────────────────────────────────────────────────────
 
-SkillNode:
-  nodeId:      int
-  name:        str
-  description: str
-  maxPoints:   int
+  # From project root:
+  python extractor/extract.py
 
-─── IMPORTANT: skillKey mapping ─────────────────────────────────────────────
+  # Custom paths:
+  python extractor/extract.py \\
+    --input "Global Tree Data.json" \\
+    --output db/data
 
-Maxroll uses opaque keys like "fl44", "fl22" for skill trees.
-The mapping from these keys to actual skill MonoBehaviours is NOT YET KNOWN.
-
-Investigation approach:
-  1. Export a known build (e.g. Void Knight with Erasing Strike as fl44)
-  2. The fl44 history contains node IDs → find a SkillTree MonoBehaviour
-     whose nodes contain ALL those IDs
-  3. That MonoBehaviour is the Erasing Strike skill tree
-  4. Reverse-engineer the fl prefix + number → MonoBehaviour name pattern
-
-Until this is solved, skills.json will be keyed by asset name and a
-manual mapping file (map-ids.py output) will bridge to Maxroll keys.
-
-─── Asset name patterns to look for ─────────────────────────────────────────
-
-  PassiveTreeData*, PassiveNodeData*  → passives
-  SkillTreeData*, SkillNodeData*      → skills
-  CharacterClass*, ClassMastery*      → classes
-  UniqueList*, AffixList*             → items (future)
+  # With validation against a Maxroll build:
+  python extractor/extract.py --validate config/build.example.json
 """
 
 import argparse
 import json
 import os
-import re
 import sys
 from pathlib import Path
+
+# ─── Defaults ─────────────────────────────────────────────────────────────────
+
+PROJECT_ROOT  = Path(__file__).parent.parent
+DEFAULT_INPUT = PROJECT_ROOT / 'Global Tree Data.json'
+DEFAULT_OUTPUT = PROJECT_ROOT / 'db' / 'data'
 
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='Convert AssetStudio MonoBehaviour exports into db/data JSON files'
+        description='Convert "Global Tree Data.json" → db/data/*.json'
     )
     parser.add_argument(
         '--input', '-i',
-        required=True,
-        help='Folder containing exported MonoBehaviour JSON files from AssetStudio'
+        default=str(DEFAULT_INPUT),
+        help=f'Path to "Global Tree Data.json" (default: {DEFAULT_INPUT})'
     )
     parser.add_argument(
         '--output', '-o',
-        default=os.path.join(os.path.dirname(__file__), '..', 'db', 'data'),
-        help='Output folder for db/data/*.json files (default: db/data/)'
+        default=str(DEFAULT_OUTPUT),
+        help=f'Output folder for db/data/ files (default: {DEFAULT_OUTPUT})'
     )
     parser.add_argument(
         '--validate', '-v',
         default=None,
-        help='Path to a Maxroll JSON build file — runs validation after extraction'
+        help='Path to a Maxroll JSON build — verify all nodeIds resolve after extraction'
     )
     return parser.parse_args()
 
-# ─── File scanning ────────────────────────────────────────────────────────────
+# ─── Extraction ───────────────────────────────────────────────────────────────
 
-def find_assets(input_dir: str, pattern: str) -> list[Path]:
+def extract_skills(skill_trees: list) -> dict:
     """
-    Find all JSON files in input_dir whose filename matches pattern (case-insensitive regex).
-    AssetStudio exports files with names like: "MonoBehaviour - PassiveTreeData_Sentinel.json"
-    """
-    root = Path(input_dir)
-    compiled = re.compile(pattern, re.IGNORECASE)
-    matches = []
-    for f in root.rglob('*.json'):
-        if compiled.search(f.stem):
-            matches.append(f)
-    return sorted(matches)
+    Convert skillTrees[] → { [treeID]: { name, nodes: { [id]: node } } }
 
-def load_json(path: Path) -> dict | None:
-    """Load a JSON file, returning None on parse error."""
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (json.JSONDecodeError, UnicodeDecodeError) as e:
-        print(f'  [WARN] Failed to parse {path.name}: {e}', file=sys.stderr)
-        return None
-
-# ─── Passive extraction ───────────────────────────────────────────────────────
-
-def extract_passives(input_dir: str) -> dict:
-    """
-    Scan for PassiveTree/PassiveNode MonoBehaviours and build passives.json.
-
-    TODO: Inspect actual AssetStudio exports to determine exact field names.
-    The field names below (nodeId, nodeName, description, maxPoints, etc.)
-    are guesses based on typical Unity MonoBehaviour naming — adjust after
-    examining real exports.
-
-    Returns: { str(nodeId): PassiveNode }
-    """
-    passives = {}
-    asset_files = find_assets(input_dir, r'(PassiveTree|PassiveNode)')
-    print(f'[passives] Found {len(asset_files)} candidate files')
-
-    for path in asset_files:
-        data = load_json(path)
-        if not data:
-            continue
-
-        # TODO: Determine actual structure from AssetStudio export
-        # Possible structure (adjust to match real exports):
-        #
-        # Option A — tree file containing array of nodes:
-        # {
-        #   "m_Name": "PassiveTreeData_Sentinel",
-        #   "nodes": [
-        #     { "nodeID": 6, "nodeName": "Juggernaut", "description": "...", "maxPoints": 5 }
-        #   ]
-        # }
-        #
-        # Option B — individual node files:
-        # {
-        #   "m_Name": "PassiveNode_Juggernaut",
-        #   "nodeID": 6,
-        #   "nodeName": "Juggernaut",
-        #   "description": "...",
-        #   "maxPoints": 5
-        # }
-
-        tree_id = extract_tree_id(data.get('m_Name', ''))
-        tree_name = extract_tree_name(data.get('m_Name', ''))
-
-        nodes = data.get('nodes', [])
-        if not nodes and 'nodeID' in data:
-            # Single-node file
-            nodes = [data]
-
-        for node in nodes:
-            node_id = node.get('nodeID') or node.get('nodeId')
-            if node_id is None:
-                continue
-            passives[str(node_id)] = {
-                'nodeId': node_id,
-                'name': node.get('nodeName') or node.get('name', f'Node {node_id}'),
-                'description': node.get('description', ''),
-                'maxPoints': node.get('maxPoints', 1),
-                'treeId': tree_id,
-                'treeName': tree_name,
-                'requires': node.get('requires', []),
-            }
-
-    print(f'[passives] Extracted {len(passives)} nodes')
-    return passives
-
-# ─── Skill extraction ─────────────────────────────────────────────────────────
-
-def extract_skills(input_dir: str) -> dict:
-    """
-    Scan for SkillTree/SkillNode MonoBehaviours and build skills.json.
-
-    CRITICAL UNKNOWN: The skillKey (fl44, fl22, etc.) used by Maxroll must be
-    mapped to actual MonoBehaviour asset names. This is currently unknown.
-    Until solved, keys will be the asset name (e.g. "SkillTreeData_ErasingStrike").
-    Use map-ids.py to create the final Maxroll-key → asset mapping.
-
-    Returns: { skillKey: { name, nodes: { str(nodeId): SkillNode } } }
+    treeID is the same key Maxroll uses (e.g. "es6ai", "fl44", "v01cv").
+    Nodes are keyed by string(id) for consistent JSON lookup.
+    Root nodes (maxPoints == 0) are included — they appear in history[] too.
     """
     skills = {}
-    asset_files = find_assets(input_dir, r'(SkillTree|SkillNode)')
-    print(f'[skills] Found {len(asset_files)} candidate files')
-
-    for path in asset_files:
-        data = load_json(path)
-        if not data:
+    for tree in skill_trees:
+        tree_id = tree.get('treeID', '').strip()
+        if not tree_id:
+            print(f'  [WARN] Skipping skill tree with no treeID: {tree.get("name")}', file=sys.stderr)
             continue
 
-        asset_name = data.get('m_Name', path.stem)
-        skill_name = extract_skill_name(asset_name)
-
-        # Use asset name as temporary key until skillKey mapping is resolved
-        skill_key = asset_name
-
         nodes = {}
-        node_list = data.get('nodes', [])
-        if not node_list and 'nodeID' in data:
-            node_list = [data]
-
-        for node in node_list:
-            node_id = node.get('nodeID') or node.get('nodeId')
+        for node in tree.get('nodes', []):
+            node_id = node.get('id')
             if node_id is None:
                 continue
             nodes[str(node_id)] = {
-                'nodeId': node_id,
-                'name': node.get('nodeName') or node.get('name', f'Node {node_id}'),
-                'description': node.get('description', ''),
-                'maxPoints': node.get('maxPoints', 1),
+                'id':                 node_id,
+                'name':               node.get('name', f'Node {node_id}'),
+                'maxPoints':          node.get('maxPoints', 1),
+                'requiredMastery':    node.get('requiredMastery', 0),
+                'masteryRequirement': node.get('masteryRequirement', 0),
+                'requirements':       node.get('requirements', []),
             }
 
-        if nodes:
-            skills[skill_key] = { 'name': skill_name, 'nodes': nodes }
+        skills[tree_id] = {
+            'name':  tree.get('name', tree_id),
+            'nodes': nodes,
+        }
 
-    print(f'[skills] Extracted {len(skills)} skill trees')
     return skills
 
-# ─── Class extraction ─────────────────────────────────────────────────────────
 
-def extract_classes(input_dir: str) -> dict:
+def extract_passives(passive_trees: list) -> dict:
     """
-    Scan for CharacterClass/Mastery MonoBehaviours and build classes.json.
+    Convert passiveTrees[] → { [treeID]: { name, nodes: { [id]: node } } }
 
-    Returns: { classes: { str(id): name }, masteries: { str(id): { name, classId } } }
+    The 5 base class trees (kn-1, ac-1, mg-1, pr-1, rg-1) each contain ALL
+    passive nodes for that class including all mastery sub-trees.
+
+    Keyed by treeID so build-db.js can look up "which tree does this character use"
+    using the classId → treeID mapping in classes.json.
     """
-    classes = {}
-    masteries = {}
-    asset_files = find_assets(input_dir, r'(CharacterClass|Mastery|ClassData)')
-    print(f'[classes] Found {len(asset_files)} candidate files')
-
-    for path in asset_files:
-        data = load_json(path)
-        if not data:
+    passives = {}
+    for tree in passive_trees:
+        tree_id = tree.get('treeID', '').strip()
+        if not tree_id:
+            print(f'  [WARN] Skipping passive tree with no treeID: {tree.get("name")}', file=sys.stderr)
             continue
 
-        # TODO: Determine actual structure from real AssetStudio exports
-        class_id = data.get('classID') or data.get('classId')
-        class_name = data.get('className') or data.get('name', '')
+        nodes = {}
+        for node in tree.get('nodes', []):
+            node_id = node.get('id')
+            if node_id is None:
+                continue
+            nodes[str(node_id)] = {
+                'id':                 node_id,
+                'name':               node.get('name', f'Node {node_id}'),
+                'maxPoints':          node.get('maxPoints', 1),
+                'requiredMastery':    node.get('requiredMastery', 0),
+                'masteryRequirement': node.get('masteryRequirement', 0),
+                'requirements':       node.get('requirements', []),
+            }
 
-        if class_id is not None and class_name:
-            classes[str(class_id)] = class_name
+        passives[tree_id] = {
+            'name':  tree.get('name', tree_id),
+            'nodes': nodes,
+        }
 
-        mastery_list = data.get('masteries', [])
-        for m in mastery_list:
-            mastery_id = m.get('masteryID') or m.get('masteryId')
-            mastery_name = m.get('masteryName') or m.get('name', '')
-            if mastery_id is not None and mastery_name:
-                masteries[str(mastery_id)] = { 'name': mastery_name, 'classId': class_id }
-
-    print(f'[classes] Extracted {len(classes)} classes, {len(masteries)} masteries')
-    return { 'classes': classes, 'masteries': masteries }
-
-# ─── Helper functions ─────────────────────────────────────────────────────────
-
-def extract_tree_id(asset_name: str) -> str:
-    """e.g. "PassiveTreeData_SentinelBase" → "sentinel_base" """
-    suffix = re.sub(r'^.*?_', '', asset_name)
-    return re.sub(r'(?<!^)(?=[A-Z])', '_', suffix).lower()
-
-def extract_tree_name(asset_name: str) -> str:
-    """e.g. "PassiveTreeData_VoidKnight" → "Void Knight" """
-    suffix = re.sub(r'^.*?_', '', asset_name)
-    return re.sub(r'(?<!^)(?=[A-Z])', ' ', suffix).strip()
-
-def extract_skill_name(asset_name: str) -> str:
-    """e.g. "SkillTreeData_ErasingStrike" → "Erasing Strike" """
-    suffix = re.sub(r'^.*?_', '', asset_name)
-    return re.sub(r'(?<!^)(?=[A-Z])', ' ', suffix).strip()
+    return passives
 
 # ─── Validation ───────────────────────────────────────────────────────────────
 
-def validate_build(build_path: str, passives: dict, skills: dict):
+# Maps Maxroll classId → passive treeID
+# Derived from the passive tree names in this file + known LE class IDs
+PASSIVE_TREE_BY_CLASS = {
+    1: 'ac-1',  # Acolyte
+    2: 'mg-1',  # Mage
+    3: 'kn-1',  # Sentinel (Knight)
+    4: 'rg-1',  # Rogue
+    5: 'pr-1',  # Primalist
+}
+
+def validate_build(build_path: str, skills: dict, passives: dict):
     """
-    Load a Maxroll JSON build and verify every nodeId in history[] exists
-    in the extracted DB. Reports any missing IDs (indicates extraction gap
-    or version mismatch between game patch and DB).
+    Load a Maxroll JSON build file and verify every nodeId in every history[]
+    resolves in the extracted DB. Reports missing IDs clearly.
     """
     print(f'\n[validate] Checking {build_path}')
-    with open(build_path, 'r') as f:
-        build = json.load(f)
+    try:
+        with open(build_path, 'r') as f:
+            build = json.load(f)
+    except Exception as e:
+        print(f'  [ERROR] Could not load build file: {e}')
+        return
 
-    missing_passives = set()
-    for nid in build.get('passives', {}).get('history', []):
-        if str(nid) not in passives:
-            missing_passives.add(nid)
+    class_id = build.get('class')
+    passive_tree_id = PASSIVE_TREE_BY_CLASS.get(class_id)
+    passive_nodes = passives.get(passive_tree_id, {}).get('nodes', {}) if passive_tree_id else {}
 
-    missing_skills = {}
-    for skill_key, tree in build.get('skillTrees', {}).items():
-        skill_data = skills.get(skill_key)
-        if not skill_data:
-            missing_skills[skill_key] = 'SKILL KEY NOT FOUND'
-            continue
-        missing_nodes = [nid for nid in tree.get('history', [])
-                         if str(nid) not in skill_data['nodes']]
-        if missing_nodes:
-            missing_skills[skill_key] = missing_nodes
-
+    # Validate passives
+    passive_history = build.get('passives', {}).get('history', [])
+    missing_passives = [nid for nid in set(passive_history) if str(nid) not in passive_nodes]
     if missing_passives:
-        print(f'  [WARN] Missing passive nodeIds: {sorted(missing_passives)}')
+        print(f'  [WARN] {len(missing_passives)} passive nodeIds not found '
+              f'in tree "{passive_tree_id}": {sorted(missing_passives)}')
     else:
-        print(f'  [OK] All passive nodeIds resolved')
+        print(f'  [OK]   All {len(set(passive_history))} unique passive nodeIds resolved '
+              f'(tree: {passive_tree_id} — {passives.get(passive_tree_id, {}).get("name", "?")})')
 
-    if missing_skills:
-        for key, issue in missing_skills.items():
-            print(f'  [WARN] Skill {key}: {issue}')
-    else:
-        print(f'  [OK] All skill nodeIds resolved')
+    # Validate skills
+    all_ok = True
+    for skill_key, tree_data in build.get('skillTrees', {}).items():
+        skill = skills.get(skill_key)
+        if not skill:
+            print(f'  [WARN] Skill key "{skill_key}" not found in skills.json')
+            all_ok = False
+            continue
+        history = tree_data.get('history', [])
+        missing = [nid for nid in set(history) if str(nid) not in skill['nodes']]
+        if missing:
+            print(f'  [WARN] {skill_key} ("{skill["name"]}"): {len(missing)} missing nodeIds: {sorted(missing)}')
+            all_ok = False
+        else:
+            print(f'  [OK]   {skill_key} → "{skill["name"]}" — all {len(set(history))} nodeIds resolved')
+
+    if all_ok:
+        print('  All data resolved successfully.')
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
     args = parse_args()
-
-    input_dir = args.input
+    input_path = Path(args.input)
     output_dir = Path(args.output)
-    output_dir.mkdir(parents=True, exist_ok=True)
 
-    if not os.path.isdir(input_dir):
-        print(f'[ERROR] Input directory not found: {input_dir}', file=sys.stderr)
+    if not input_path.exists():
+        print(f'[ERROR] Input file not found: {input_path}', file=sys.stderr)
+        print('  Make sure "Global Tree Data.json" is in the project root.', file=sys.stderr)
         sys.exit(1)
 
-    print(f'Processing exports from: {input_dir}')
-    print(f'Output to: {output_dir}\n')
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f'Reading: {input_path}')
+    with open(input_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
 
     # Extract
-    passives = extract_passives(input_dir)
-    skills = extract_skills(input_dir)
-    classes = extract_classes(input_dir)
+    print()
+    skill_trees_raw  = data.get('skillTrees', [])
+    passive_trees_raw = data.get('passiveTrees', [])
+    weaver_tree_raw  = data.get('weaverTree', None)
+
+    print(f'Found: {len(skill_trees_raw)} skill trees, '
+          f'{len(passive_trees_raw)} passive trees, '
+          f'{"1 weaver tree" if weaver_tree_raw else "no weaver tree"}')
+
+    skills  = extract_skills(skill_trees_raw)
+    passives = extract_passives(passive_trees_raw)
+
+    # Total node counts
+    total_skill_nodes   = sum(len(t['nodes']) for t in skills.values())
+    total_passive_nodes = sum(len(t['nodes']) for t in passives.values())
+    print(f'Extracted: {len(skills)} skill trees ({total_skill_nodes} nodes), '
+          f'{len(passives)} passive trees ({total_passive_nodes} nodes)')
 
     # Write outputs
-    files = {
+    print()
+    outputs = {
+        'skills.json':  skills,
         'passives.json': passives,
-        'skills.json': skills,
-        'classes.json': classes,
     }
-    for filename, data in files.items():
+    for filename, db_data in outputs.items():
         out_path = output_dir / filename
         with open(out_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f'[write] {out_path} ({len(data)} entries)')
+            json.dump(db_data, f, indent=2, ensure_ascii=False)
+        print(f'[write] {out_path}')
 
     # Validate
     if args.validate:
-        validate_build(args.validate, passives, skills)
+        validate_build(args.validate, skills, passives)
 
     print('\nDone.')
 

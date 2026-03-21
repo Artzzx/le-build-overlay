@@ -273,12 +273,7 @@ function getCurrentNode(build, trackIndex, db) {
   const group = groups[track.currentStep];
   if (!group) return null; // track completed
 
-  const node = lookupNode(group.nodeId, track, db);
-  // Count how many history entries before the current group's startIdx are == nodeId
-  // This tells us how many points have already been placed in this node
-  // (in case the same node appears multiple times in history — edge case)
-  const pointsSoFar = group.count; // within this group, all points are in this group
-
+  const node = lookupNode(group.nodeId, track, db, build);
   return node ? { ...node, count: group.count, pointsSoFar: 0 } : null;
 }
 
@@ -300,7 +295,7 @@ function getUpcoming(build, trackIndex, db, count = 3) {
 
   for (let i = track.currentStep + 1; i < groups.length && results.length < count; i++) {
     const group = groups[i];
-    const node = lookupNode(group.nodeId, track, db);
+    const node = lookupNode(group.nodeId, track, db, build);
     if (node) results.push({ ...node, count: group.count });
   }
 
@@ -310,17 +305,26 @@ function getUpcoming(build, trackIndex, db, count = 3) {
 /**
  * Resolve a nodeId to its full info from the appropriate DB table.
  *
+ * Passive lookup: uses build.classId → passiveTreeByClass → treeID → nodes[nodeId]
+ * Skill lookup:   uses track.skillKey (= treeID) → nodes[nodeId]
+ *
  * @param {number} nodeId
- * @param {object} track - the track (used to determine passive vs skill lookup)
- * @param {object} db - { passives: {...}, skills: {...} } from build-db.js
+ * @param {object} track - the track object
+ * @param {object} db    - { passives, skills, classes } from build-db.js
+ * @param {object} build - full build (needed for classId when looking up passives)
  * @returns {object|null}
  */
-function lookupNode(nodeId, track, db) {
+function lookupNode(nodeId, track, db, build) {
   if (!db) return null;
   const key = String(nodeId);
   if (track.type === 'passive') {
-    return db.passives?.[key] ?? null;
+    // passives.json is keyed by treeID, not flat nodeId
+    // resolve: classId → treeID via classes.passiveTreeByClass
+    const classId = String(build?.classId ?? 0);
+    const treeId  = db.classes?.passiveTreeByClass?.[classId];
+    return treeId ? (db.passives?.[treeId]?.nodes?.[key] ?? null) : null;
   } else {
+    // skills.json key = treeID = Maxroll skillKey directly
     return db.skills?.[track.skillKey]?.nodes?.[key] ?? null;
   }
 }

@@ -367,6 +367,10 @@ function groupHistory(history) {
 
 /**
  * Resolve nodeId → node info from the in-memory db.
+ *
+ * Passive: uses state.build.classId → passiveTreeByClass → treeID → node
+ * Skill:   uses track.skillKey (= treeID) → node
+ *
  * @param {number} nodeId
  * @param {object} track
  * @returns {object|null}
@@ -375,7 +379,9 @@ function resolveNode(nodeId, track) {
   if (!state.db) return null;
   const key = String(nodeId);
   if (track.type === 'passive') {
-    return state.db.passives?.[key] ?? null;
+    const classId = String(state.build?.classId ?? 0);
+    const treeId  = state.db.classes?.passiveTreeByClass?.[classId];
+    return treeId ? (state.db.passives?.[treeId]?.nodes?.[key] ?? null) : null;
   } else {
     return state.db.skills?.[track.skillKey]?.nodes?.[key] ?? null;
   }

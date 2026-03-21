@@ -1,76 +1,5352 @@
 {
-  "_comment": "GENERATED FILE — do not edit manually. Run extractor/extract.py to regenerate.",
-  "_status": "PLACEHOLDER — contains sample data for development. Real data requires AssetStudio extraction (see extractor/README.md).",
-  "1": {
-    "nodeId": 1,
-    "name": "Strength",
-    "description": "+4 Strength per point",
-    "maxPoints": 5,
-    "treeId": "sentinel_base",
-    "treeName": "Sentinel",
-    "requires": []
+  "kn-1": {
+    "name": "Knight",
+    "nodes": {
+      "49": {
+        "id": 49,
+        "name": "Knight Vitality And Health",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "0": {
+        "id": 0,
+        "name": "Knight Strength And Protections",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "5": {
+        "id": 5,
+        "name": "Knight Melee Damage And Stun Chance",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "1": {
+        "id": 1,
+        "name": "Knight Block Chance And Protection",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 49,
+            "requirement": 1
+          }
+        ]
+      },
+      "2": {
+        "id": 2,
+        "name": "Knight Hybrid Armour",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "4": {
+        "id": 4,
+        "name": "Knight Damage And Stun Avoidance",
+        "maxPoints": 10,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "50": {
+        "id": 50,
+        "name": "Knight Retribution When Hit Chance",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 5,
+            "requirement": 1
+          }
+        ]
+      },
+      "8": {
+        "id": 8,
+        "name": "Knight Movement Skill Cooldown",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 2,
+            "requirement": 1
+          },
+          {
+            "nodeID": 4,
+            "requirement": 1
+          }
+        ]
+      },
+      "3": {
+        "id": 3,
+        "name": "Knight Health On Block Chance",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 1,
+            "requirement": 1
+          }
+        ]
+      },
+      "106": {
+        "id": 106,
+        "name": "Knight Mana Gain",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "55": {
+        "id": 55,
+        "name": "Knight Retribution Added Crit Chance",
+        "maxPoints": 4,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 50,
+            "requirement": 4
+          }
+        ]
+      },
+      "7": {
+        "id": 7,
+        "name": "Knight Axe Throw Chance",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "6": {
+        "id": 6,
+        "name": "Knight Dual Wielding",
+        "maxPoints": 1,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "107": {
+        "id": 107,
+        "name": "Knight Mace Damage",
+        "maxPoints": 10,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "108": {
+        "id": 108,
+        "name": "Knight Blade Attack Speed",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "10": {
+        "id": 10,
+        "name": "VK Damage And Leech",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "58": {
+        "id": 58,
+        "name": "VK Smite Conversion",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "11": {
+        "id": 11,
+        "name": "VK Health And Void Protection",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "12": {
+        "id": 12,
+        "name": "VK Leech",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 10,
+            "requirement": 1
+          }
+        ]
+      },
+      "13": {
+        "id": 13,
+        "name": "VK Melee Damage Armor And Area",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "14": {
+        "id": 14,
+        "name": "VK Void Damage Over Time",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "15": {
+        "id": 15,
+        "name": "VK Melee Void Damage On Hit",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 58,
+            "requirement": 2
+          }
+        ]
+      },
+      "16": {
+        "id": 16,
+        "name": "VK Absorb On Kill Chance",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "51": {
+        "id": 51,
+        "name": "VK Throwing And Spell Void Damage On Hit",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 58,
+            "requirement": 2
+          }
+        ]
+      },
+      "56": {
+        "id": 56,
+        "name": "VK Void Corruption",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "19": {
+        "id": 19,
+        "name": "VK Spell Damage And Area And Abyssal Echoes",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "18": {
+        "id": 18,
+        "name": "VK Void Cull",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "20": {
+        "id": 20,
+        "name": "VK Leech And Leech Rate",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 12,
+            "requirement": 1
+          }
+        ]
+      },
+      "57": {
+        "id": 57,
+        "name": "VK Time Rot Spread",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "59": {
+        "id": 59,
+        "name": "VK Vitality And CDR And Void Rifts",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "60": {
+        "id": 60,
+        "name": "VK Time Rot Mega Damage",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "63": {
+        "id": 63,
+        "name": "VK Phys And Void Pen With Frailty And Slow Chance",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "62": {
+        "id": 62,
+        "name": "VK Health and Strength",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "22": {
+        "id": 22,
+        "name": "VK Health And Vitality",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "61": {
+        "id": 61,
+        "name": "VK Void Damage And Less Damage Taken",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 60,
+            "requirement": 3
+          },
+          {
+            "nodeID": 63,
+            "requirement": 3
+          }
+        ]
+      },
+      "23": {
+        "id": 23,
+        "name": "VK Mana",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "40": {
+        "id": 40,
+        "name": "VK Echo",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "25": {
+        "id": 25,
+        "name": "VK Void Essence",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "24": {
+        "id": 24,
+        "name": "VK Void Aegis",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 25,
+            "requirement": 1
+          }
+        ]
+      },
+      "54": {
+        "id": 54,
+        "name": "VK Void Essence Refund",
+        "maxPoints": 1,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 25,
+            "requirement": 1
+          }
+        ]
+      },
+      "26": {
+        "id": 26,
+        "name": "VK Void Damage And Move Speed",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "79": {
+        "id": 79,
+        "name": "VK Echo And Attack Speed",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 40,
+            "requirement": 3
+          }
+        ]
+      },
+      "64": {
+        "id": 64,
+        "name": "VK Elemental To Void Damage Taken",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "102": {
+        "id": 102,
+        "name": "VK Super Echo",
+        "maxPoints": 1,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 26,
+            "requirement": 5
+          },
+          {
+            "nodeID": 79,
+            "requirement": 5
+          }
+        ]
+      },
+      "27": {
+        "id": 27,
+        "name": "FG Block and Block Effectiveness",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "65": {
+        "id": 65,
+        "name": "FG Strength and Damage",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "28": {
+        "id": 28,
+        "name": "FG Armour If Hit Recently",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "30": {
+        "id": 30,
+        "name": "FG Throwing Damage And Stun Chance",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 65,
+            "requirement": 1
+          }
+        ]
+      },
+      "53": {
+        "id": 53,
+        "name": "FG phys and fire damage and penetration with FS and SW",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 65,
+            "requirement": 1
+          }
+        ]
+      },
+      "32": {
+        "id": 32,
+        "name": "Sentinel Stun Avoidance And Duration",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "29": {
+        "id": 29,
+        "name": "FG Armour And Protection On Block",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 27,
+            "requirement": 1
+          }
+        ]
+      },
+      "52": {
+        "id": 52,
+        "name": "FG Throwing Shred",
+        "maxPoints": 6,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 30,
+            "requirement": 1
+          }
+        ]
+      },
+      "33": {
+        "id": 33,
+        "name": "FG Health And Stun Chance",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "66": {
+        "id": 66,
+        "name": "FG Attunement and Armour",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "36": {
+        "id": 36,
+        "name": "FG Melee Damage Per Mana Cost",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "37": {
+        "id": 37,
+        "name": "FG Bleed and Ignite",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "110": {
+        "id": 110,
+        "name": "FG Throwing Damage With Shield",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 30,
+            "requirement": 1
+          }
+        ]
+      },
+      "39": {
+        "id": 39,
+        "name": "FG Stance Switch",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "111": {
+        "id": 111,
+        "name": "FG Crit Chance And Crit Multi Per Strength",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 53,
+            "requirement": 1
+          }
+        ]
+      },
+      "34": {
+        "id": 34,
+        "name": "FG Armour and Thorns",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "31": {
+        "id": 31,
+        "name": "FG Strength and Increased Health",
+        "maxPoints": 6,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "100": {
+        "id": 100,
+        "name": "FG Minion Physical Damage",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "42": {
+        "id": 42,
+        "name": "FG Dexterity and Dodge Conversion",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "43": {
+        "id": 43,
+        "name": "FG Melee Crit Chance",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 31,
+            "requirement": 1
+          }
+        ]
+      },
+      "41": {
+        "id": 41,
+        "name": "FG Block and Armour",
+        "maxPoints": 4,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "38": {
+        "id": 38,
+        "name": "FG Potion Refill",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "44": {
+        "id": 44,
+        "name": "FG Throwing Crit Chance",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 42,
+            "requirement": 1
+          }
+        ]
+      },
+      "48": {
+        "id": 48,
+        "name": "FG Damage if Blocked",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 41,
+            "requirement": 1
+          }
+        ]
+      },
+      "45": {
+        "id": 45,
+        "name": "FG Melee Crit Multi",
+        "maxPoints": 6,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 43,
+            "requirement": 4
+          }
+        ]
+      },
+      "47": {
+        "id": 47,
+        "name": "FG Shield Elemental Resistance",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 41,
+            "requirement": 3
+          }
+        ]
+      },
+      "67": {
+        "id": 67,
+        "name": "FG Less Damage Over Time Taken",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 38,
+            "requirement": 3
+          }
+        ]
+      },
+      "46": {
+        "id": 46,
+        "name": "FG Throwing Crit Multi",
+        "maxPoints": 6,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 44,
+            "requirement": 4
+          }
+        ]
+      },
+      "68": {
+        "id": 68,
+        "name": "FG Weapon Specialisation",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "35": {
+        "id": 35,
+        "name": "FG Ring Of Shields",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 48,
+            "requirement": 1
+          }
+        ]
+      },
+      "112": {
+        "id": 112,
+        "name": "FG Melee Damage Per Hit Taken",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "72": {
+        "id": 72,
+        "name": "Paladin Stun Avoidance and Block",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "71": {
+        "id": 71,
+        "name": "Paladin Attunement And Ele Res And Edurance Threshold",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "77": {
+        "id": 77,
+        "name": "Paladin Phys And Fire Damage And Penetration",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "76": {
+        "id": 76,
+        "name": "Paladin Holy Symbol On Block",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 72,
+            "requirement": 1
+          }
+        ]
+      },
+      "69": {
+        "id": 69,
+        "name": "Paladin Health Endurance And Healing Effectiveness",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "74": {
+        "id": 74,
+        "name": "Paladin Divine Bolt",
+        "maxPoints": 4,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "84": {
+        "id": 84,
+        "name": "Paladin Melee Ignite Chance And Fire Pen",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "94": {
+        "id": 94,
+        "name": "Paladin Blind And Electrify Chance And Increased Duration",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "78": {
+        "id": 78,
+        "name": "Paladin Holy Nova On Block Replacement",
+        "maxPoints": 1,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 76,
+            "requirement": 5
+          }
+        ]
+      },
+      "83": {
+        "id": 83,
+        "name": "Paladin Healing Effect Necro Res Health And Health Regen",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "80": {
+        "id": 80,
+        "name": "Paladin Divine Bolt Damage And Projectiles",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 74,
+            "requirement": 1
+          }
+        ]
+      },
+      "73": {
+        "id": 73,
+        "name": "Paladin Strength And Fire Res Shred Per Strength",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 84,
+            "requirement": 1
+          }
+        ]
+      },
+      "70": {
+        "id": 70,
+        "name": "Paladin Attunement and Mana Regen",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "82": {
+        "id": 82,
+        "name": "Paladin Lightning Pen Res And Damage To Electrified",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "75": {
+        "id": 75,
+        "name": "Paladin Throwing Buffs",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "97": {
+        "id": 97,
+        "name": "Paladin Healing Effect Doubled With 10 Mana Cost Spell",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "104": {
+        "id": 104,
+        "name": "Paladin Health Regen And Armor",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "90": {
+        "id": 90,
+        "name": "Paladin Buffs When Using A Shield",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "81": {
+        "id": 81,
+        "name": "Paladin Bleed and Bleed Duration",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "86": {
+        "id": 86,
+        "name": "Paladin Crit Chance And Multiplier",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "89": {
+        "id": 89,
+        "name": "Paladin Less Dodge And More Block",
+        "maxPoints": 4,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 90,
+            "requirement": 1
+          }
+        ]
+      },
+      "96": {
+        "id": 96,
+        "name": "Paladin Divine Essence",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "91": {
+        "id": 91,
+        "name": "Paladin Health Endurance Threshold And Haste On Heal",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 104,
+            "requirement": 1
+          }
+        ]
+      },
+      "88": {
+        "id": 88,
+        "name": "Paladin Attack Speed And Fire Pen",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "87": {
+        "id": 87,
+        "name": "Paladin Increased Bleeding Effectiveness",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 81,
+            "requirement": 3
+          }
+        ]
+      },
+      "98": {
+        "id": 98,
+        "name": "Paladin Duality",
+        "maxPoints": 12,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "95": {
+        "id": 95,
+        "name": "Paladin Armor Health Regen And Armor Applies To DoT",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 119,
+            "requirement": 1
+          }
+        ]
+      },
+      "93": {
+        "id": 93,
+        "name": "Paladin Fire And Lightning Damage And Move Speed",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 119,
+            "requirement": 1
+          }
+        ]
+      },
+      "92": {
+        "id": 92,
+        "name": "Paladin Melee Ignite Chance And Ignite Refresh On Holy Aura",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 88,
+            "requirement": 4
+          }
+        ]
+      },
+      "17": {
+        "id": 17,
+        "name": "VK Smite Scaling Conversion",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "114": {
+        "id": 114,
+        "name": "Paladin Spell Damage With Shield And Reduced Crit Damage Taken",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 72,
+            "requirement": 1
+          }
+        ]
+      },
+      "116": {
+        "id": 116,
+        "name": "VK Crit Chance And Mortal Cleave",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "118": {
+        "id": 118,
+        "name": "Paladin Shock Lightning Res Shred Electrify And Lightning Damage Over Time",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "119": {
+        "id": 119,
+        "name": "Paladin Covenant",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "120": {
+        "id": 120,
+        "name": "FG Two Hander And Shield",
+        "maxPoints": 1,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": []
+      }
+    }
   },
-  "2": {
-    "nodeId": 2,
-    "name": "Vitality",
-    "description": "+4 Vitality per point",
-    "maxPoints": 5,
-    "treeId": "sentinel_base",
-    "treeName": "Sentinel",
-    "requires": [1]
+  "ac-1": {
+    "name": "Acolyte",
+    "nodes": {
+      "1": {
+        "id": 1,
+        "name": "Acolyte Intelligence And Necrotic Proteciton",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "0": {
+        "id": 0,
+        "name": "Acolyte Armour Aura",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "2": {
+        "id": 2,
+        "name": "Acolyte Damage Aura",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "3": {
+        "id": 3,
+        "name": "Acolyte Chance To Gain Ward On Nearby Death",
+        "maxPoints": 10,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "55": {
+        "id": 55,
+        "name": "Acolyte Mostly Shared Attack And Cast Speed",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "4": {
+        "id": 4,
+        "name": "Acolyte Vitality And Minion Health",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "5": {
+        "id": 5,
+        "name": "Acolyte Summon Revenant",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 55,
+            "requirement": 1
+          }
+        ]
+      },
+      "6": {
+        "id": 6,
+        "name": "Acolyte Damage And Health Drain",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 2,
+            "requirement": 1
+          }
+        ]
+      },
+      "7": {
+        "id": 7,
+        "name": "Acolyte Ward Retention And Protection",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 3,
+            "requirement": 1
+          }
+        ]
+      },
+      "8": {
+        "id": 8,
+        "name": "Acolyte Poison Protection And AoE Poison On Kill",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "56": {
+        "id": 56,
+        "name": "Acolyte Health Regen And Health Drain Effect",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 6,
+            "requirement": 1
+          },
+          {
+            "nodeID": 4,
+            "requirement": 1
+          }
+        ]
+      },
+      "82": {
+        "id": 82,
+        "name": "Acolyte Shared Necrotic Damage",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "80": {
+        "id": 80,
+        "name": "Acolyte Scaling Minion Protection",
+        "maxPoints": 1,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 55,
+            "requirement": 4
+          }
+        ]
+      },
+      "83": {
+        "id": 83,
+        "name": "Acolyte Poison Damage",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": [
+          {
+            "nodeID": 8,
+            "requirement": 1
+          }
+        ]
+      },
+      "84": {
+        "id": 84,
+        "name": "Acolyte Shared Physical Damage",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "59": {
+        "id": 59,
+        "name": "Necromancer Minion Health and Armour",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "11": {
+        "id": 11,
+        "name": "Necromancer minion damage and attack speed",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "10": {
+        "id": 10,
+        "name": "Necromancer Potion Health",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "21": {
+        "id": 21,
+        "name": "Necromancer Blood Armour",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "14": {
+        "id": 14,
+        "name": "Necromancer Shared Physical And Necrotic Damage",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "15": {
+        "id": 15,
+        "name": "Necromancer Ward On Minion Death",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "16": {
+        "id": 16,
+        "name": "Necromancer minion health",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 21,
+            "requirement": 1
+          }
+        ]
+      },
+      "13": {
+        "id": 13,
+        "name": "Necromancer Ward Per Second",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 15,
+            "requirement": 1
+          }
+        ]
+      },
+      "17": {
+        "id": 17,
+        "name": "Necromancer Minion Frostbite",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "75": {
+        "id": 75,
+        "name": "Necromancer Minion Armour Shred",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 14,
+            "requirement": 3
+          }
+        ]
+      },
+      "19": {
+        "id": 19,
+        "name": "Necromancer Health And Armor",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "60": {
+        "id": 60,
+        "name": "Necromancer Minion Leech",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "12": {
+        "id": 12,
+        "name": "Necromancer One Extra Skeleton",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 16,
+            "requirement": 5
+          }
+        ]
+      },
+      "18": {
+        "id": 18,
+        "name": "Necromancer Minion Flat Crit",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "20": {
+        "id": 20,
+        "name": "Necromancer Minion Physical Damage And Speed",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "23": {
+        "id": 23,
+        "name": "Necromancer Health Vs Minion Health",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "74": {
+        "id": 74,
+        "name": "Necromancer Damage Redirect",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "62": {
+        "id": 62,
+        "name": "Necromancer Increased Attack and Cast Speed And Minions",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "24": {
+        "id": 24,
+        "name": "Necromancer Vitality",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 23,
+            "requirement": 1
+          }
+        ]
+      },
+      "76": {
+        "id": 76,
+        "name": "Necromancer Minion Necrotic And Fire Damage",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "63": {
+        "id": 63,
+        "name": "Necromancer Increased Crit Chance",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 62,
+            "requirement": 1
+          }
+        ]
+      },
+      "61": {
+        "id": 61,
+        "name": "Necromancer Extra Skeletons",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 23,
+            "requirement": 3
+          }
+        ]
+      },
+      "26": {
+        "id": 26,
+        "name": "Necromancer Poison Minions",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 62,
+            "requirement": 3
+          }
+        ]
+      },
+      "64": {
+        "id": 64,
+        "name": "Necromancer HP and Armor Buff For Each Minion",
+        "maxPoints": 4,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "25": {
+        "id": 25,
+        "name": "Necromancer Elemental And Necrotic Protection",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 76,
+            "requirement": 3
+          }
+        ]
+      },
+      "27": {
+        "id": 27,
+        "name": "Necromancer Minion Crit Multi",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 63,
+            "requirement": 3
+          }
+        ]
+      },
+      "65": {
+        "id": 65,
+        "name": "Necromancer Extra Skeleton Mage",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "77": {
+        "id": 77,
+        "name": "Necromancer Minion Frenzy And Haste",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "28": {
+        "id": 28,
+        "name": "Necromancer Int And Vit",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "29": {
+        "id": 29,
+        "name": "Lich Low Health Damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "30": {
+        "id": 30,
+        "name": "Lich Spell Leech",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "58": {
+        "id": 58,
+        "name": "Lich Intelligence",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "31": {
+        "id": 31,
+        "name": "Lich Melee And Dodge",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "32": {
+        "id": 32,
+        "name": "Lich Shared Bleed And Frostbite Chance",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "66": {
+        "id": 66,
+        "name": "Lich Increased Necrotic And Cold Damage",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "33": {
+        "id": 33,
+        "name": "Lich Vitality And Poison Res",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "34": {
+        "id": 34,
+        "name": "Lich Shared DoT damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "22": {
+        "id": 22,
+        "name": "Lich Disable Leech",
+        "maxPoints": 1,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 30,
+            "requirement": 2
+          }
+        ]
+      },
+      "36": {
+        "id": 36,
+        "name": "Lich Ward At Half Health Per Poison Res",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 33,
+            "requirement": 5
+          }
+        ]
+      },
+      "35": {
+        "id": 35,
+        "name": "Lich Cull",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 31,
+            "requirement": 1
+          }
+        ]
+      },
+      "72": {
+        "id": 72,
+        "name": "Lich Increased Poison Damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "39": {
+        "id": 39,
+        "name": "Lich Vitality",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "37": {
+        "id": 37,
+        "name": "Lich Ward Per Second And Resists",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 33,
+            "requirement": 1
+          }
+        ]
+      },
+      "38": {
+        "id": 38,
+        "name": "Lich Intelligence Vs Ele Res",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "57": {
+        "id": 57,
+        "name": "Lich Health Drain Damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "40": {
+        "id": 40,
+        "name": "Lich Ward Retention And Mana",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "68": {
+        "id": 68,
+        "name": "Lich Crit Chance and Attack Speed",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "43": {
+        "id": 43,
+        "name": "Lich Dual Wield",
+        "maxPoints": 1,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "67": {
+        "id": 67,
+        "name": "Lich Physical Necrotic And Poison Penetration",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "70": {
+        "id": 70,
+        "name": "Lich DoT And Leech",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "42": {
+        "id": 42,
+        "name": "Lich Shared Flat Necrotic Damage",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "69": {
+        "id": 69,
+        "name": "Lich Delayed Damage",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 67,
+            "requirement": 1
+          }
+        ]
+      },
+      "73": {
+        "id": 73,
+        "name": "Lich Crit Multiplier",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 68,
+            "requirement": 4
+          }
+        ]
+      },
+      "45": {
+        "id": 45,
+        "name": "Lich Weapon Bonuses",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "44": {
+        "id": 44,
+        "name": "Lich Less DoT Taken",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 115,
+            "requirement": 1
+          }
+        ]
+      },
+      "47": {
+        "id": 47,
+        "name": "Lich 1h spell damage",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "71": {
+        "id": 71,
+        "name": "Lich Speed and Life Leech",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "46": {
+        "id": 46,
+        "name": "Lich Poison Chance",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "49": {
+        "id": 49,
+        "name": "Lich Melee And Ward",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "48": {
+        "id": 48,
+        "name": "Lich Tree Intelligence Vs Health Drain",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "78": {
+        "id": 78,
+        "name": "Lich Super Leech",
+        "maxPoints": 1,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "50": {
+        "id": 50,
+        "name": "Warlock Mana Gain",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "52": {
+        "id": 52,
+        "name": "Warlock Fire And Necrotic Damage That Also Applies To Minions",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "53": {
+        "id": 53,
+        "name": "Warlock Damage Over Time And Health",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "54": {
+        "id": 54,
+        "name": "Warlock Health And Armor Also Per Curse",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "79": {
+        "id": 79,
+        "name": "Warlock Spell Damage And Area For Curses",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "86": {
+        "id": 86,
+        "name": "Warlock Bleed Overload",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 53,
+            "requirement": 1
+          }
+        ]
+      },
+      "87": {
+        "id": 87,
+        "name": "Warlock Ward Per Second And Less Damage Taken Per Curse",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 54,
+            "requirement": 1
+          }
+        ]
+      },
+      "88": {
+        "id": 88,
+        "name": "Warlock Poison Overload",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "89": {
+        "id": 89,
+        "name": "Warlock Ward Decay Ward On Kill And Ward Per Second While Channeling",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "90": {
+        "id": 90,
+        "name": "Warlock Physical Damage Bleed Chance With Rip Blood And Rip Blood Casts",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 86,
+            "requirement": 5
+          }
+        ]
+      },
+      "91": {
+        "id": 91,
+        "name": "Vitality And Ward Decay Threshold Per Necrotic Res",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 89,
+            "requirement": 3
+          }
+        ]
+      },
+      "92": {
+        "id": 92,
+        "name": "Warlock Less Damage Taken And More Damage To Damned While Channeling",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 89,
+            "requirement": 1
+          }
+        ]
+      },
+      "93": {
+        "id": 93,
+        "name": "Warlock Leech And Leech Rate",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "94": {
+        "id": 94,
+        "name": "Warlock Ward And Mana Gain On Potion Use And Poison Spread",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 88,
+            "requirement": 5
+          }
+        ]
+      },
+      "96": {
+        "id": 96,
+        "name": "Warlock Withering Chance And Less Damage Taken From Withering",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "97": {
+        "id": 97,
+        "name": "Warlock Ignite Overload",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "98": {
+        "id": 98,
+        "name": "Warlock Damned Overload",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "99": {
+        "id": 99,
+        "name": "Warlock Intelligence And Vitality",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "100": {
+        "id": 100,
+        "name": "Warlock Anguish On Curse Skill",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "101": {
+        "id": 101,
+        "name": "Warlock Witchfire And Elemental And Necrotic Damage",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 97,
+            "requirement": 5
+          },
+          {
+            "nodeID": 98,
+            "requirement": 5
+          }
+        ]
+      },
+      "102": {
+        "id": 102,
+        "name": "Warlock Double Damage Chance",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "103": {
+        "id": 103,
+        "name": "Warlock Fire Whip And Fire Damage ",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 97,
+            "requirement": 5
+          }
+        ]
+      },
+      "104": {
+        "id": 104,
+        "name": "Warlock Chains And Mana Gain On Damned Target Hit",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 98,
+            "requirement": 5
+          }
+        ]
+      },
+      "105": {
+        "id": 105,
+        "name": "Warlock Curse Damage And Anguish Trigger On Bosses And Rares",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 100,
+            "requirement": 2
+          }
+        ]
+      },
+      "106": {
+        "id": 106,
+        "name": "Warlock Haste Chance On Cursed Kill",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "107": {
+        "id": 107,
+        "name": "Warlock DoT And More DoT To Boss And Rares",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "108": {
+        "id": 108,
+        "name": "Warlock Crit Multi And Bonus Crit Chance To Cursed",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 102,
+            "requirement": 2
+          }
+        ]
+      },
+      "109": {
+        "id": 109,
+        "name": "Warlock Cast Speed Tripled For Curses And Cleanse On Low Health And Ward Per Cleansed Curse",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "110": {
+        "id": 110,
+        "name": "Warlock More Witchfire Damage And Witchfire Spread",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 101,
+            "requirement": 5
+          }
+        ]
+      },
+      "111": {
+        "id": 111,
+        "name": "Warlock Health And More Damage Per Ailment On You",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "112": {
+        "id": 112,
+        "name": "Warlock Intelligence And Mana Per Int",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "114": {
+        "id": 114,
+        "name": "Lich Damage Increase From Leech",
+        "maxPoints": 3,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 22,
+            "requirement": 1
+          }
+        ]
+      },
+      "115": {
+        "id": 115,
+        "name": "Lich Half Health",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      }
+    }
   },
-  "3": {
-    "nodeId": 3,
-    "name": "Endurance",
-    "description": "+5% Endurance Threshold per point",
-    "maxPoints": 5,
-    "treeId": "sentinel_base",
-    "treeName": "Sentinel",
-    "requires": [2]
+  "mg-1": {
+    "name": "Mage",
+    "nodes": {
+      "0": {
+        "id": 0,
+        "name": "Mage Intelligence And Elemental Protection",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "2": {
+        "id": 2,
+        "name": "Mage Increased Elemental Damage",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "1": {
+        "id": 1,
+        "name": "Mage Health And Mana",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "4": {
+        "id": 4,
+        "name": "Mage Spell Damage Every 3 Seconds",
+        "maxPoints": 10,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "3": {
+        "id": 3,
+        "name": "Mage Ward Gained At 70 Percent Health",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "7": {
+        "id": 7,
+        "name": "Mage Fire Special",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 2,
+            "requirement": 1
+          }
+        ]
+      },
+      "5": {
+        "id": 5,
+        "name": "Mage Attack And Cast Speed",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "6": {
+        "id": 6,
+        "name": "Mage Lightning Special",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 2,
+            "requirement": 1
+          }
+        ]
+      },
+      "24": {
+        "id": 24,
+        "name": "Mage Cold Conversion",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "9": {
+        "id": 9,
+        "name": "Mage Crit Chance And Multiplier",
+        "maxPoints": 10,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "8": {
+        "id": 8,
+        "name": "Mage Ward Retention",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 3,
+            "requirement": 1
+          }
+        ]
+      },
+      "59": {
+        "id": 59,
+        "name": "Mage Ice And Fire",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "45": {
+        "id": 45,
+        "name": "Mage Lightning And Fire",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "58": {
+        "id": 58,
+        "name": "Mage Cold Special",
+        "maxPoints": 3,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": [
+          {
+            "nodeID": 59,
+            "requirement": 3
+          },
+          {
+            "nodeID": 24,
+            "requirement": 3
+          }
+        ]
+      },
+      "78": {
+        "id": 78,
+        "name": "Mage Ward Node Augment",
+        "maxPoints": 3,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": [
+          {
+            "nodeID": 45,
+            "requirement": 3
+          },
+          {
+            "nodeID": 8,
+            "requirement": 3
+          }
+        ]
+      },
+      "12": {
+        "id": 12,
+        "name": "Sorc Armour And Mana",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "11": {
+        "id": 11,
+        "name": "Sorc Spell Damage",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 13,
+            "requirement": 2
+          }
+        ]
+      },
+      "20": {
+        "id": 20,
+        "name": "Sorc Spell Crit Chance",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "14": {
+        "id": 14,
+        "name": "Sorc Mana Regen Per Mana",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 12,
+            "requirement": 2
+          }
+        ]
+      },
+      "13": {
+        "id": 13,
+        "name": "Sorc Cast Speed On Cast",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "15": {
+        "id": 15,
+        "name": "Sorc Ward On High Mana Use",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "17": {
+        "id": 17,
+        "name": "Sorc Lightning Damage",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "16": {
+        "id": 16,
+        "name": "Sorc Cold Damage",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "18": {
+        "id": 18,
+        "name": "Sorc Fire Damage",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "66": {
+        "id": 66,
+        "name": "Sorc Chill",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "60": {
+        "id": 60,
+        "name": "Sorc Increased Spell Damage On Expensive Ability Use",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "61": {
+        "id": 61,
+        "name": "Sorc Lightning Penetration",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 17,
+            "requirement": 1
+          }
+        ]
+      },
+      "62": {
+        "id": 62,
+        "name": "Sorc Cold Penetration",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 16,
+            "requirement": 1
+          }
+        ]
+      },
+      "63": {
+        "id": 63,
+        "name": "Sorc Fire Penetration",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 18,
+            "requirement": 1
+          }
+        ]
+      },
+      "22": {
+        "id": 22,
+        "name": "Sorc Lightning Crit Chance",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "21": {
+        "id": 21,
+        "name": "Sorc Stun and Freeze Chance",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "23": {
+        "id": 23,
+        "name": "Sorc Fire DoT",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "26": {
+        "id": 26,
+        "name": "Sorc Spell Crit Multi",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 22,
+            "requirement": 1
+          }
+        ]
+      },
+      "28": {
+        "id": 28,
+        "name": "Sorc Ward On Elemental Spell Hit",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "25": {
+        "id": 25,
+        "name": "Sorc Vitality",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "69": {
+        "id": 69,
+        "name": "Sorc Intelligence and Chance for Ele Spell Damage",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "64": {
+        "id": 64,
+        "name": "Sorc Lightning Nova On Distant Crit",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 22,
+            "requirement": 5
+          }
+        ]
+      },
+      "67": {
+        "id": 67,
+        "name": "Sorc Elemental Damage And Stun Chance",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "10": {
+        "id": 10,
+        "name": "Sorc Adaptive Spell Damage And Cast Speed",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "29": {
+        "id": 29,
+        "name": "Sorc Damage To Shocked And Spark Charges",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "31": {
+        "id": 31,
+        "name": "Sorc Area And Elemental Damage",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "27": {
+        "id": 27,
+        "name": "Sorc Mana And Mana Before Health",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "76": {
+        "id": 76,
+        "name": "Sorc Ward On Potion Use",
+        "maxPoints": 3,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 69,
+            "requirement": 5
+          }
+        ]
+      },
+      "30": {
+        "id": 30,
+        "name": "Sorc Base Spell Damage",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "68": {
+        "id": 68,
+        "name": "Sorc Increased Mana",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "65": {
+        "id": 65,
+        "name": "Sorc Cooldown Recovery Speed",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "32": {
+        "id": 32,
+        "name": "SB Ward On Hit",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "35": {
+        "id": 35,
+        "name": "SB Matching Melee",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "33": {
+        "id": 33,
+        "name": "SB Elemental Damage",
+        "maxPoints": 6,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "34": {
+        "id": 34,
+        "name": "SB Melee Ailments",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "38": {
+        "id": 38,
+        "name": "SB Fire Aura While Moving Or Using Melee",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 33,
+            "requirement": 1
+          }
+        ]
+      },
+      "39": {
+        "id": 39,
+        "name": "SB Frost Claw",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "37": {
+        "id": 37,
+        "name": "SB Arcane Shield",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "36": {
+        "id": 36,
+        "name": "SB Melee Cold and Freeze",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 35,
+            "requirement": 1
+          }
+        ]
+      },
+      "42": {
+        "id": 42,
+        "name": "SB Fire Aura Area And Damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 38,
+            "requirement": 1
+          }
+        ]
+      },
+      "40": {
+        "id": 40,
+        "name": "SB Melee Fire and Vitality",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "70": {
+        "id": 70,
+        "name": "SB Cold Fire Aura",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 38,
+            "requirement": 1
+          }
+        ]
+      },
+      "71": {
+        "id": 71,
+        "name": "SB Ward Retention and Elemental Burst Damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "43": {
+        "id": 43,
+        "name": "SB Arcane Shield Stacks",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 37,
+            "requirement": 4
+          }
+        ]
+      },
+      "72": {
+        "id": 72,
+        "name": "SB Melee Lightning And Spark Charge",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "77": {
+        "id": 77,
+        "name": "SB Attack Speed and Ward On Hit",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "44": {
+        "id": 44,
+        "name": "SB Lightning Fire Aura",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 42,
+            "requirement": 1
+          }
+        ]
+      },
+      "75": {
+        "id": 75,
+        "name": "SB Dexterity",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "84": {
+        "id": 84,
+        "name": "SB Dual Wielding",
+        "maxPoints": 1,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "41": {
+        "id": 41,
+        "name": "SB Mana on Hit",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "48": {
+        "id": 48,
+        "name": "SB High Cost Melee Elemental Damage",
+        "maxPoints": 6,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 75,
+            "requirement": 3
+          }
+        ]
+      },
+      "80": {
+        "id": 80,
+        "name": "SB Melee Lightning and Parry Chance",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "73": {
+        "id": 73,
+        "name": "SB Melee Ignite",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "81": {
+        "id": 81,
+        "name": "SB Melee Cold and Cast Speed",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "47": {
+        "id": 47,
+        "name": "SB Fire Aura on Hit",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 41,
+            "requirement": 3
+          }
+        ]
+      },
+      "49": {
+        "id": 49,
+        "name": "SB Intelligence and Ward Regen",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "46": {
+        "id": 46,
+        "name": "SB Slow Cast",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "82": {
+        "id": 82,
+        "name": "SB Health and DoT",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "74": {
+        "id": 74,
+        "name": "SB Ward Per Second Per Fire Aura",
+        "maxPoints": 3,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 47,
+            "requirement": 3
+          }
+        ]
+      },
+      "50": {
+        "id": 50,
+        "name": "SB Blade Weaving",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 48,
+            "requirement": 1
+          }
+        ]
+      },
+      "51": {
+        "id": 51,
+        "name": "SB Ward Regen Per Intelligence",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 49,
+            "requirement": 5
+          }
+        ]
+      },
+      "52": {
+        "id": 52,
+        "name": "SB Melee Damage Per Fire Aura",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 74,
+            "requirement": 1
+          }
+        ]
+      },
+      "54": {
+        "id": 54,
+        "name": "Runemaster Spell Damage",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "55": {
+        "id": 55,
+        "name": "Runemaster Health And Less Damage Taken",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "56": {
+        "id": 56,
+        "name": "Runemaster Mana Cast Speed And Ward Burst",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "57": {
+        "id": 57,
+        "name": "Runemaster Health And Mana Regen",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "86": {
+        "id": 86,
+        "name": "Runemaster Intelligence And Ward On Cast",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 56,
+            "requirement": 1
+          }
+        ]
+      },
+      "87": {
+        "id": 87,
+        "name": "Runemaster Spell Damage And Crit Chance",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "88": {
+        "id": 88,
+        "name": "Runemaster Ailments With Specific Elements",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 55,
+            "requirement": 3
+          }
+        ]
+      },
+      "89": {
+        "id": 89,
+        "name": "Runemaster Catalyst Crit Res",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 86,
+            "requirement": 1
+          }
+        ]
+      },
+      "90": {
+        "id": 90,
+        "name": "Runemaster Ward On Traversal",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 87,
+            "requirement": 4
+          }
+        ]
+      },
+      "91": {
+        "id": 91,
+        "name": "Runemaster Health And Ward Generation",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 86,
+            "requirement": 1
+          }
+        ]
+      },
+      "92": {
+        "id": 92,
+        "name": "Runemaster Caster Weapon Bonuses",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "93": {
+        "id": 93,
+        "name": "Runemaster Damage To Bosses Decree",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "94": {
+        "id": 94,
+        "name": "Runemaster Ward Burst Decree",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "95": {
+        "id": 95,
+        "name": "Runemaster Brand Of Deception",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "96": {
+        "id": 96,
+        "name": "Runemaster Crit Damage And Ward",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "97": {
+        "id": 97,
+        "name": "Runemaster Intelligence And Cooldown Recovery",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "98": {
+        "id": 98,
+        "name": "Runemaster Armor While Channeling",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "99": {
+        "id": 99,
+        "name": "Runemaster DoT vs Branded",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 95,
+            "requirement": 5
+          }
+        ]
+      },
+      "100": {
+        "id": 100,
+        "name": "Runemaster Runeword Avalanche",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "101": {
+        "id": 101,
+        "name": "Runemaster Spell Damage vs Branded",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "102": {
+        "id": 102,
+        "name": "Runemaster Runeword Duration",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 112,
+            "requirement": 1
+          },
+          {
+            "nodeID": 110,
+            "requirement": 1
+          },
+          {
+            "nodeID": 100,
+            "requirement": 1
+          }
+        ]
+      },
+      "104": {
+        "id": 104,
+        "name": "Runemaster Runeword Cataclysm",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "105": {
+        "id": 105,
+        "name": "Runemaster Speed After Traversal",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 87,
+            "requirement": 1
+          }
+        ]
+      },
+      "106": {
+        "id": 106,
+        "name": "Runemaster Increased Area",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "107": {
+        "id": 107,
+        "name": "Runemaster Frostbite Conversion",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 88,
+            "requirement": 2
+          }
+        ]
+      },
+      "108": {
+        "id": 108,
+        "name": "Runemaster Mana Regen Decree",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "109": {
+        "id": 109,
+        "name": "Runemaster Endurance And Mana",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 97,
+            "requirement": 1
+          }
+        ]
+      },
+      "110": {
+        "id": 110,
+        "name": "Runemaster Runeword Inferno",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "111": {
+        "id": 111,
+        "name": "Runemaster Health And Health Regen",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 97,
+            "requirement": 1
+          }
+        ]
+      },
+      "112": {
+        "id": 112,
+        "name": "Runemaster Runeword Hurricane",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": []
+      }
+    }
   },
-  "4": {
-    "nodeId": 4,
-    "name": "Block Chance",
-    "description": "+4% Block Chance per point",
-    "maxPoints": 5,
-    "treeId": "sentinel_base",
-    "treeName": "Sentinel",
-    "requires": [1]
+  "pr-1": {
+    "name": "Primalist",
+    "nodes": {
+      "0": {
+        "id": 0,
+        "name": "Primalist Strength And Health Regen",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "1": {
+        "id": 1,
+        "name": "Primalist Attunement And Elemental Protection",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "2": {
+        "id": 2,
+        "name": "Primalist Shared Health",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "3": {
+        "id": 3,
+        "name": "Primalist Health On Hit Every 3 Seconds",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "10": {
+        "id": 10,
+        "name": "Primalist Dual Wielding",
+        "maxPoints": 1,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "4": {
+        "id": 4,
+        "name": "Primalist Potion Effect On Minions",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "5": {
+        "id": 5,
+        "name": "Primalist Shared Melee Damage And Leech",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 0,
+            "requirement": 1
+          }
+        ]
+      },
+      "6": {
+        "id": 6,
+        "name": "Primalist Shared Spell Damage",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 1,
+            "requirement": 1
+          }
+        ]
+      },
+      "8": {
+        "id": 8,
+        "name": "Primalist Minion Damage On Hit Every 3 Seconds",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 3,
+            "requirement": 1
+          }
+        ]
+      },
+      "7": {
+        "id": 7,
+        "name": "Primalist Physical Cold Lightning",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "9": {
+        "id": 9,
+        "name": "Primalist Companion Survival",
+        "maxPoints": 6,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 4,
+            "requirement": 1
+          }
+        ]
+      },
+      "114": {
+        "id": 114,
+        "name": "Primalist Low Health",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "115": {
+        "id": 115,
+        "name": "Primalist Adaptive Spell Damage",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 6,
+            "requirement": 5
+          }
+        ]
+      },
+      "116": {
+        "id": 116,
+        "name": "Primalist Weapon Melee Damage",
+        "maxPoints": 10,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": [
+          {
+            "nodeID": 5,
+            "requirement": 5
+          }
+        ]
+      },
+      "86": {
+        "id": 86,
+        "name": "Primalist Totem Survival",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": [
+          {
+            "nodeID": 115,
+            "requirement": 1
+          }
+        ]
+      },
+      "13": {
+        "id": 13,
+        "name": "BM Shared Melee Damage",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "17": {
+        "id": 17,
+        "name": "BM Shared Dodge Rating",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "12": {
+        "id": 12,
+        "name": "BM Strength And Health",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "15": {
+        "id": 15,
+        "name": "BM Slow Melee",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 13,
+            "requirement": 1
+          }
+        ]
+      },
+      "14": {
+        "id": 14,
+        "name": "BM One Companion",
+        "maxPoints": 1,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "19": {
+        "id": 19,
+        "name": "BM Resistance on Melee Hit",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "16": {
+        "id": 16,
+        "name": "BM Minion Melee Leech",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 13,
+            "requirement": 1
+          }
+        ]
+      },
+      "24": {
+        "id": 24,
+        "name": "BM Heal on Companion Ability",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "18": {
+        "id": 18,
+        "name": "BM Phys Bleed",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 19,
+            "requirement": 2
+          }
+        ]
+      },
+      "25": {
+        "id": 25,
+        "name": "BM Shark Shred",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 15,
+            "requirement": 1
+          }
+        ]
+      },
+      "22": {
+        "id": 22,
+        "name": "BM Minion Speed",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "56": {
+        "id": 56,
+        "name": "BM Boar Damage Taken",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "67": {
+        "id": 67,
+        "name": "BM Companion Damage And Shared Ele Res",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "101": {
+        "id": 101,
+        "name": "BM Flat Melee Phys Damage",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "108": {
+        "id": 108,
+        "name": "BM Boar Strength",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "55": {
+        "id": 55,
+        "name": "BM Dex And Move Speed",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "57": {
+        "id": 57,
+        "name": "BM Shark on Kill",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "27": {
+        "id": 27,
+        "name": "BM Vitality",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "20": {
+        "id": 20,
+        "name": "BM Haste on Hit",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "23": {
+        "id": 23,
+        "name": "BM Minion Poison Chance",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "59": {
+        "id": 59,
+        "name": "BM Aspect Duration And Health",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "21": {
+        "id": 21,
+        "name": "BM Lynx",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "29": {
+        "id": 29,
+        "name": "BM Shared Physical Res",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "58": {
+        "id": 58,
+        "name": "BM Viper On Hit",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "109": {
+        "id": 109,
+        "name": "BM Shark Duration And Effect",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 57,
+            "requirement": 1
+          }
+        ]
+      },
+      "32": {
+        "id": 32,
+        "name": "BM One Companion Health",
+        "maxPoints": 1,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "54": {
+        "id": 54,
+        "name": "BM Companion Limit",
+        "maxPoints": 1,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "28": {
+        "id": 28,
+        "name": "BM Lynx Crit Multi",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 21,
+            "requirement": 3
+          }
+        ]
+      },
+      "26": {
+        "id": 26,
+        "name": "BM Viper Duration",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 58,
+            "requirement": 3
+          }
+        ]
+      },
+      "30": {
+        "id": 30,
+        "name": "BM Shark Stacks",
+        "maxPoints": 1,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 109,
+            "requirement": 1
+          }
+        ]
+      },
+      "33": {
+        "id": 33,
+        "name": "BM Companion Aspect Effect",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 59,
+            "requirement": 3
+          }
+        ]
+      },
+      "31": {
+        "id": 31,
+        "name": "BM Strength And Dexterity",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "34": {
+        "id": 34,
+        "name": "BM Health And Reduced Bonus Damage From Crits",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "40": {
+        "id": 40,
+        "name": "Shaman Armour With A Totem",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "36": {
+        "id": 36,
+        "name": "Shaman Shared Damage And Tenacity",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "41": {
+        "id": 41,
+        "name": "Shaman Attunement And Protection",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "38": {
+        "id": 38,
+        "name": "Shaman Attack And Cast Speed With A Totem",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 40,
+            "requirement": 1
+          }
+        ]
+      },
+      "60": {
+        "id": 60,
+        "name": "Shaman Lightning Retaliation",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "61": {
+        "id": 61,
+        "name": "Shaman Shock Chance and Chill Chance",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "35": {
+        "id": 35,
+        "name": "Shaman Totem Damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 40,
+            "requirement": 1
+          }
+        ]
+      },
+      "62": {
+        "id": 62,
+        "name": "Shaman Stun Chance and Avoidance and Attunement",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "43": {
+        "id": 43,
+        "name": "Shaman Storm Bringer",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "42": {
+        "id": 42,
+        "name": "Shaman Wind Bringer",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "37": {
+        "id": 37,
+        "name": "Shaman Totem Speed",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "44": {
+        "id": 44,
+        "name": "Shaman Hail Bringer",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 42,
+            "requirement": 1
+          }
+        ]
+      },
+      "46": {
+        "id": 46,
+        "name": "Shaman Minion Elemental Damage",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "102": {
+        "id": 102,
+        "name": "Shaman Stun Chance",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 62,
+            "requirement": 1
+          }
+        ]
+      },
+      "63": {
+        "id": 63,
+        "name": "Shaman Shared Flat Spell Lightning Damage",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 43,
+            "requirement": 2
+          }
+        ]
+      },
+      "51": {
+        "id": 51,
+        "name": "Shaman Slow Melee Cold",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "64": {
+        "id": 64,
+        "name": "Shaman Shared Flat Cold Damage",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 42,
+            "requirement": 2
+          }
+        ]
+      },
+      "65": {
+        "id": 65,
+        "name": "Shaman Increased Ele Melee Damage",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "45": {
+        "id": 45,
+        "name": "Shaman Shared Base Spell Damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "48": {
+        "id": 48,
+        "name": "Shaman Protection Per Totem",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "103": {
+        "id": 103,
+        "name": "Shaman Freeze Chance",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "39": {
+        "id": 39,
+        "name": "Shaman Slow Melee Lightning",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 65,
+            "requirement": 1
+          }
+        ]
+      },
+      "50": {
+        "id": 50,
+        "name": "Shaman Attunement",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "69": {
+        "id": 69,
+        "name": "Shaman Chance to Cast Lightning on Cast",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "66": {
+        "id": 66,
+        "name": "Shaman Melee Damage Per Totem",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 48,
+            "requirement": 1
+          }
+        ]
+      },
+      "106": {
+        "id": 106,
+        "name": "Shaman Totem Duration",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 103,
+            "requirement": 1
+          }
+        ]
+      },
+      "68": {
+        "id": 68,
+        "name": "Shaman Chance to Cast Lightning on Hit",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 39,
+            "requirement": 1
+          }
+        ]
+      },
+      "49": {
+        "id": 49,
+        "name": "Shaman Maelstrom When Hit",
+        "maxPoints": 6,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 50,
+            "requirement": 1
+          }
+        ]
+      },
+      "52": {
+        "id": 52,
+        "name": "Shaman Armour and Retaliation",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "70": {
+        "id": 70,
+        "name": "Shaman Area And Less Damage Taken From Shocked",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 69,
+            "requirement": 3
+          },
+          {
+            "nodeID": 68,
+            "requirement": 3
+          }
+        ]
+      },
+      "53": {
+        "id": 53,
+        "name": "Shaman Spell Damage Per Totem",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "107": {
+        "id": 107,
+        "name": "Shaman Totem Stun Immunity",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "71": {
+        "id": 71,
+        "name": "Druid Health And Mana",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "73": {
+        "id": 73,
+        "name": "Druid Shared Physical And Poison Damage",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "72": {
+        "id": 72,
+        "name": "Druid Healing Effect And Eterra's Blessing",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 98,
+            "requirement": 1
+          }
+        ]
+      },
+      "97": {
+        "id": 97,
+        "name": "Druid Attunement And Strength",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "98": {
+        "id": 98,
+        "name": "Druid Cold Damage And Healing Effect",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "81": {
+        "id": 81,
+        "name": "Druid Damage While Transformed And Rage Decay",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "76": {
+        "id": 76,
+        "name": "Druid Melee Bleed And Spell Poison Chance",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 73,
+            "requirement": 1
+          }
+        ]
+      },
+      "80": {
+        "id": 80,
+        "name": "Druid Minion Health And Healing Effect",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 72,
+            "requirement": 1
+          }
+        ]
+      },
+      "77": {
+        "id": 77,
+        "name": "Druid Thorn Shield And Armor",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 89,
+            "requirement": 3
+          }
+        ]
+      },
+      "79": {
+        "id": 79,
+        "name": "Druid Shared Attack And Cast Speed",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "83": {
+        "id": 83,
+        "name": "Druid Shared Cold Damage And Freeze Rate",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 98,
+            "requirement": 1
+          }
+        ]
+      },
+      "110": {
+        "id": 110,
+        "name": "Druid No Rage Decay Out Of Combat",
+        "maxPoints": 1,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 81,
+            "requirement": 3
+          }
+        ]
+      },
+      "82": {
+        "id": 82,
+        "name": "Druid Crit Chance And Crit Leech",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "88": {
+        "id": 88,
+        "name": "Druid Attunement And Crit Avoidance Per Attunement",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "94": {
+        "id": 94,
+        "name": "Druid Stacking Less Hit Damage Taken",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "111": {
+        "id": 111,
+        "name": "Druid Strength And Strength Scaling",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "90": {
+        "id": 90,
+        "name": "Druid Shared Added Physical Damage",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "84": {
+        "id": 84,
+        "name": "Druid Minion Damage And Healing Effectiveness",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "87": {
+        "id": 87,
+        "name": "Druid Health Regen And Mana Regen",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "93": {
+        "id": 93,
+        "name": "Druid Shapeshifter Duration",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "92": {
+        "id": 92,
+        "name": "Druid Shapeshifter Crit Chance And Crit Multi",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 93,
+            "requirement": 5
+          }
+        ]
+      },
+      "89": {
+        "id": 89,
+        "name": "Druid Endurance And Armor",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "78": {
+        "id": 78,
+        "name": "Druid Damage With Exactly One Companion",
+        "maxPoints": 1,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 84,
+            "requirement": 1
+          }
+        ]
+      },
+      "85": {
+        "id": 85,
+        "name": "Druid Shapeshifter Heal On Transform",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 93,
+            "requirement": 2
+          }
+        ]
+      },
+      "100": {
+        "id": 100,
+        "name": "Druid Shared Poison Chance And Vine On Kill",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 84,
+            "requirement": 4
+          }
+        ]
+      },
+      "99": {
+        "id": 99,
+        "name": "Druid Crit Chance And Rage Gain On Crit",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "104": {
+        "id": 104,
+        "name": "Druid Health and Endurance Threshold",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "91": {
+        "id": 91,
+        "name": "Druid Shared Added Spell Damage",
+        "maxPoints": 10,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 78,
+            "requirement": 1
+          }
+        ]
+      },
+      "112": {
+        "id": 112,
+        "name": "Druid Shared Cold Penetration",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "118": {
+        "id": 118,
+        "name": "Druid Damage And Penetration",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "74": {
+        "id": 74,
+        "name": "Druid Damage Over Time While Transformed",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      }
+    }
   },
-  "6": {
-    "nodeId": 6,
-    "name": "Juggernaut",
-    "description": "+1% armour per point of vitality",
-    "maxPoints": 5,
-    "treeId": "sentinel_base",
-    "treeName": "Sentinel",
-    "requires": [1]
-  },
-  "8": {
-    "nodeId": 8,
-    "name": "Void Aegis",
-    "description": "+15 Void Resistance per point",
-    "maxPoints": 5,
-    "treeId": "void_knight",
-    "treeName": "Void Knight",
-    "requires": [3]
-  },
-  "9": {
-    "nodeId": 9,
-    "name": "Time Legion",
-    "description": "Gain Haste for 2s on hit (once per 5s)",
-    "maxPoints": 1,
-    "treeId": "void_knight",
-    "treeName": "Void Knight",
-    "requires": [8]
-  },
-  "10": {
-    "nodeId": 10,
-    "name": "Temporal Mastery",
-    "description": "+10% Cooldown Recovery Speed per point",
-    "maxPoints": 3,
-    "treeId": "void_knight",
-    "treeName": "Void Knight",
-    "requires": [6]
+  "rg-1": {
+    "name": "Rogue",
+    "nodes": {
+      "1": {
+        "id": 1,
+        "name": "Rogue Dodge and Poison Resistance",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "0": {
+        "id": 0,
+        "name": "Rogue Dexterity",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "6": {
+        "id": 6,
+        "name": "Rogue Attack Speed",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "7": {
+        "id": 7,
+        "name": "Rogue Less Damage While Moving",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 1,
+            "requirement": 1
+          }
+        ]
+      },
+      "10": {
+        "id": 10,
+        "name": "Rogue Dual Wielding",
+        "maxPoints": 1,
+        "requiredMastery": 0,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "8": {
+        "id": 8,
+        "name": "Rogue Haste",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 7,
+            "requirement": 1
+          }
+        ]
+      },
+      "9": {
+        "id": 9,
+        "name": "Rogue Glancing Blow",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "12": {
+        "id": 12,
+        "name": "Rogue Third Attack",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 6,
+            "requirement": 1
+          }
+        ]
+      },
+      "13": {
+        "id": 13,
+        "name": "Rogue Bow And Dagger Poison",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "14": {
+        "id": 14,
+        "name": "Rogue Recovery On 0 Cost Skill",
+        "maxPoints": 4,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "11": {
+        "id": 11,
+        "name": "Rogue Dual Wield Damage",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 10,
+            "requirement": 1
+          }
+        ]
+      },
+      "15": {
+        "id": 15,
+        "name": "Rogue Crit Chance",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "16": {
+        "id": 16,
+        "name": "Rogue Bleed on Third Attack",
+        "maxPoints": 5,
+        "requiredMastery": 0,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 12,
+            "requirement": 3
+          }
+        ]
+      },
+      "17": {
+        "id": 17,
+        "name": "Rogue Damage For Mana",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": [
+          {
+            "nodeID": 14,
+            "requirement": 1
+          }
+        ]
+      },
+      "18": {
+        "id": 18,
+        "name": "Rogue Health on Glancing Blow",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 25,
+        "requirements": [
+          {
+            "nodeID": 9,
+            "requirement": 3
+          }
+        ]
+      },
+      "2": {
+        "id": 2,
+        "name": "BD Flow",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "49": {
+        "id": 49,
+        "name": "BD Melee Damage And Move Speed",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "50": {
+        "id": 50,
+        "name": "BD Dexterity And Glancing Blow",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "53": {
+        "id": 53,
+        "name": "BD Shadow Damage and Health Restore",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "51": {
+        "id": 51,
+        "name": "BD Damage Over Time",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "52": {
+        "id": 52,
+        "name": "BD Melee Physical Damage and Dodge Rating",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "54": {
+        "id": 54,
+        "name": "BD Flow Melee and Throwing Attack speed",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 2,
+            "requirement": 1
+          }
+        ]
+      },
+      "55": {
+        "id": 55,
+        "name": "BD Melee and Throw Bleed with Phys Dmg",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "56": {
+        "id": 56,
+        "name": "BD Dusk Shroud When Hit",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 50,
+            "requirement": 1
+          }
+        ]
+      },
+      "57": {
+        "id": 57,
+        "name": "BD Longer Flow with Crit and Bleed",
+        "maxPoints": 1,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 54,
+            "requirement": 1
+          }
+        ]
+      },
+      "58": {
+        "id": 58,
+        "name": "BD Attack Speed and Dusk Shroud Chance",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 56,
+            "requirement": 1
+          }
+        ]
+      },
+      "59": {
+        "id": 59,
+        "name": "BD Flow Damage and Crit Multi",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 54,
+            "requirement": 1
+          }
+        ]
+      },
+      "60": {
+        "id": 60,
+        "name": "BD Crimson Shroud Chance",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 55,
+            "requirement": 1
+          }
+        ]
+      },
+      "61": {
+        "id": 61,
+        "name": "BD Dodge to Glancing Blow Conversion",
+        "maxPoints": 1,
+        "requiredMastery": 1,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 56,
+            "requirement": 1
+          }
+        ]
+      },
+      "62": {
+        "id": 62,
+        "name": "BD Damage and Attack Speed Dual Wielding",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "63": {
+        "id": 63,
+        "name": "BD Leech",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "64": {
+        "id": 64,
+        "name": "BD Dodge Rating and Damage at Full Health",
+        "maxPoints": 6,
+        "requiredMastery": 1,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "65": {
+        "id": 65,
+        "name": "BD Weapon Combo Specific Bonuses",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 62,
+            "requirement": 1
+          }
+        ]
+      },
+      "66": {
+        "id": 66,
+        "name": "BD Silver Shroud",
+        "maxPoints": 10,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "67": {
+        "id": 67,
+        "name": "BD Perfection",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 64,
+            "requirement": 1
+          }
+        ]
+      },
+      "68": {
+        "id": 68,
+        "name": "BD Crit Chance and Vulternability",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "69": {
+        "id": 69,
+        "name": "BD Health On Kill Per Shroud",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "70": {
+        "id": 70,
+        "name": "BD Perfection Armor and Dodge",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 67,
+            "requirement": 1
+          }
+        ]
+      },
+      "71": {
+        "id": 71,
+        "name": "BD Low Life Crit Chance and Damage Taken",
+        "maxPoints": 8,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "72": {
+        "id": 72,
+        "name": "BD Armor Shred",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "73": {
+        "id": 73,
+        "name": "BD Crit Multi and Less Other Damage",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 68,
+            "requirement": 1
+          }
+        ]
+      },
+      "74": {
+        "id": 74,
+        "name": "BD Added Shadows and Damage",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "75": {
+        "id": 75,
+        "name": "BD Full Health Perfection",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 70,
+            "requirement": 1
+          }
+        ]
+      },
+      "20": {
+        "id": 20,
+        "name": "Marksman Bow Damage and Crit Chance",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "21": {
+        "id": 21,
+        "name": "Marksman Dexterity and Boss Dodge Rating Reduction",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "3": {
+        "id": 3,
+        "name": "Marksman Bow Attack Speed and Health Gain",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "22": {
+        "id": 22,
+        "name": "Marksman Concentration",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "23": {
+        "id": 23,
+        "name": "Marksman Bow and Throwing Damage",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "24": {
+        "id": 24,
+        "name": "Marksman Elemental Arrows",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "25": {
+        "id": 25,
+        "name": "Marksman Critical Vulnerability",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 20,
+            "requirement": 1
+          }
+        ]
+      },
+      "26": {
+        "id": 26,
+        "name": "Marksman DoT Less Taken and More Done",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "27": {
+        "id": 27,
+        "name": "Marksman Increased Elemental Arrow Damage",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 24,
+            "requirement": 1
+          }
+        ]
+      },
+      "28": {
+        "id": 28,
+        "name": "Marksman Concentration Cooldown",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 22,
+            "requirement": 1
+          }
+        ]
+      },
+      "29": {
+        "id": 29,
+        "name": "Marksman Maximum Elemental Arrows",
+        "maxPoints": 3,
+        "requiredMastery": 2,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 24,
+            "requirement": 1
+          }
+        ]
+      },
+      "30": {
+        "id": 30,
+        "name": "Marksman Crit Multi and Avoidance",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 25,
+            "requirement": 1
+          }
+        ]
+      },
+      "31": {
+        "id": 31,
+        "name": "Marksman Concentration Movement and Dodge",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 28,
+            "requirement": 1
+          }
+        ]
+      },
+      "32": {
+        "id": 32,
+        "name": "Marksman Elemental Arrow Extra Consume",
+        "maxPoints": 2,
+        "requiredMastery": 2,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 27,
+            "requirement": 1
+          }
+        ]
+      },
+      "34": {
+        "id": 34,
+        "name": "Marksman Health and Bow Health Leech",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "33": {
+        "id": 33,
+        "name": "Marksman Bow Attack Speed On Bow Use",
+        "maxPoints": 6,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "76": {
+        "id": 76,
+        "name": "Marksman Bleed and Physical Damage",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "35": {
+        "id": 35,
+        "name": "Marksman Elemental Arrow Alt Generation",
+        "maxPoints": 8,
+        "requiredMastery": 2,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "39": {
+        "id": 39,
+        "name": "Marksman Sharpshooter",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "36": {
+        "id": 36,
+        "name": "Marksman Silver Shroud On Proc",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 33,
+            "requirement": 1
+          }
+        ]
+      },
+      "37": {
+        "id": 37,
+        "name": "Marksman Bow Damage and Nearby Damage Taken",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "38": {
+        "id": 38,
+        "name": "Marksman Poison Chance and Penetration",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "41": {
+        "id": 41,
+        "name": "Marksman Stacking Bow Crit",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "40": {
+        "id": 40,
+        "name": "Marksman Bow Damage Per Mana",
+        "maxPoints": 10,
+        "requiredMastery": 2,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "44": {
+        "id": 44,
+        "name": "Marksman Sharpshooter Stun and Armor Shred",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 39,
+            "requirement": 4
+          }
+        ]
+      },
+      "42": {
+        "id": 42,
+        "name": "Marksman Rain of Arrows Proc",
+        "maxPoints": 4,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 36,
+            "requirement": 1
+          }
+        ]
+      },
+      "43": {
+        "id": 43,
+        "name": "Marksman Mana Cost and Regen",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 40,
+            "requirement": 1
+          }
+        ]
+      },
+      "46": {
+        "id": 46,
+        "name": "Marksman Stacking Crit Multi and Health on Crit",
+        "maxPoints": 5,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 41,
+            "requirement": 1
+          }
+        ]
+      },
+      "45": {
+        "id": 45,
+        "name": "Marksman Bow Skill Specific Buffs",
+        "maxPoints": 2,
+        "requiredMastery": 2,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 40,
+            "requirement": 1
+          }
+        ]
+      },
+      "4": {
+        "id": 4,
+        "name": "BD Mana Regen",
+        "maxPoints": 5,
+        "requiredMastery": 1,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "48": {
+        "id": 48,
+        "name": "Falconer Minion Damage And Falcon Crit Chance",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "78": {
+        "id": 78,
+        "name": "Falconer Haste Chance And Damage While Hasted",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "79": {
+        "id": 79,
+        "name": "Falconer Health And Dodge",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 0,
+        "requirements": []
+      },
+      "80": {
+        "id": 80,
+        "name": "Falconer Crimson Shroud Chance",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 48,
+            "requirement": 1
+          }
+        ]
+      },
+      "81": {
+        "id": 81,
+        "name": "Falconer Dex And Falcon Damage",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": []
+      },
+      "82": {
+        "id": 82,
+        "name": "Falconer Dodge And Endurance Threshold",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 5,
+        "requirements": [
+          {
+            "nodeID": 79,
+            "requirement": 1
+          }
+        ]
+      },
+      "83": {
+        "id": 83,
+        "name": "Falconer Weapon Mastery",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "84": {
+        "id": 84,
+        "name": "Falconer Throwing Damage And Speed",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "85": {
+        "id": 85,
+        "name": "Falconer Bow Damage And Chance To Buff Falcon On Bow Attack",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": []
+      },
+      "86": {
+        "id": 86,
+        "name": "Falconer Dodge And Mana Regen",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 10,
+        "requirements": [
+          {
+            "nodeID": 79,
+            "requirement": 2
+          }
+        ]
+      },
+      "87": {
+        "id": 87,
+        "name": "Falconer Falcon And Ballista Damage",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": [
+          {
+            "nodeID": 48,
+            "requirement": 1
+          }
+        ]
+      },
+      "88": {
+        "id": 88,
+        "name": "Falconer 1h Damage And Block",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 15,
+        "requirements": []
+      },
+      "89": {
+        "id": 89,
+        "name": "Falconer Spear Buffs",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 83,
+            "requirement": 3
+          }
+        ]
+      },
+      "90": {
+        "id": 90,
+        "name": "Falconer Added Throwing Damage To Falcon",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": [
+          {
+            "nodeID": 84,
+            "requirement": 3
+          }
+        ]
+      },
+      "91": {
+        "id": 91,
+        "name": "Falconer Area And Mana Gain On Detonations",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 20,
+        "requirements": []
+      },
+      "92": {
+        "id": 92,
+        "name": "Falconer Dex Dodge And Armor",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "93": {
+        "id": 93,
+        "name": "Falconer Health And Silver Shroud",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "95": {
+        "id": 95,
+        "name": "Falconer Block And Glancing Blow",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 25,
+        "requirements": []
+      },
+      "94": {
+        "id": 94,
+        "name": "Falconer Shared Damage And Falcon Leech",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": [
+          {
+            "nodeID": 92,
+            "requirement": 1
+          }
+        ]
+      },
+      "97": {
+        "id": 97,
+        "name": "Falconer Falcon Instant Abilities And CDR",
+        "maxPoints": 1,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "98": {
+        "id": 98,
+        "name": "Falconer Dodge And Chance To Throw Caltrops On Dodge",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 30,
+        "requirements": []
+      },
+      "99": {
+        "id": 99,
+        "name": "Falconer DoT And Ailment Sharing To Falcon",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "100": {
+        "id": 100,
+        "name": "Falconer Share Crit Chance And Crit Multi",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": []
+      },
+      "101": {
+        "id": 101,
+        "name": "Falconer Throwing Damage And Caltrops Apply Frailty",
+        "maxPoints": 8,
+        "requiredMastery": 3,
+        "masteryRequirement": 35,
+        "requirements": [
+          {
+            "nodeID": 98,
+            "requirement": 1
+          }
+        ]
+      },
+      "102": {
+        "id": 102,
+        "name": "Falconer Armor Per 2 Dex And Increased Armor On Falcon Hits",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": [
+          {
+            "nodeID": 92,
+            "requirement": 2
+          }
+        ]
+      },
+      "103": {
+        "id": 103,
+        "name": "Falconer Haste Effect And Haste On Potion Use Plus More Potions",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "104": {
+        "id": 104,
+        "name": "Falconer Glancing Blow And Double Chance If No Recent Hit",
+        "maxPoints": 5,
+        "requiredMastery": 3,
+        "masteryRequirement": 40,
+        "requirements": []
+      },
+      "105": {
+        "id": 105,
+        "name": "Falconer Less Damage Taken While Moving And Movespeed And Dodge",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": []
+      },
+      "106": {
+        "id": 106,
+        "name": "Falconer Health On Minion Crit Plus Crit Avoidance And Minion Crit Multi",
+        "maxPoints": 7,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 100,
+            "requirement": 2
+          }
+        ]
+      },
+      "107": {
+        "id": 107,
+        "name": "Falconer Damage And Slow Duration More Damage Per Slow",
+        "maxPoints": 6,
+        "requiredMastery": 3,
+        "masteryRequirement": 45,
+        "requirements": [
+          {
+            "nodeID": 98,
+            "requirement": 1
+          }
+        ]
+      }
+    }
   }
 }
