@@ -103,12 +103,11 @@ function groupHistory(history) {
 ```
 Each group = one UI "step" the player advances through.
 
-### Skill Keys (fl44, fl22, etc.)
-Maxroll encodes skill trees with opaque keys like `fl44`, `fl22`. These map to actual skills:
-- `fl` = likely a fixed prefix
-- The numeric suffix corresponds to the skill's internal ID
-- The mapping must be discovered by cross-referencing extracted MonoBehaviour assets
-- Once mapped, stored in `db/data/skills.json` as `{ "fl44": { name: "Erasing Strike", nodes: {...} } }`
+### Skill Keys (es6ai, v01cv, etc.)
+Maxroll's skill keys are the `treeID` field from "Global Tree Data.json" verbatim.
+No mapping or lookup table is needed — they are the same string.
+Examples: `"es6ai"` = Erasing Strike, `"v01cv"` = Void Cleave, `"vr53sl"` = Volatile Reversal.
+`db/data/skills.json` is keyed directly by treeID.
 
 ---
 
@@ -157,32 +156,54 @@ Maxroll encodes skill trees with opaque keys like `fl44`, `fl22`. These map to a
 ```
 
 ### passives.json (db/data/)
-```json
-{
-  "6": {
-    "nodeId": 6,
-    "name": "Juggernaut",
-    "description": "+1% armour per point of vitality",
-    "maxPoints": 5,
-    "treeId": "sentinel_base",
-    "treeName": "Sentinel",
-    "requires": [1]
-  }
-}
-```
 
-### skills.json (db/data/)
+Keyed by `treeID` (one per base class). Lookup requires classId → treeID first.
 ```json
 {
-  "fl44": {
-    "name": "Erasing Strike",
+  "kn-1": {
+    "name": "Knight",
     "nodes": {
-      "4": { "nodeId": 4, "name": "Crushing Blows", "description": "...", "maxPoints": 4 },
-      "14": { "nodeId": 14, "name": "Void Spiral", "description": "...", "maxPoints": 1 }
+      "49": {
+        "id": 49,
+        "name": "Knight Vitality And Health",
+        "maxPoints": 8,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      }
     }
   }
 }
 ```
+
+classId → treeID mapping (in classes.json `passiveTreeByClass`):
+- 1 (Acolyte) → "ac-1", 2 (Mage) → "mg-1", 3 (Sentinel) → "kn-1"
+- 4 (Rogue) → "rg-1", 5 (Primalist) → "pr-1"
+
+### skills.json (db/data/)
+
+**Key insight: `treeID` in "Global Tree Data.json" = Maxroll's skillKey directly.**
+No mapping step needed.
+
+```json
+{
+  "es6ai": {
+    "name": "Erasing Strike",
+    "nodes": {
+      "2": {
+        "id": 2,
+        "name": "Erasing Strike Skill Tree Root Node",
+        "maxPoints": 0,
+        "requiredMastery": 0,
+        "masteryRequirement": 0,
+        "requirements": []
+      }
+    }
+  }
+}
+```
+
+**NOTE: There is NO description field.** The source data ("Global Tree Data.json") does not contain node descriptions. The overlay displays node names only.
 
 ### classes.json (db/data/)
 ```json
@@ -367,10 +388,8 @@ Phase 2 requires manual tool installation and game files on the dev machine.
 
 ## Known Unknowns / Investigation Needed
 
-1. **skillKey mapping** (`fl44` → "Erasing Strike"): The exact mapping between Maxroll's opaque skill keys and actual skill MonoBehaviour assets is TBD. Approach: export a known build, cross-reference node IDs in `fl44.history` against extracted SkillTree MonoBehaviours.
+1. **Hotkey conflict with game**: Keys `1`–`6` are game ability hotkeys. Strategy: only activate when overlay is visible + user is actively navigating (F1 mode). May need per-game testing.
 
-2. **Hotkey conflict with game**: Keys `1`–`6` are game ability hotkeys. Strategy: only activate when overlay is visible + user is actively navigating (F1 mode). May need per-game testing.
+2. **Multi-monitor position**: The overlay x/y calculation assumes a single primary screen. Multi-monitor support may need `screen.getAllDisplays()`.
 
-3. **AssetStudio JSON structure**: The exact schema of exported MonoBehaviour JSONs varies. `extract.py` must be written after inspecting actual exports.
-
-4. **Multi-monitor position**: The overlay x/y calculation assumes a single primary screen. Multi-monitor support may need `screen.getAllDisplays()`.
+3. **Node descriptions**: `"Global Tree Data.json"` does not contain description text for nodes — only names, maxPoints, and requirement links. If descriptions are needed in the future, they would require a different source (e.g. a localization asset bundle).
