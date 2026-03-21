@@ -302,10 +302,10 @@ function renderTrack(track, index) {
       const dotsEl = document.createElement('div');
       dotsEl.className = 'track-dots';
 
-      // Count how many points already placed in this node from history
-      // (sum of all previous groups with same nodeId — or just group.count context)
-      // For simplicity: dots filled = points already allocated in prior occurrences
-      const pointsAllocated = 0; // TODO: compute from history if same node repeats
+      // Sum points already allocated to this nodeId in all groups before currentStep
+      const pointsAllocated = groups
+        .slice(0, track.currentStep)
+        .reduce((sum, g) => sum + (g.nodeId === currentGroup.nodeId ? g.count : 0), 0);
 
       for (let p = 0; p < node.maxPoints; p++) {
         const dot = document.createElement('span');
