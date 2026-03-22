@@ -337,8 +337,12 @@ ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
     let skillsDb = {};
     let classesDb = { classes: {}, masteries: {} };
     try {
-      const skillsPath = path.join(__dirname, '..', 'db', 'data', 'skills.json');
-      skillsDb = JSON.parse(fs.readFileSync(skillsPath, 'utf-8'));
+      const reconPath = path.join(__dirname, '..', 'db', 'data', 'skill_tree_reconciled.json');
+      const rawNodes = JSON.parse(fs.readFileSync(reconPath, 'utf-8'));
+      for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
+        if (!skillsDb[treeID]) skillsDb[treeID] = { name: treeName, nodes: {} };
+        skillsDb[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
+      }
     } catch { /* DB not yet extracted — skill names fall back to skillKey */ }
     try {
       const classesPath = path.join(__dirname, '..', 'db', 'data', 'classes.json');

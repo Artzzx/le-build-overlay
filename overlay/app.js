@@ -19,7 +19,7 @@
  * ─── State model ─────────────────────────────────────────────────────────────
  *
  *  state.build         — full normalized build object (see build-schema.js)
- *  state.db            — { passives, skills, classes } from db/data/
+ *  state.db            — { passives, skills, classes } parsed from db/data/skill_tree_reconciled.json + classes.json
  *  state.expandedTrack — index of the track row currently expanded (0-based)
  *  state.visible       — whether the overlay div is showing
  *
@@ -110,12 +110,20 @@ async function loadBuild() {
  * @returns {{ passives: object, skills: object, classes: object }}
  */
 async function loadDb() {
-  const [passives, skills, classes] = await Promise.all([
-    fetchJson('../db/data/passives.json', {}),
-    fetchJson('../db/data/skills.json', {}),
+  const [rawNodes, classes] = await Promise.all([
+    fetchJson('../db/data/skill_tree_reconciled.json', []),
     fetchJson('../db/data/classes.json', { classes: {}, masteries: {} }),
   ]);
-  return { passives, skills, classes };
+
+  // Parse flat array into { [treeID]: { name, nodes: { [nodeID]: node } } }
+  const trees = {};
+  for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
+    if (!trees[treeID]) trees[treeID] = { name: treeName, nodes: {} };
+    trees[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
+  }
+
+  // passives and skills share the same unified map
+  return { passives: trees, skills: trees, classes };
 }
 
 async function fetchJson(url, fallback) {
