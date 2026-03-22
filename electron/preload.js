@@ -52,4 +52,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onReloadBuild: (callback) => {
     ipcRenderer.on('reload-build', () => callback());
   },
+
+  /**
+   * Subscribe to settings-changed events (triggered when settings window saves).
+   * @param {function} callback - receives the updated settings object
+   */
+  onSettingsChanged: (callback) => {
+    ipcRenderer.on('settings-changed', (_event, s) => callback(s));
+  },
 });

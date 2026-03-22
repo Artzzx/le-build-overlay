@@ -74,6 +74,7 @@ async function init() {
   render();
   subscribeToHotkeys();
   subscribeToReload();
+  subscribeToSettings();
 }
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
@@ -159,14 +160,30 @@ function subscribeToReload() {
   });
 }
 
+function subscribeToSettings() {
+  if (!window.electronAPI?.onSettingsChanged) return;
+  window.electronAPI.onSettingsChanged((s) => applyDisplaySettings(s));
+}
+
+/**
+ * Apply display settings (font size, opacity) as CSS custom properties.
+ * @param {object} s - settings object from main
+ */
+function applyDisplaySettings(s) {
+  if (!s?.display) return;
+  const root = document.documentElement;
+  root.style.setProperty('--font-size-base', `${s.display.fontSize}px`);
+  const bg = `rgba(6, 8, 14, ${s.display.opacity})`;
+  root.style.setProperty('--bg', bg);
+}
+
 // ─── Hotkey handlers ──────────────────────────────────────────────────────────
 
 function handleAdvance(trackIndex) {
   const track = state.build?.tracks?.[trackIndex];
   if (!track) return;
 
-  const groups = groupHistory(track.history);
-  if (track.currentStep >= groups.length - 1) return; // already at end
+  if (track.currentStep >= track.history.length) return; // already completed
 
   // Update state (immutable-ish)
   state.build = {
@@ -236,9 +253,16 @@ function render() {
  */
 function renderTrack(track, index) {
   const groups = groupHistory(track.history);
-  const isCompleted = track.currentStep >= groups.length;
+  const isCompleted = track.currentStep >= track.history.length;
   const isExpanded = index === state.expandedTrack && !isCompleted;
-  const currentGroup = groups[track.currentStep] ?? null;
+
+  // Find which group contains the current flat history position
+  const currentGroup = groups.find(
+    g => track.currentStep >= g.startIdx && track.currentStep < g.startIdx + g.count
+  ) ?? null;
+
+  // How many points within the current node have been allocated
+  const pointsInNode = currentGroup ? track.currentStep - currentGroup.startIdx : 0;
 
   // Resolve current node info from DB
   const node = currentGroup ? resolveNode(currentGroup.nodeId, track) : null;
@@ -273,7 +297,7 @@ function renderTrack(track, index) {
   // Progress: currentStep / totalGroups
   const progressEl = document.createElement('span');
   progressEl.className = 'track-progress';
-  progressEl.textContent = `${isCompleted ? groups.length : track.currentStep}/${groups.length}`;
+  progressEl.textContent = `${track.currentStep}/${track.history.length}`;
   header.appendChild(progressEl);
 
   // Hotkey number
@@ -297,28 +321,31 @@ function renderTrack(track, index) {
       body.appendChild(descEl);
     }
 
-    // Point dots
-    if (currentGroup && node.maxPoints > 1) {
-      const dotsEl = document.createElement('div');
-      dotsEl.className = 'track-dots';
+    // Point dots + pts label
+    if (currentGroup && node.maxPoints > 0) {
+      // Points label: "X / Y pts"
+      const ptsEl = document.createElement('div');
+      ptsEl.className = 'track-pts';
+      ptsEl.textContent = `${pointsInNode} / ${node.maxPoints} pts`;
+      body.appendChild(ptsEl);
 
-      // Sum points already allocated to this nodeId in all groups before currentStep
-      const pointsAllocated = groups
-        .slice(0, track.currentStep)
-        .reduce((sum, g) => sum + (g.nodeId === currentGroup.nodeId ? g.count : 0), 0);
+      if (node.maxPoints > 1) {
+        const dotsEl = document.createElement('div');
+        dotsEl.className = 'track-dots';
 
-      for (let p = 0; p < node.maxPoints; p++) {
-        const dot = document.createElement('span');
-        if (p < pointsAllocated) {
-          dot.className = `dot filled ${track.type}`;
-        } else if (p === pointsAllocated) {
-          dot.className = 'dot current';
-        } else {
-          dot.className = 'dot empty';
+        for (let p = 0; p < node.maxPoints; p++) {
+          const dot = document.createElement('span');
+          if (p < pointsInNode) {
+            dot.className = `dot filled ${track.type}`;
+          } else if (p === pointsInNode) {
+            dot.className = 'dot current';
+          } else {
+            dot.className = 'dot empty';
+          }
+          dotsEl.appendChild(dot);
         }
-        dotsEl.appendChild(dot);
+        body.appendChild(dotsEl);
       }
-      body.appendChild(dotsEl);
     }
 
     div.appendChild(body);

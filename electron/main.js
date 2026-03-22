@@ -39,22 +39,81 @@ const fs = require('fs');
 // ─── State ────────────────────────────────────────────────────────────────────
 
 let overlayWin = null;
-let configWin = null;
+let configWin  = null;
+let settingsWin = null;
 let overlayVisible = true;
 
-// Path to the user's active build config (runtime file, not a source file)
-const BUILD_CONFIG_PATH = path.join(__dirname, '..', 'config', 'build.json');
+// Paths to runtime config files
+const BUILD_CONFIG_PATH    = path.join(__dirname, '..', 'config', 'build.json');
+const SETTINGS_CONFIG_PATH = path.join(__dirname, '..', 'config', 'settings.json');
+
+// Default settings — used if settings.json is missing or corrupt
+const DEFAULT_SETTINGS = {
+  window:  { x: null, y: null, width: 260, height: 400 },
+  display: { fontSize: 13, opacity: 0.88 },
+  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5' },
+};
+
+// In-memory settings (loaded at startup, mutated on save)
+let settings = { ...DEFAULT_SETTINGS };
+
+// ─── Settings helpers ─────────────────────────────────────────────────────────
+
+function loadSettings() {
+  try {
+    const raw = fs.readFileSync(SETTINGS_CONFIG_PATH, 'utf-8');
+    const parsed = JSON.parse(raw);
+    // Deep merge so partial files still work
+    settings = {
+      window:  { ...DEFAULT_SETTINGS.window,  ...parsed.window  },
+      display: { ...DEFAULT_SETTINGS.display, ...parsed.display },
+      hotkeys: { ...DEFAULT_SETTINGS.hotkeys, ...parsed.hotkeys },
+    };
+  } catch {
+    settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+  }
+}
+
+function saveSettings(updated) {
+  settings = updated;
+  fs.writeFileSync(SETTINGS_CONFIG_PATH, JSON.stringify(settings, null, 2), 'utf-8');
+}
+
+/**
+ * Apply current settings to the overlay window and re-register hotkeys.
+ * Safe to call at any time (win may not exist yet).
+ */
+function applySettings() {
+  if (overlayWin && !overlayWin.isDestroyed()) {
+    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
+    const x = settings.window.x ?? (sw - settings.window.width - 10);
+    const y = settings.window.y ?? (sh - settings.window.height - 220);
+    overlayWin.setBounds({
+      x: Math.round(x),
+      y: Math.round(y),
+      width:  settings.window.width,
+      height: settings.window.height,
+    });
+    // Notify renderer about display settings (font size, opacity)
+    overlayWin.webContents.send('settings-changed', settings);
+  }
+  // Re-register hotkeys whenever settings change
+  globalShortcut.unregisterAll();
+  registerHotkeys();
+}
 
 // ─── Window creation ─────────────────────────────────────────────────────────
 
 function createOverlayWindow() {
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+  const x = settings.window.x ?? (screenWidth  - settings.window.width  - 10);
+  const y = settings.window.y ?? (screenHeight - settings.window.height - 220);
 
   overlayWin = new BrowserWindow({
-    width: 260,
-    height: 400,
-    x: screenWidth - 270,   // right edge with 10px margin
-    y: screenHeight - 620,  // above action bar
+    width:  settings.window.width,
+    height: settings.window.height,
+    x: Math.round(x),
+    y: Math.round(y),
     transparent: true,
     frame: false,
     alwaysOnTop: true,
@@ -99,11 +158,36 @@ function createConfigWindow() {
   configWin.on('closed', () => { configWin = null; });
 }
 
+function createSettingsWindow() {
+  settingsWin = new BrowserWindow({
+    width: 420,
+    height: 520,
+    title: 'LE Build Overlay — Settings',
+    transparent: false,
+    frame: true,
+    alwaysOnTop: false,
+    skipTaskbar: false,
+    resizable: false,
+    focusable: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'settings-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  settingsWin.setMenuBarVisibility(false);
+  settingsWin.loadFile(path.join(__dirname, '..', 'overlay', 'settings.html'));
+  settingsWin.on('closed', () => { settingsWin = null; });
+}
+
 // ─── Global hotkeys ──────────────────────────────────────────────────────────
 
 function registerHotkeys() {
+  const hk = settings.hotkeys;
+
   // Toggle overlay visibility
-  globalShortcut.register('F1', () => {
+  globalShortcut.register(hk.toggle, () => {
     if (!overlayWin) return;
     overlayVisible = !overlayVisible;
     if (overlayVisible) {
@@ -111,27 +195,45 @@ function registerHotkeys() {
     } else {
       overlayWin.hide();
     }
-    // Notify renderer so it can update any internal state
     overlayWin.webContents.send('hotkey', { action: 'toggle', visible: overlayVisible });
   });
 
   // Advance / undo tracks 1–6
   for (let i = 1; i <= 6; i++) {
     const trackIndex = i - 1; // 0-based internally
+    const advKey = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
+    const undoKey = hk.undoModifier   ? `${hk.undoModifier}+${i}`   : `${i}`;
 
-    globalShortcut.register(`${i}`, () => {
-      if (!overlayWin || !overlayVisible) return;
-      overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
-    });
+    // Skip registration if advance and undo keys conflict
+    if (advKey !== undoKey) {
+      globalShortcut.register(advKey, () => {
+        if (!overlayWin || !overlayVisible) return;
+        overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
+      });
+    }
 
-    globalShortcut.register(`Shift+${i}`, () => {
+    globalShortcut.register(undoKey, () => {
       if (!overlayWin || !overlayVisible) return;
-      overlayWin.webContents.send('hotkey', { action: 'undo', trackIndex });
+      // If advance and undo share the same key (no modifier), this acts as advance only
+      if (advKey === undoKey) {
+        overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
+      } else {
+        overlayWin.webContents.send('hotkey', { action: 'undo', trackIndex });
+      }
     });
   }
 
+  // Open settings window
+  globalShortcut.register(hk.settingsKey, () => {
+    if (settingsWin && !settingsWin.isDestroyed()) {
+      settingsWin.focus();
+    } else {
+      createSettingsWindow();
+    }
+  });
+
   // Open config window
-  globalShortcut.register('F5', () => {
+  globalShortcut.register(hk.configKey, () => {
     if (configWin && !configWin.isDestroyed()) {
       configWin.focus();
     } else {
@@ -141,6 +243,19 @@ function registerHotkeys() {
 }
 
 // ─── IPC handlers ────────────────────────────────────────────────────────────
+
+ipcMain.handle('get-settings', () => settings);
+
+ipcMain.handle('save-settings', (event, updated) => {
+  try {
+    saveSettings(updated);
+    applySettings();
+    return { success: true };
+  } catch (err) {
+    console.error('[main] save-settings error:', err.message);
+    return { success: false, error: err.message };
+  }
+});
 
 ipcMain.on('save-build', (event, buildJson) => {
   // Renderer sends updated build state after each advance/undo so currentStep persists
@@ -191,6 +306,7 @@ ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
+  loadSettings();
   createOverlayWindow();
   registerHotkeys();
 });

@@ -261,20 +261,34 @@ describe('parseBuild', () => {
 // ─── advanceTrack / undoTrack ─────────────────────────────────────────────────
 
 describe('advanceTrack', () => {
-  test('increments currentStep', () => {
+  test('increments currentStep by one flat history entry', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
     const updated = advanceTrack(build, 0);
-    assert.equal(updated.tracks[0].currentStep, 1);
+    assert.equal(updated.tracks[0].currentStep, 1); // one point, not one group
     // original is unchanged (immutable)
     assert.equal(build.tracks[0].currentStep, 0);
   });
 
-  test('does not exceed last group', () => {
+  test('advancing through a multi-point node steps one point at a time', () => {
+    // fl44 history starts with [4, 4, 14, 11, 12] — node 4 has 2 consecutive entries
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const groups = groupHistory(build.tracks[0].history);
+    const skillTrack = build.tracks.findIndex(t => t.skillKey === 'fl44');
+    const b1 = advanceTrack(build, skillTrack);
+    const b2 = advanceTrack(b1, skillTrack);
+    // After 2 advances we should be at step 2 (both points of node 4 allocated)
+    assert.equal(b2.tracks[skillTrack].currentStep, 2);
+    // Node 4 has maxPoints=4 but only 2 entries in history, so step 2 = moving to node 14
+    const node1 = getCurrentNode(b1, skillTrack, { passives: {}, skills: SAMPLE_SKILLS_DB, classes: SAMPLE_CLASSES_DB });
+    assert.ok(node1);
+    assert.equal(node1.pointsSoFar, 1); // 1 point of node 4 already applied
+  });
+
+  test('does not exceed history length (per-point advance)', () => {
+    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
+    const histLen = build.tracks[0].history.length;
     let b = build;
-    for (let i = 0; i < groups.length + 5; i++) b = advanceTrack(b, 0);
-    assert.equal(b.tracks[0].currentStep, groups.length - 1);
+    for (let i = 0; i < histLen + 5; i++) b = advanceTrack(b, 0);
+    assert.equal(b.tracks[0].currentStep, histLen);
   });
 
   test('returns same build if trackIndex out of range', () => {
@@ -318,13 +332,11 @@ describe('getCurrentNode', () => {
 
   test('returns null for completed track', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const groups = groupHistory(build.tracks[1].history);
-    // Directly set currentStep to groups.length (past end) — simulates a completed track
-    // loaded from disk. advanceTrack() stops at groups.length-1 by design.
+    // Directly set currentStep to history.length (fully completed)
     const completedBuild = {
       ...build,
       tracks: build.tracks.map((t, i) =>
-        i === 1 ? { ...t, currentStep: groups.length } : t
+        i === 1 ? { ...t, currentStep: t.history.length } : t
       ),
     };
     const node = getCurrentNode(completedBuild, 1, TEST_DB);
