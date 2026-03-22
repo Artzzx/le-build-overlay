@@ -369,6 +369,20 @@ ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
   }
 });
 
+ipcMain.handle('fetch-build-url', async (event, url) => {
+  // Config window requests a build from a Maxroll planner URL.
+  // We fetch from the main process to avoid CORS restrictions in the renderer.
+  try {
+    const { fetchFromUrl } = require('../parser/fetch-build');
+    const buildObj = await fetchFromUrl(url);
+    // Return the raw Maxroll JSON string — config.js passes it straight to load-build
+    return { success: true, json: JSON.stringify(buildObj) };
+  } catch (err) {
+    console.error('[main] fetch-build-url error:', err.message);
+    return { success: false, error: err.message };
+  }
+});
+
 // ─── App lifecycle ────────────────────────────────────────────────────────────
 
 app.whenReady().then(() => {

@@ -2,18 +2,26 @@
 <!--
   overlay/config.html
   ────────────────────
-  Config window: paste a Maxroll build JSON and load it into the overlay.
+  Config window: load a build into the overlay.
 
-  This is a normal focusable window (NOT transparent, NOT click-through).
-  Opened by pressing F5 while the app is running.
+  Two modes:
+    A) From Maxroll URL  — paste a planner URL; the overlay fetches it for you.
+    B) From export codes — paste codes exported from the in-game dialog or
+                           copied from the Maxroll planner directly.
+
+  In-game export flow (mode B):
+    1. Open "Import/Export Profile Data" in-game
+    2. Click "Passives" tab → Export → copy the code
+    3. Click each Skill tab → Export → copy the code
+    4. Paste all codes into the text area below (one per line)
+
+  This is the same format Maxroll produces when you click Export in the planner.
 
   Flow:
-    1. User pastes Maxroll JSON into the textarea
-    2. Optionally sets a build name
-    3. Clicks "Load Build"
-    4. config.js calls window.configAPI.loadBuild() → main.js parses, saves, notifies overlay
-    5. On success: window closes automatically
-    6. On error: error message shown inline
+    1. User picks a mode and provides input
+    2. config.js calls window.configAPI methods → main.js parses/fetches/saves
+    3. On success: window closes automatically
+    4. On error: error message shown inline
 -->
 <html lang="en">
 <head>
@@ -24,18 +32,19 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #0a0c14;
-      --bg-input: #0f1218;
-      --border:   rgba(80, 70, 50, 0.7);
+      --bg:           #0a0c14;
+      --bg-input:     #0f1218;
+      --bg-tab-act:   #131720;
+      --border:       rgba(80, 70, 50, 0.7);
       --border-focus: rgba(201, 168, 76, 0.8);
-      --gold:     #c9a84c;
-      --blue:     #60a5fa;
-      --green:    #4ade80;
-      --red:      #f87171;
-      --text:     #d0c8b0;
-      --text-dim: #8a8070;
-      --font:     'Rajdhani', 'Segoe UI', sans-serif;
-      --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+      --gold:         #c9a84c;
+      --blue:         #60a5fa;
+      --green:        #4ade80;
+      --red:          #f87171;
+      --text:         #d0c8b0;
+      --text-dim:     #8a8070;
+      --font:         'Rajdhani', 'Segoe UI', sans-serif;
+      --font-mono:    'Share Tech Mono', 'Courier New', monospace;
     }
 
     body {
@@ -60,6 +69,40 @@
       padding-bottom: 8px;
     }
 
+    /* ── Tabs ─────────────────────────────────────────────────── */
+
+    .tab-bar {
+      display: flex;
+      gap: 2px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-dim);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 6px 14px 5px;
+      cursor: pointer;
+      transition: color 0.1s, border-color 0.1s;
+      margin-bottom: -1px;
+    }
+
+    .tab-btn:hover    { color: var(--text); }
+    .tab-btn.active   { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* ── Tab panels ───────────────────────────────────────────── */
+
+    .tab-panel { display: none; flex-direction: column; gap: 10px; }
+    .tab-panel.active { display: flex; }
+
+    /* ── Form elements ────────────────────────────────────────── */
+
     label {
       display: block;
       font-size: 11px;
@@ -82,13 +125,11 @@
       outline: none;
     }
 
-    input[type="text"]:focus {
-      border-color: var(--border-focus);
-    }
+    input[type="text"]:focus { border-color: var(--border-focus); }
 
     textarea {
       width: 100%;
-      height: 220px;
+      height: 200px;
       background: var(--bg-input);
       border: 1px solid var(--border);
       color: var(--text);
@@ -101,9 +142,7 @@
       outline: none;
     }
 
-    textarea:focus {
-      border-color: var(--border-focus);
-    }
+    textarea:focus { border-color: var(--border-focus); }
 
     textarea::placeholder {
       color: var(--text-dim);
@@ -111,17 +150,19 @@
       font-size: 12px;
     }
 
-    .row {
+    .row { display: flex; flex-direction: column; gap: 4px; }
+
+    /* ── URL row (input + button side by side) ─────────────────── */
+
+    .url-row {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      gap: 6px;
+      align-items: stretch;
     }
 
-    .actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
+    .url-row input { flex: 1; }
+
+    /* ── Buttons ──────────────────────────────────────────────── */
 
     button {
       background: rgba(201, 168, 76, 0.15);
@@ -136,20 +177,12 @@
       border-radius: 2px;
       cursor: pointer;
       transition: background 0.1s;
+      white-space: nowrap;
     }
 
-    button:hover {
-      background: rgba(201, 168, 76, 0.28);
-    }
-
-    button:active {
-      background: rgba(201, 168, 76, 0.4);
-    }
-
-    button:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
+    button:hover   { background: rgba(201, 168, 76, 0.28); }
+    button:active  { background: rgba(201, 168, 76, 0.4); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
 
     button.secondary {
       background: transparent;
@@ -163,12 +196,15 @@
       background: rgba(255,255,255,0.05);
     }
 
+    /* ── Status message ───────────────────────────────────────── */
+
     #status {
       font-size: 12px;
       min-height: 18px;
       padding: 6px 8px;
       border-radius: 2px;
       display: none;
+      line-height: 1.5;
     }
 
     #status.error {
@@ -185,16 +221,42 @@
       color: var(--green);
     }
 
+    #status.info {
+      display: block;
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      color: var(--blue);
+    }
+
+    /* ── Hint text ────────────────────────────────────────────── */
+
     .hint {
       font-size: 11px;
       color: var(--text-dim);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
-    a {
-      color: var(--blue);
-      text-decoration: none;
+    .hint code {
+      font-family: var(--font-mono);
+      background: rgba(255,255,255,0.06);
+      padding: 0 3px;
+      border-radius: 2px;
     }
+
+    .hint ol, .hint ul {
+      padding-left: 16px;
+      margin-top: 4px;
+    }
+
+    .hint li { margin-bottom: 2px; }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
   </style>
 
   <!-- Fonts (same as overlay) -->
@@ -204,28 +266,83 @@
 </head>
 <body>
 
-  <h1>Load Maxroll Build</h1>
+  <h1>Load Build</h1>
 
-  <div class="row">
-    <label for="build-name">Build Name (optional)</label>
-    <input type="text" id="build-name" placeholder="e.g. Void Knight Erasing Strike" maxlength="60" />
+  <!-- ── Mode tabs ──────────────────────────────────────────────────────── -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="url">From Maxroll URL</button>
+    <button class="tab-btn"        data-tab="manual">From Export Codes</button>
   </div>
 
-  <div class="row">
-    <label for="json-input">Maxroll Build JSON</label>
-    <textarea
-      id="json-input"
-      spellcheck="false"
-      placeholder='Paste your Maxroll planner JSON here.&#10;&#10;It should look like:&#10;{&#10;  "passives": { "history": [...], "position": 113 },&#10;  "class": 3,&#10;  "mastery": 2,&#10;  "skillTrees": { "fl44": {...}, ... }&#10;}'
-    ></textarea>
+  <!-- ── Tab A: Maxroll URL ─────────────────────────────────────────────── -->
+  <div class="tab-panel active" id="tab-url">
+
+    <div class="row">
+      <label for="url-input">Maxroll Planner URL</label>
+      <div class="url-row">
+        <input
+          type="text"
+          id="url-input"
+          placeholder="https://maxroll.gg/last-epoch/planner/…"
+          spellcheck="false"
+        />
+        <button id="fetch-btn">Fetch</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <label for="build-name-url">Build Name (optional)</label>
+      <input type="text" id="build-name-url" placeholder="e.g. Rogue Heartseeker" maxlength="60" />
+    </div>
+
+    <div class="hint">
+      Paste the URL from the Maxroll planner and click <strong>Fetch</strong>.
+      The overlay downloads the build data automatically — no manual exporting needed.
+    </div>
+
   </div>
 
+  <!-- ── Tab B: In-game / Maxroll export codes ─────────────────────────── -->
+  <div class="tab-panel" id="tab-manual">
+
+    <div class="row">
+      <label for="build-name-manual">Build Name (optional)</label>
+      <input type="text" id="build-name-manual" placeholder="e.g. Rogue Heartseeker" maxlength="60" />
+    </div>
+
+    <div class="row">
+      <label for="json-input">Export Codes (one per line)</label>
+      <textarea
+        id="json-input"
+        spellcheck="false"
+        placeholder='Paste your export codes here — one JSON block per line.&#10;&#10;From Maxroll planner:  click Export and copy all lines.&#10;From in-game dialog:   export Passives tab, then each Skill tab.&#10;&#10;Example:&#10;{"passives":{"history":[...],"position":113},"class":4,"mastery":2}&#10;{"skillTrees":{"htsk5":{"history":[...],"position":26}}}&#10;{"skillTrees":{"smbmb":{"history":[...],"position":22}}}'
+      ></textarea>
+    </div>
+
+    <div class="hint">
+      <strong>From Maxroll planner:</strong> click Export → copy all lines.<br/>
+      <strong>From the game:</strong>
+      <ol>
+        <li>Open <em>Import/Export Profile Data</em> in-game</li>
+        <li>Click <strong>Passives</strong> tab → Export → copy the code</li>
+        <li>Click each <strong>Skill</strong> tab → Export → copy the code</li>
+        <li>Paste all codes here, one per line</li>
+      </ol>
+    </div>
+
+    <div class="actions">
+      <button id="load-btn">Load Build</button>
+      <button class="secondary" id="clear-btn">Clear</button>
+      <span class="hint" style="margin-left:auto">Ctrl+Enter to load</span>
+    </div>
+
+  </div>
+
+  <!-- ── Shared status + footer ─────────────────────────────────────────── -->
   <div id="status"></div>
 
-  <div class="actions">
-    <button id="load-btn">Load Build</button>
-    <button class="secondary" id="clear-btn">Clear</button>
-    <span class="hint" style="margin-left:auto">F5 to reopen this window</span>
+  <div class="hint" style="margin-top:auto; border-top:1px solid var(--border); padding-top:8px">
+    F5 to reopen this window
   </div>
 
   <script src="config.js"></script>
