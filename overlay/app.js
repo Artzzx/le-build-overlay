@@ -52,6 +52,8 @@ const state = {
   db: null,              // { passives, skills, classes }
   expandedTrack: 0,      // 0-based index of expanded track row
   visible: true,         // overlay visibility
+  settings: null,        // last-received settings object (for display toggles)
+  positionMode: false,   // true while drag/resize mode is active
 };
 
 // ─── Initialization ───────────────────────────────────────────────────────────
@@ -75,6 +77,8 @@ async function init() {
   subscribeToHotkeys();
   subscribeToReload();
   subscribeToSettings();
+  subscribeToPositionMode();
+  initPositionModeUI();
 }
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
@@ -166,15 +170,120 @@ function subscribeToSettings() {
 }
 
 /**
- * Apply display settings (font size, opacity) as CSS custom properties.
+ * Apply display settings as CSS custom properties and re-render if needed.
  * @param {object} s - settings object from main
  */
 function applyDisplaySettings(s) {
   if (!s?.display) return;
+  state.settings = s;
   const root = document.documentElement;
   root.style.setProperty('--font-size-base', `${s.display.fontSize}px`);
   const bg = `rgba(6, 8, 14, ${s.display.opacity})`;
   root.style.setProperty('--bg', bg);
+  // Toggle always-progress class on overlay root
+  const overlayRoot = document.getElementById('overlay-root');
+  overlayRoot?.classList.toggle('always-progress', s.display.alwaysShowProgress ?? false);
+  // Re-render so description / inline progress toggles take effect immediately
+  render();
+}
+
+// ─── Position mode ────────────────────────────────────────────────────────────
+
+function subscribeToPositionMode() {
+  if (!window.electronAPI) return;
+  window.electronAPI.onEnterPositionMode?.(() => enterPositionMode());
+  window.electronAPI.onExitPositionMode?.(() => exitPositionMode());
+}
+
+function enterPositionMode() {
+  state.positionMode = true;
+  const overlayRoot = document.getElementById('overlay-root');
+  overlayRoot?.classList.add('position-mode');
+  document.getElementById('position-bar')?.classList.remove('hidden');
+  document.querySelectorAll('.resize-grip').forEach(g => g.classList.remove('hidden'));
+}
+
+function exitPositionMode() {
+  state.positionMode = false;
+  const overlayRoot = document.getElementById('overlay-root');
+  overlayRoot?.classList.remove('position-mode');
+  document.getElementById('position-bar')?.classList.add('hidden');
+  document.querySelectorAll('.resize-grip').forEach(g => g.classList.add('hidden'));
+}
+
+/**
+ * Wire up drag (position bar) and resize (corner grips) mouse event handlers.
+ * Called once on init after DOM is ready.
+ */
+function initPositionModeUI() {
+  const posBar = document.getElementById('position-bar');
+  const doneBtn = document.getElementById('pos-done-btn');
+
+  if (!posBar || !doneBtn) return;
+
+  // ── Drag to move ─────────────────────────────────────────────────────────
+  let dragging = false;
+  let lastX = 0, lastY = 0;
+
+  posBar.addEventListener('mousedown', (e) => {
+    if (e.target === doneBtn) return; // don't start drag when clicking Done
+    dragging = true;
+    lastX = e.screenX;
+    lastY = e.screenY;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const dx = e.screenX - lastX;
+    const dy = e.screenY - lastY;
+    lastX = e.screenX;
+    lastY = e.screenY;
+    window.electronAPI?.moveWindow?.(dx, dy);
+  });
+
+  document.addEventListener('mouseup', () => { dragging = false; });
+
+  // ── Done button ───────────────────────────────────────────────────────────
+  doneBtn.addEventListener('click', () => {
+    window.electronAPI?.endPositionMode?.();
+  });
+
+  // ── Resize grips ──────────────────────────────────────────────────────────
+  document.querySelectorAll('.resize-grip').forEach((grip) => {
+    const corner = grip.dataset.corner; // 'nw' | 'ne' | 'sw' | 'se'
+    let resizing = false;
+    let startX = 0, startY = 0, startW = 0, startH = 0;
+
+    grip.addEventListener('mousedown', (e) => {
+      resizing = true;
+      startX = e.screenX;
+      startY = e.screenY;
+      startW = window.innerWidth;
+      startH = window.innerHeight;
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!resizing) return;
+      const dx = e.screenX - startX;
+      const dy = e.screenY - startY;
+      let newW = startW;
+      let newH = startH;
+      // East edges grow right, west edges grow left (invert dx)
+      if (corner.includes('e')) newW = startW + dx;
+      if (corner.includes('w')) newW = startW - dx;
+      if (corner.includes('s')) newH = startH + dy;
+      if (corner.includes('n')) newH = startH - dy;
+      window.electronAPI?.resizeWindow?.(
+        Math.max(180, Math.round(newW)),
+        Math.max(200, Math.round(newH))
+      );
+    });
+
+    document.addEventListener('mouseup', () => { resizing = false; });
+  });
 }
 
 // ─── Hotkey handlers ──────────────────────────────────────────────────────────
@@ -308,13 +417,22 @@ function renderTrack(track, index) {
 
   div.appendChild(header);
 
+  // ── Inline progress (always-progress mode, hidden when expanded) ──────────
+  if (!isCompleted && currentGroup && node && node.maxPoints > 0) {
+    const inlineEl = document.createElement('div');
+    inlineEl.className = 'track-progress-inline';
+    buildProgressContent(inlineEl, pointsInNode, node, track.type);
+    div.appendChild(inlineEl);
+  }
+
   // ── Body (expanded only) ─────────────────────────────────────────────────
   if (isExpanded && node) {
     const body = document.createElement('div');
     body.className = 'track-body';
 
-    // Description
-    if (node.description) {
+    // Description (respects showDescription setting)
+    const showDesc = state.settings?.display?.showDescription ?? true;
+    if (node.description && showDesc) {
       const descEl = document.createElement('div');
       descEl.className = 'track-desc';
       descEl.textContent = node.description;
@@ -323,35 +441,47 @@ function renderTrack(track, index) {
 
     // Point dots + pts label
     if (currentGroup && node.maxPoints > 0) {
-      // Points label: "X / Y pts"
-      const ptsEl = document.createElement('div');
-      ptsEl.className = 'track-pts';
-      ptsEl.textContent = `${pointsInNode} / ${node.maxPoints} pts`;
-      body.appendChild(ptsEl);
-
-      if (node.maxPoints > 1) {
-        const dotsEl = document.createElement('div');
-        dotsEl.className = 'track-dots';
-
-        for (let p = 0; p < node.maxPoints; p++) {
-          const dot = document.createElement('span');
-          if (p < pointsInNode) {
-            dot.className = `dot filled ${track.type}`;
-          } else if (p === pointsInNode) {
-            dot.className = 'dot current';
-          } else {
-            dot.className = 'dot empty';
-          }
-          dotsEl.appendChild(dot);
-        }
-        body.appendChild(dotsEl);
-      }
+      buildProgressContent(body, pointsInNode, node, track.type);
     }
 
     div.appendChild(body);
   }
 
   return div;
+}
+
+/**
+ * Append pts label + dots to a container element.
+ * Shared by the expanded body and the always-visible inline progress.
+ *
+ * @param {HTMLElement} container
+ * @param {number} pointsInNode - points already applied to current node
+ * @param {object} node - resolved node info (maxPoints, etc.)
+ * @param {string} trackType - 'passive' | 'skill' (for dot color class)
+ */
+function buildProgressContent(container, pointsInNode, node, trackType) {
+  const ptsEl = document.createElement('div');
+  ptsEl.className = 'track-pts';
+  ptsEl.textContent = `${pointsInNode} / ${node.maxPoints} pts`;
+  container.appendChild(ptsEl);
+
+  if (node.maxPoints > 1) {
+    const dotsEl = document.createElement('div');
+    dotsEl.className = 'track-dots';
+
+    for (let p = 0; p < node.maxPoints; p++) {
+      const dot = document.createElement('span');
+      if (p < pointsInNode) {
+        dot.className = `dot filled ${trackType}`;
+      } else if (p === pointsInNode) {
+        dot.className = 'dot current';
+      } else {
+        dot.className = 'dot empty';
+      }
+      dotsEl.appendChild(dot);
+    }
+    container.appendChild(dotsEl);
+  }
 }
 
 /**

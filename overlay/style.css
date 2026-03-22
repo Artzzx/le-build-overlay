@@ -262,6 +262,79 @@ html, body {
   border-top: 1px solid rgba(255,255,255,0.04);
 }
 
+/* ─── Position mode ──────────────────────────────────────────────────────── */
+
+#overlay-root.position-mode {
+  border: 2px solid #d97706;
+}
+
+#position-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 6px;
+  background: rgba(217, 119, 6, 0.2);
+  border-bottom: 1px solid rgba(217, 119, 6, 0.4);
+  cursor: move;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.pos-grip-icon {
+  color: #d97706;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.pos-label {
+  flex: 1;
+  font-size: 10px;
+  color: #d97706;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+#pos-done-btn {
+  font-size: 11px;
+  padding: 1px 8px;
+  background: #d97706;
+  color: #0d1117;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+#pos-done-btn:hover { background: #f59e0b; }
+
+/* Corner resize grips — positioned fixed so they always sit at window corners */
+.resize-grip {
+  position: fixed;
+  width: 14px;
+  height: 14px;
+  background: #d97706;
+  opacity: 0.85;
+  border-radius: 2px;
+  z-index: 9999;
+}
+.grip-nw { top: 0;    left: 0;   cursor: nw-resize; }
+.grip-ne { top: 0;    right: 0;  cursor: ne-resize; }
+.grip-sw { bottom: 0; left: 0;   cursor: sw-resize; }
+.grip-se { bottom: 0; right: 0;  cursor: se-resize; }
+
+/* ─── Inline progress (always-progress mode) ─────────────────────────────── */
+
+.track-progress-inline {
+  display: none;
+  padding: 2px 0 5px;
+}
+
+/* Shown on all non-expanded, non-completed tracks when setting is ON */
+#overlay-root.always-progress .track:not(.expanded):not(.completed) .track-progress-inline {
+  display: block;
+}
+
 /* ─── Utilities ──────────────────────────────────────────────────────────── */
 
 .hidden {
