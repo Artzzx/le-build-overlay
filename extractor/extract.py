@@ -146,8 +146,8 @@ def build_description_lookup(nodes_dir: str, skill_trees: list, passive_trees: l
 
     # ── Build lookup indexes from Global Tree Data ─────────────────────────────
     def _norm(s: str) -> str:
-        """Normalize a name for fuzzy matching: lowercase, strip all non-alphanumeric.
-        Handles spacing differences like "Ghost Flame" → "Ghostflame" → "ghostflame".
+        """Normalize a name: lowercase, strip all non-alphanumeric.
+        Handles spacing/punctuation differences like "Ghost Flame" → "ghostflame".
         """
         return re.sub(r'[^a-z0-9]', '', s.lower())
 
@@ -171,10 +171,24 @@ def build_description_lookup(nodes_dir: str, skill_trees: list, passive_trees: l
     # Node names that are Unity's default placeholder — skip silently
     PLACEHOLDER_NAMES = {'name', ''}
 
-    # Mastery passive tree node counts (SkillTreeNode files, NOT in Global Tree Data)
-    # These are mastery specialization passive branches stored as skill-type MonoBehaviours.
-    # We can't resolve their treeIDs — they're not in Global Tree Data — so skip quietly.
-    passive_node_counts = set(passive_count_to_id.keys())
+    # Mastery passive tree extensions are stored as SkillTreeNode MonoBehaviours
+    # but are NOT skill trees — they're per-mastery passive specializations
+    # (e.g. "Arcanist" 108 nodes, "Bone Aura" 110 nodes).
+    # All observed mastery extensions have 100+ nodes in the export.
+    # Skill trees max out at ~35 nodes in GDT, but the export includes extra
+    # lock/hidden nodes not in GDT, so real skill trees can appear with up to
+    # ~55–60 nodes in the export. Using 60 as the threshold is safe.
+    MAX_SKILL_TREE_NODES = 60
+
+    # Manual overrides: display names that differ from Global Tree Data internal names
+    # and can't be resolved by the algorithmic passes below.
+    # Add new entries here when a skill is renamed between game patches.
+    # Key = SkillTreeNode root nodeName (lowercase), Value = Global Tree Data tree.name (lowercase)
+    DISPLAY_NAME_OVERRIDES = {
+        'profane veil':         'profane form',         # display vs internal name mismatch
+        'summon storm crows':   'summon storm crow',    # plural vs singular
+        'summon skeletal mage': 'summon skeleton mage', # skeletal → skeleton rename
+    }
 
     # ── Scan all node files ────────────────────────────────────────────────────
     node_pattern  = re.compile(r'^SkillTreeNode\s+#\d+$',  re.IGNORECASE)
@@ -252,10 +266,9 @@ def build_description_lookup(nodes_dir: str, skill_trees: list, passive_trees: l
             skipped_placeholder += 1
             continue
 
-        # SkillTreeNode groups sized like passive trees are mastery specialization
-        # branches (e.g. "Bone Aura" 110 nodes, "Arcanist" 108 nodes).
-        # They are NOT in Global Tree Data — skip quietly.
-        if not is_passive and len(nodes) in passive_node_counts:
+        # Any SkillTreeNode group larger than the max possible skill tree (35 nodes)
+        # is a mastery passive extension — not in Global Tree Data, skip quietly.
+        if not is_passive and len(nodes) > MAX_SKILL_TREE_NODES:
             skipped_mastery += 1
             continue
 
@@ -263,11 +276,37 @@ def build_description_lookup(nodes_dir: str, skill_trees: list, passive_trees: l
         tree_id = None
 
         if not is_passive:
-            # Pass 1: exact lowercase name  (e.g. "fireball" → "fi9")
-            tree_id = skill_name_to_id.get(root_name.lower())
-            # Pass 2: normalized name — handles "Ghost Flame" → "Ghostflame"
+            nl = root_name.lower()
+
+            # Pass 1: exact lowercase  ("fireball" → "fi9")
+            tree_id = skill_name_to_id.get(nl)
+
+            # Pass 2: normalized — strips spaces/punct ("Ghost Flame" → "ghostflame")
             if not tree_id:
                 tree_id = skill_name_norm_to_id.get(_norm(root_name))
+
+            # Pass 3: manual overrides for display-name ≠ internal-name cases
+            if not tree_id:
+                alias = DISPLAY_NAME_OVERRIDES.get(nl)
+                if alias:
+                    tree_id = skill_name_to_id.get(alias) or skill_name_norm_to_id.get(_norm(alias))
+
+            # Pass 4: prefix transformations
+            #   - "Volatile Zombie" → "Summon Volatile Zombie"  (Summon stripped from display)
+            #   - "Summon Frenzy Totem" → already exact, but "Frenzy Totem" → add Summon
+            #   - "Inner Focus" → "Focus"  (descriptive prefix added to display name)
+            if not tree_id:
+                candidates = []
+                if nl.startswith('summon '):
+                    candidates.append(nl[7:])          # strip leading "Summon "
+                else:
+                    candidates.append('summon ' + nl)  # prepend "Summon "
+                if nl.startswith('inner '):
+                    candidates.append(nl[6:])          # strip leading "Inner "
+                for c in candidates:
+                    tree_id = skill_name_to_id.get(c) or skill_name_norm_to_id.get(_norm(c))
+                    if tree_id:
+                        break
         else:
             # Passive tree: match by node count (5 base-class trees, all distinct)
             tree_id = passive_count_to_id.get(len(nodes))
