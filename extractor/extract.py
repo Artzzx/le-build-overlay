@@ -2,7 +2,11 @@
 """
 extractor/extract.py
 ─────────────────────
-Produces db/data/skills.json and db/data/passives.json by combining two sources:
+Produces db/data/skills.json and db/data/passives.json from two sources.
+Run reconcile_skill_trees.py afterward to produce the runtime file
+(db/data/skill_tree_reconciled.json) used by build-db.js and app.js.
+
+Sources:
 
   Source 1 — "Global Tree Data.json" (project root)
     → tree structure: treeID, node ids, maxPoints, requirements
@@ -41,7 +45,10 @@ Produces db/data/skills.json and db/data/passives.json by combining two sources:
   python extractor/extract.py
 
   # Full (Global Tree Data + display names from export):
-  python extractor/extract.py --nodes C:\\Tools\\le_export
+  python extractor/extract.py --nodes C:\\Tools\\le_export\\MonoBehaviour\\Node
+
+  # Then produce the runtime file:
+  python extractor/reconcile_skill_trees.py
 
   # With validation:
   python extractor/extract.py --nodes C:\\Tools\\le_export --validate config/my-build.json
@@ -543,13 +550,22 @@ def main():
         print(f'Description coverage: {desc_count}/{total_nodes} nodes '
               f'({100*desc_count//total_nodes}%)')
 
-    # ── Write outputs ─────────────────────────────────────────────────────────
+    # ── Write intermediate files: skills.json + passives.json ────────────────
+    # These are the intermediate outputs consumed by reconcile_skill_trees.py.
+    # The runtime file (skill_tree_reconciled.json) is produced by that script.
     print()
-    for filename, db_data in [('skills.json', skills), ('passives.json', passives)]:
-        out_path = output_dir / filename
-        with open(out_path, 'w', encoding='utf-8') as f:
-            json.dump(db_data, f, indent=2, ensure_ascii=False)
-        print(f'[write] {out_path}')
+    skills_path = output_dir / 'skills.json'
+    with open(skills_path, 'w', encoding='utf-8') as f:
+        json.dump(skills, f, indent=2, ensure_ascii=False)
+    print(f'[write] {skills_path}  ({len(skills)} trees)')
+
+    passives_path = output_dir / 'passives.json'
+    with open(passives_path, 'w', encoding='utf-8') as f:
+        json.dump(passives, f, indent=2, ensure_ascii=False)
+    print(f'[write] {passives_path}  ({len(passives)} trees)')
+
+    print('\nRun: python extractor/reconcile_skill_trees.py'
+          '  → produces db/data/skill_tree_reconciled.json')
 
     # ── Validate ──────────────────────────────────────────────────────────────
     if args.validate:
