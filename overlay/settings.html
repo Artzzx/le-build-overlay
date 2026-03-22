@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LE Build Overlay — Settings</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 13px;
+      background: #0d1117;
+      color: #d0c8b0;
+      padding: 16px;
+      user-select: none;
+    }
+
+    h2 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #c9a84c;
+      margin-bottom: 14px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #8a8070;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      border-bottom: 1px solid rgba(80,70,50,0.4);
+      padding-bottom: 4px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    label {
+      width: 130px;
+      flex-shrink: 0;
+      color: #a09880;
+    }
+
+    input[type="number"], input[type="text"], select {
+      background: #161b22;
+      border: 1px solid rgba(80,70,50,0.5);
+      border-radius: 3px;
+      color: #d0c8b0;
+      font-size: 13px;
+      padding: 4px 8px;
+      width: 100px;
+      outline: none;
+    }
+    input[type="number"]:focus, input[type="text"]:focus, select:focus {
+      border-color: rgba(201,168,76,0.6);
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: #c9a84c;
+    }
+
+    .range-val {
+      width: 40px;
+      text-align: right;
+      color: #c9a84c;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+
+    .hint {
+      font-size: 11px;
+      color: #604030;
+      margin-left: 4px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    button {
+      padding: 6px 18px;
+      border-radius: 3px;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    #save-btn {
+      background: #c9a84c;
+      color: #0d1117;
+    }
+    #save-btn:hover { background: #e0bf60; }
+    #save-btn:disabled { opacity: 0.5; cursor: default; }
+
+    #reset-btn {
+      background: transparent;
+      color: #8a8070;
+      border: 1px solid rgba(80,70,50,0.5);
+    }
+    #reset-btn:hover { color: #d0c8b0; border-color: rgba(80,70,50,0.8); }
+
+    #status {
+      font-size: 12px;
+      min-height: 18px;
+      text-align: right;
+      margin-top: 6px;
+    }
+    #status.error   { color: #f87171; }
+    #status.success { color: #4ade80; }
+  </style>
+</head>
+<body>
+  <h2>Overlay Settings</h2>
+
+  <!-- Window -->
+  <div class="section">
+    <div class="section-title">Window</div>
+    <div class="row">
+      <label>X position <span class="hint">(null = auto)</span></label>
+      <input type="number" id="win-x" placeholder="auto" style="width:80px" />
+    </div>
+    <div class="row">
+      <label>Y position <span class="hint">(null = auto)</span></label>
+      <input type="number" id="win-y" placeholder="auto" style="width:80px" />
+    </div>
+    <div class="row">
+      <label>Width (px)</label>
+      <input type="number" id="win-width" min="180" max="600" style="width:80px" />
+    </div>
+    <div class="row">
+      <label>Height (px)</label>
+      <input type="number" id="win-height" min="200" max="900" style="width:80px" />
+    </div>
+  </div>
+
+  <!-- Display -->
+  <div class="section">
+    <div class="section-title">Display</div>
+    <div class="row">
+      <label>Font size (px)</label>
+      <input type="range" id="font-size" min="11" max="18" step="1" />
+      <span class="range-val" id="font-size-val">13</span>
+    </div>
+    <div class="row">
+      <label>Opacity</label>
+      <input type="range" id="opacity" min="30" max="100" step="2" />
+      <span class="range-val" id="opacity-val">88%</span>
+    </div>
+  </div>
+
+  <!-- Hotkeys -->
+  <div class="section">
+    <div class="section-title">Hotkeys</div>
+    <div class="row">
+      <label>Toggle visibility</label>
+      <input type="text" id="hk-toggle" maxlength="8" style="width:80px" />
+    </div>
+    <div class="row">
+      <label>Advance modifier</label>
+      <select id="hk-advance-mod">
+        <option value="">None (1–6)</option>
+        <option value="Alt">Alt+1–6</option>
+        <option value="Ctrl">Ctrl+1–6</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Undo modifier</label>
+      <select id="hk-undo-mod">
+        <option value="Shift">Shift+1–6</option>
+        <option value="Alt">Alt+1–6</option>
+        <option value="Ctrl">Ctrl+1–6</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Open settings</label>
+      <input type="text" id="hk-settings" maxlength="8" style="width:80px" />
+    </div>
+    <div class="row">
+      <label>Open build config</label>
+      <input type="text" id="hk-config" maxlength="8" style="width:80px" />
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="reset-btn">Reset Defaults</button>
+    <button id="save-btn">Save</button>
+  </div>
+  <div id="status"></div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

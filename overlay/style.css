@@ -31,6 +31,7 @@
 /* ─── Design tokens ──────────────────────────────────────────────────────── */
 
 :root {
+  --font-size-base: 13px;  /* overridden at runtime by applyDisplaySettings() */
   --bg:           rgba(6, 8, 14, 0.88);
   --bg-hover:     rgba(16, 20, 30, 0.92);
   --border:       rgba(80, 70, 50, 0.6);
@@ -113,7 +114,7 @@ html, body {
   align-items: center;
   height: var(--row-height);
   gap: 4px;
-  font-size: 13px;
+  font-size: var(--font-size-base);
   font-weight: 500;
 }
 
@@ -141,7 +142,7 @@ html, body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 13px;
+  font-size: var(--font-size-base);
   letter-spacing: 0.02em;
 }
 
@@ -192,9 +193,19 @@ html, body {
   align-items: center;
 }
 
+/* Points label: "X / Y pts" */
+.track-pts {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 5px;
+  letter-spacing: 0.04em;
+}
+
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   border: 1px solid var(--border);
 }
