@@ -110,6 +110,7 @@ function enterPositionMode() {
   inPositionMode = true;
   overlayWin.setIgnoreMouseEvents(false);
   overlayWin.setFocusable(true);
+  overlayWin.focus(); // bring to front so mouse events are received
   overlayWin.webContents.send('enter-position-mode');
 }
 
@@ -156,6 +157,11 @@ function createOverlayWindow() {
 
   // Make the window fully click-through — mouse events pass to whatever is behind it
   overlayWin.setIgnoreMouseEvents(true, { forward: true });
+
+  // Send initial settings to renderer once it loads so display toggles apply on first render
+  overlayWin.webContents.once('did-finish-load', () => {
+    overlayWin.webContents.send('settings-changed', settings);
+  });
 
   overlayWin.on('closed', () => { overlayWin = null; });
 }
@@ -232,13 +238,13 @@ function registerHotkeys() {
     // Skip registration if advance and undo keys conflict
     if (advKey !== undoKey) {
       globalShortcut.register(advKey, () => {
-        if (!overlayWin || !overlayVisible) return;
+        if (!overlayWin || !overlayVisible || inPositionMode) return;
         overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
       });
     }
 
     globalShortcut.register(undoKey, () => {
-      if (!overlayWin || !overlayVisible) return;
+      if (!overlayWin || !overlayVisible || inPositionMode) return;
       // If advance and undo share the same key (no modifier), this acts as advance only
       if (advKey === undoKey) {
         overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
