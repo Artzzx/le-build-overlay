@@ -3,3 +3,5 @@ config/build.json
 extractor/skillkey-map.json
 EXTRACTION_GUIDE.md
 Global Tree Data.json
+settings.json
+skill_tree_reconciled.json
