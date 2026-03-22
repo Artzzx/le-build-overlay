@@ -13,7 +13,7 @@ const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { groupHistory, validateBuild, validateTrack, initializeBuild } = require('../parser/build-schema');
-const { parseBuild, advanceTrack, undoTrack, getCurrentNode, resolveClassName, resolveSkillName } = require('../parser/maxroll');
+const { parseBuild, mergeRawLines, advanceTrack, undoTrack, getCurrentNode, resolveClassName, resolveSkillName } = require('../parser/maxroll');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -135,6 +135,69 @@ describe('validateTrack', () => {
   test('valid passive track passes', () => {
     const good = { type: 'passive', label: 'Passives', history: [1, 2, 3], totalSteps: 3, currentStep: 0 };
     assert.doesNotThrow(() => validateTrack(good, 0));
+  });
+});
+
+// ─── mergeRawLines ────────────────────────────────────────────────────────────
+
+describe('mergeRawLines', () => {
+  test('passes through single-object JSON unchanged', () => {
+    const input = JSON.stringify(SAMPLE_MAXROLL);
+    const result = mergeRawLines(input);
+    assert.deepEqual(result, SAMPLE_MAXROLL);
+  });
+
+  test('merges multi-line format (passives line + per-skill lines)', () => {
+    const lines = [
+      JSON.stringify({ passives: { history: [1, 1, 6], position: 3 }, class: 4, mastery: 2 }),
+      JSON.stringify({ skillTrees: { htsk5: { history: [9, 10], position: 2 } } }),
+      JSON.stringify({ skillTrees: { smbmb: { history: [17, 18], position: 2 } } }),
+    ].join('\n');
+
+    const result = mergeRawLines(lines);
+    assert.deepEqual(result.passives.history, [1, 1, 6]);
+    assert.equal(result.class, 4);
+    assert.equal(result.mastery, 2);
+    assert.ok(result.skillTrees.htsk5);
+    assert.ok(result.skillTrees.smbmb);
+  });
+
+  test('merges real configraw.env.json format (6 lines)', () => {
+    const raw = [
+      '{"passives":{"history":[6,6,6,6,6,6,6,6,1,7,7,7,7,7,8,8,8,8,8,0,3,3,3,3,3,3,3,3,20,20,20,20,20,25,25,21,21,21,21,21,30,30,30,30,30,33,22,22,22,22,36,39,39,39,39,41,41,41,41,41,44,22,22,22,40,46,46,46,46,46,45,45,22,50,50,50,50,50,50,50,50,78,78,78,78,78,28,31,31,31,31,28,28,28,28,31,37,37,37,37,37,79,82,82,82,82,82,0,0,0,0,0,0],"position":113},"class":4,"mastery":2}',
+      '{"skillTrees":{"htsk5":{"history":[9,10,1,4,5,1,3,3,3,23,23,23,27,28,6,8,6,6,9,9,9,11,23,18,18,18],"position":26}}}',
+      '{"skillTrees":{"smbmb":{"history":[17,17,18,16,15,29,19,20,20,21,30,30,30,30,2,17,17,17,32,32,32,32],"position":22}}}',
+      '{"skillTrees":{"pun22":{"history":[3,3,3,3,2,2,7,7,5,5,20,13,13,14,14,20,21,21,21,21,21,16],"position":22}}}',
+      '{"skillTrees":{"dqv5":{"history":[5,6,6,6,6,6,28,28,28,28,28,8,8,8,2,3,3,3,3,3,20,24],"position":22}}}',
+      '{"skillTrees":{"srk21":{"history":[15,15,27,27,27,27,15,20,21,22,22,22,9,9,12,11,11,11,14,23,23,23],"position":22}}}',
+    ].join('\n');
+
+    const result = mergeRawLines(raw);
+    assert.equal(result.class, 4);
+    assert.equal(result.mastery, 2);
+    assert.equal(result.passives.history.length, 113);
+    assert.equal(Object.keys(result.skillTrees).length, 5);
+    assert.ok(result.skillTrees.htsk5);
+    assert.ok(result.skillTrees.srk21);
+  });
+
+  test('throws on empty input', () => {
+    assert.throws(() => mergeRawLines(''), /empty/i);
+  });
+
+  test('throws on invalid JSON line', () => {
+    const lines = ['{"passives":{"history":[1],"position":1},"class":1,"mastery":1}', 'not json'].join('\n');
+    assert.throws(() => mergeRawLines(lines), /Line 2/);
+  });
+
+  test('ignores blank lines between JSON objects', () => {
+    const lines = [
+      JSON.stringify({ passives: { history: [1], position: 1 }, class: 1, mastery: 1 }),
+      '',
+      JSON.stringify({ skillTrees: { abc: { history: [2], position: 1 } } }),
+    ].join('\n');
+    const result = mergeRawLines(lines);
+    assert.ok(result.skillTrees.abc);
   });
 });
 

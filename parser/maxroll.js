@@ -58,10 +58,84 @@ const fs = require('fs');
 const path = require('path');
 const { validateBuild, groupHistory, initializeBuild } = require('./build-schema');
 
+// ─── Multi-line merge ─────────────────────────────────────────────────────────
+
+/**
+ * Merge newline-delimited Maxroll JSON blobs into a single complete object.
+ *
+ * Maxroll only lets you copy one section at a time, so users paste the build
+ * as several separate JSON lines:
+ *   Line 1: {"passives":{...},"class":4,"mastery":2}
+ *   Line 2: {"skillTrees":{"htsk5":{...}}}
+ *   Line 3: {"skillTrees":{"smbmb":{...}}}
+ *   ...
+ *
+ * This function parses each non-empty line and merges all skillTrees entries
+ * into one canonical Maxroll JSON object that parseBuild() can handle normally.
+ *
+ * Also accepts a single-object JSON string (legacy / future Maxroll format).
+ *
+ * @param {string} text - raw pasted text, one JSON object per line
+ * @returns {object}    - merged single Maxroll JSON object
+ * @throws {Error}      - if any line is invalid JSON or structure is unrecognizable
+ */
+function mergeRawLines(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+  if (lines.length === 0) {
+    throw new Error('Input is empty');
+  }
+
+  // Fast path: single valid JSON blob (standard format)
+  if (lines.length === 1) {
+    try {
+      return JSON.parse(lines[0]);
+    } catch (e) {
+      throw new Error(`Invalid JSON: ${e.message}`);
+    }
+  }
+
+  // Multi-line path: parse each line and merge
+  const merged = { skillTrees: {} };
+
+  lines.forEach((line, idx) => {
+    let obj;
+    try {
+      obj = JSON.parse(line);
+    } catch (e) {
+      throw new Error(`Line ${idx + 1} is not valid JSON: ${e.message}`);
+    }
+
+    // Passives / class / mastery block
+    if (obj.passives !== undefined) {
+      merged.passives = obj.passives;
+    }
+    if (obj.class !== undefined) {
+      merged.class = obj.class;
+    }
+    if (obj.mastery !== undefined) {
+      merged.mastery = obj.mastery;
+    }
+
+    // Skill tree block — merge each key into the shared skillTrees map
+    if (obj.skillTrees && typeof obj.skillTrees === 'object') {
+      Object.assign(merged.skillTrees, obj.skillTrees);
+    }
+  });
+
+  return merged;
+}
+
 // ─── Core parser ─────────────────────────────────────────────────────────────
 
 /**
  * Parse a raw Maxroll JSON export into normalized build format.
+ *
+ * Accepts either:
+ *   • A single JSON string/object (standard Maxroll format)
+ *   • A multi-line string where each line is a separate Maxroll JSON blob
+ *     (one line for passives/class/mastery, one line per skill — the format
+ *      produced when copying from Maxroll one section at a time)
  *
  * @param {string|object} rawInput - Maxroll JSON as string or already-parsed object
  * @param {object} skillsDb       - Contents of db/data/skills.json (used to resolve skill names)
@@ -71,14 +145,10 @@ const { validateBuild, groupHistory, initializeBuild } = require('./build-schema
  * @throws {Error}                - If input is invalid or missing required fields
  */
 function parseBuild(rawInput, skillsDb, classesDb, buildName = 'Imported Build') {
-  // 1. Parse if string
+  // 1. Parse / merge input
   let raw;
   if (typeof rawInput === 'string') {
-    try {
-      raw = JSON.parse(rawInput);
-    } catch (e) {
-      throw new Error(`Invalid JSON: ${e.message}`);
-    }
+    raw = mergeRawLines(rawInput);
   } else if (rawInput && typeof rawInput === 'object') {
     raw = rawInput;
   } else {
@@ -333,6 +403,7 @@ function lookupNode(nodeId, track, db, build) {
 
 module.exports = {
   parseBuild,
+  mergeRawLines,
   loadBuildFromFile,
   saveBuild,
   advanceTrack,

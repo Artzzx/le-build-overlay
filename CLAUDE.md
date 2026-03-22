@@ -27,8 +27,8 @@ le-build-overlay/
 ├── db/
 │   ├── build-db.js           ← Load and query db/data/*.json files
 │   └── data/                 ← Game data extracted per-patch (see extractor/)
-│       ├── passives.json     ← nodeId → {name, description, maxPoints, tree}
-│       ├── skills.json       ← skillKey → {name, nodes: {nodeId → info}}
+│       ├── passives.json     ← treeID → {name, nodes: {nodeId → {nodeName, name, description, maxPoints, ...}}}
+│       ├── skills.json       ← treeID/skillKey → {name, nodes: {nodeId → {nodeName, name, description, maxPoints, ...}}}
 │       ├── classes.json      ← classId/masteryId → names
 │       └── items.json        ← (future) uniqueId/affixId → info
 ├── extractor/
@@ -165,7 +165,9 @@ Keyed by `treeID` (one per base class). Lookup requires classId → treeID first
     "nodes": {
       "49": {
         "id": 49,
+        "nodeName": "Vitality and Health",
         "name": "Knight Vitality And Health",
+        "description": "Gain Vitality and Health...",
         "maxPoints": 8,
         "requiredMastery": 0,
         "masteryRequirement": 0,
@@ -192,7 +194,9 @@ No mapping step needed.
     "nodes": {
       "2": {
         "id": 2,
+        "nodeName": "Erasing Strike",
         "name": "Erasing Strike Skill Tree Root Node",
+        "description": "",
         "maxPoints": 0,
         "requiredMastery": 0,
         "masteryRequirement": 0,
@@ -203,7 +207,12 @@ No mapping step needed.
 }
 ```
 
-**NOTE: There is NO description field.** The source data ("Global Tree Data.json") does not contain node descriptions. The overlay displays node names only.
+**Node field priority:**
+- `nodeName` — real player-facing display name from SkillTreeNode MonoBehaviour (e.g. "Champion of the Void"). Populated by `extract.py --nodes`. Falls back to `name` when `--nodes` was not run.
+- `name` — internal name from "Global Tree Data.json" (e.g. "Void Cleave Crit Multi And Mana On Crit"). Always present.
+- `description` — in-game description from SkillTreeNode MonoBehaviour. Empty string when `--nodes` was not run.
+
+The overlay renderer (`app.js`) uses `node.nodeName || node.name` for display.
 
 ### classes.json (db/data/)
 ```json
@@ -392,4 +401,4 @@ Phase 2 requires manual tool installation and game files on the dev machine.
 
 2. **Multi-monitor position**: The overlay x/y calculation assumes a single primary screen. Multi-monitor support may need `screen.getAllDisplays()`.
 
-3. **Node descriptions**: `"Global Tree Data.json"` does not contain description text for nodes — only names, maxPoints, and requirement links. If descriptions are needed in the future, they would require a different source (e.g. a localization asset bundle).
+3. **Node display names and descriptions**: ~~`"Global Tree Data.json"` does not contain description text~~ — **Resolved.** Real display names (`nodeName`) and descriptions come from individual `SkillTreeNode #*.json` MonoBehaviour files in the AssetStudio export. Run `python extractor/extract.py --nodes C:\Tools\le_export` after a full MonoBehaviour export to populate both fields. The join chain is: `SkillTreeNode.tree.m_PathID` → `SkillTree #<pathID>.json.treeID` → `(treeID, nodeId)` composite key.

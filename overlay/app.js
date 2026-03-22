@@ -266,7 +266,7 @@ function renderTrack(track, index) {
   if (isCompleted) {
     nameEl.textContent = track.label;
   } else {
-    nameEl.textContent = node?.name ?? (track.label);
+    nameEl.textContent = node?.nodeName || node?.name || track.label;
   }
   header.appendChild(nameEl);
 

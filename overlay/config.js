@@ -50,14 +50,6 @@ async function handleLoad() {
     return;
   }
 
-  // Quick client-side JSON syntax check before sending to main
-  try {
-    JSON.parse(jsonString);
-  } catch (e) {
-    showError(`Invalid JSON syntax: ${e.message}`);
-    return;
-  }
-
   clearStatus();
   setLoading(true);
 
