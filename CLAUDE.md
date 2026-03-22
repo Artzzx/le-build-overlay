@@ -27,14 +27,11 @@ le-build-overlay/
 ├── db/
 │   ├── build-db.js           ← Load and query db/data/*.json files
 │   └── data/                 ← Game data extracted per-patch (see extractor/)
-│       ├── passives.json     ← treeID → {name, nodes: {nodeId → {nodeName, name, description, maxPoints, ...}}}
-│       ├── skills.json       ← treeID/skillKey → {name, nodes: {nodeId → {nodeName, name, description, maxPoints, ...}}}
-│       ├── classes.json      ← classId/masteryId → names
-│       └── items.json        ← (future) uniqueId/affixId → info
+│       ├── skill_tree_reconciled.json  ← flat node array, the ONLY file runtime reads
+│       ├── classes.json                ← classId/masteryId → names
+│       └── items.json                  ← (future) item/affix data
 ├── extractor/
-│   ├── README.md             ← Step-by-step guide to re-extract data after a patch
-│   ├── extract.py            ← Process AssetStudio JSON exports → db/data/*.json
-│   └── map-ids.py            ← Map raw MonoBehaviour data → clean DB JSONs
+│   └── extract.py            ← Regenerate db/data/ from game assets (run after patches)
 ├── config/
 │   └── build.json            ← User's active build (written by parser, read by overlay)
 └── scripts/
@@ -107,7 +104,16 @@ Each group = one UI "step" the player advances through.
 Maxroll's skill keys are the `treeID` field from "Global Tree Data.json" verbatim.
 No mapping or lookup table is needed — they are the same string.
 Examples: `"es6ai"` = Erasing Strike, `"v01cv"` = Void Cleave, `"vr53sl"` = Volatile Reversal.
-`db/data/skills.json` is keyed directly by treeID.
+`skill_tree_reconciled.json` rows are tagged with `treeID` directly.
+
+### Node Display Names vs Internal Names
+- `nodeName` — real player-facing display name from SkillTreeNode MonoBehaviour export.
+  Populated by running `python extractor/extract.py --nodes <path>`. Falls back to internal name when not run.
+- `description` — in-game tooltip text. Empty string when `--nodes` not used.
+
+`extract.py` matches node files to tree IDs by grouping `SkillTreeNode #*.json` files by `tree.m_PathID`,
+then matching each group's root node (id=0) display name to a GDT tree name (~68% coverage).
+See README.md → Reconciliation for the active work to close that gap.
 
 ---
 
@@ -346,12 +352,12 @@ function resolveTrack(track, db) {
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Config Parser (maxroll.js) | 🔲 TODO |
-| 2 | Game Asset Extraction (extract.py) | 🔲 TODO — requires game install |
+| 2 | Game Asset Extraction (extract.py) | ✅ Done — `db/data/skill_tree_reconciled.json` generated (~68% name coverage) |
 | 3 | Local DB Build (build-db.js) | 🔲 TODO — depends on Phase 2 |
 | 4 | Overlay UI | 🔲 TODO |
 
-**Start with Phase 1 and Phase 4 (Electron shell) — they have no dependencies.**
-Phase 2 requires manual tool installation and game files on the dev machine.
+**Phase 2 is complete.** `extract.py` generates `db/data/skill_tree_reconciled.json` from the game export.
+Reconciliation work to improve name coverage (currently ~68%) is ongoing — see README.md.
 
 ---
 
@@ -359,17 +365,14 @@ Phase 2 requires manual tool installation and game files on the dev machine.
 
 | # | Task | Estimated effort | Depends on |
 |---|------|-----------------|------------|
-| 1 | Il2CppDumper + AssetStudio export | 1h (manual) | Game installed |
-| 2 | Write extract.py | 3-4h | Task 1 |
-| 3 | Write maxroll.js + build-schema.js | 2h | None |
-| 4 | Map skillKey (fl44 etc.) to skills | 1-2h | Tasks 1+2 |
-| 5 | Electron shell (window + hotkeys) | 2h | None |
-| 6 | Overlay UI (track rendering + advance logic) | 3-4h | Tasks 3+5 |
-| 7 | Wire DB → parser → UI | 2h | Tasks 2+4+6 |
-| 8 | Config window (JSON paste UI) | 1h | Task 5 |
-| 9 | Test with real build + polish | 2h | All |
-
-**Total: ~16-20h**
+| 1 | Il2CppDumper + AssetStudio export | 1h (manual) | Game installed | ✅ Done |
+| 2 | Write extract.py | 3-4h | Task 1 | ✅ Done |
+| 3 | Write maxroll.js + build-schema.js | 2h | None | 🔲 TODO |
+| 4 | Electron shell (window + hotkeys) | 2h | None | 🔲 TODO |
+| 5 | Overlay UI (track rendering + advance logic) | 3-4h | Tasks 3+4 | 🔲 TODO |
+| 6 | Wire DB → parser → UI | 2h | Tasks 2+5 | 🔲 TODO |
+| 7 | Config window (JSON paste UI) | 1h | Task 4 | 🔲 TODO |
+| 8 | Test with real build + polish | 2h | All | 🔲 TODO |
 
 ---
 
@@ -401,4 +404,4 @@ Phase 2 requires manual tool installation and game files on the dev machine.
 
 2. **Multi-monitor position**: The overlay x/y calculation assumes a single primary screen. Multi-monitor support may need `screen.getAllDisplays()`.
 
-3. **Node display names and descriptions**: ~~`"Global Tree Data.json"` does not contain description text~~ — **Resolved.** Real display names (`nodeName`) and descriptions come from individual `SkillTreeNode #*.json` MonoBehaviour files in the AssetStudio export. Run `python extractor/extract.py --nodes C:\Tools\le_export` after a full MonoBehaviour export to populate both fields. The join chain is: `SkillTreeNode.tree.m_PathID` → `SkillTree #<pathID>.json.treeID` → `(treeID, nodeId)` composite key.
+3. **Node display names and descriptions**: **Resolved.** Real display names (`nodeName`) and descriptions come from individual `SkillTreeNode #*.json` MonoBehaviour files exported by AssetStudio. Run `python extractor/extract.py --nodes <path_to_node_files>` to populate both fields. The join: SkillTreeNode files are grouped by `tree.m_PathID`; each group's root node (id=0) display name matches the GDT tree name → `(treeID, nodeId)` composite key.
