@@ -271,13 +271,13 @@ function saveBuild(build, filePath) {
 // ─── Track advancement ────────────────────────────────────────────────────────
 
 /**
- * Advance one step on the given track.
+ * Advance one point on the given track (advances one flat history entry).
  * Returns a NEW build object (immutable update — don't mutate in place).
  *
- * currentStep is an index into the GROUPED steps array (see groupHistory).
- * "Advancing" means moving to the next group.
+ * currentStep is a flat count of history entries applied (0 = not started,
+ * history.length = fully completed). Each press allocates exactly one point.
  *
- * Does nothing if track is already at the last step.
+ * Does nothing if track is already completed.
  *
  * @param {object} build
  * @param {number} trackIndex - 0-based index into build.tracks
@@ -287,11 +287,8 @@ function advanceTrack(build, trackIndex) {
   const track = build.tracks[trackIndex];
   if (!track) return build;
 
-  const groups = groupHistory(track.history);
-  const maxStep = groups.length - 1;
-
-  if (track.currentStep >= maxStep) {
-    // Already at end — no-op (but don't throw)
+  if (track.currentStep >= track.history.length) {
+    // Already completed — no-op
     return build;
   }
 
@@ -329,10 +326,13 @@ function undoTrack(build, trackIndex) {
 /**
  * Returns node info for the CURRENT step of the given track.
  *
+ * currentStep is a flat history-entry count. This function finds which group
+ * contains the current position and how many points within it are allocated.
+ *
  * @param {object} build
  * @param {number} trackIndex
  * @param {object} db - { passives, skills } from build-db.js
- * @returns {{ nodeId, name, description, maxPoints, count, pointsSoFar } | null}
+ * @returns {{ nodeId, name, maxPoints, count, pointsSoFar } | null}
  *   null if track is completed or db is unavailable
  */
 function getCurrentNode(build, trackIndex, db) {
@@ -340,20 +340,23 @@ function getCurrentNode(build, trackIndex, db) {
   if (!track) return null;
 
   const groups = groupHistory(track.history);
-  const group = groups[track.currentStep];
-  if (!group) return null; // track completed
+  const group = groups.find(
+    g => track.currentStep >= g.startIdx && track.currentStep < g.startIdx + g.count
+  );
+  if (!group) return null; // track completed (currentStep >= history.length)
 
+  const pointsSoFar = track.currentStep - group.startIdx;
   const node = lookupNode(group.nodeId, track, db, build);
-  return node ? { ...node, count: group.count, pointsSoFar: 0 } : null;
+  return node ? { ...node, count: group.count, pointsSoFar } : null;
 }
 
 /**
- * Returns the next N upcoming nodes from currentStep.
+ * Returns the next N upcoming group nodes after the current position.
  *
  * @param {object} build
  * @param {number} trackIndex
  * @param {object} db
- * @param {number} count - how many upcoming steps to return
+ * @param {number} count - how many upcoming groups to return
  * @returns {object[]} array of node info objects (may be shorter than count at end of track)
  */
 function getUpcoming(build, trackIndex, db, count = 3) {
@@ -361,9 +364,13 @@ function getUpcoming(build, trackIndex, db, count = 3) {
   if (!track) return [];
 
   const groups = groupHistory(track.history);
-  const results = [];
+  const currentGroupIdx = groups.findIndex(
+    g => track.currentStep >= g.startIdx && track.currentStep < g.startIdx + g.count
+  );
+  const startFrom = currentGroupIdx === -1 ? 0 : currentGroupIdx + 1;
 
-  for (let i = track.currentStep + 1; i < groups.length && results.length < count; i++) {
+  const results = [];
+  for (let i = startFrom; i < groups.length && results.length < count; i++) {
     const group = groups[i];
     const node = lookupNode(group.nodeId, track, db, build);
     if (node) results.push({ ...node, count: group.count });

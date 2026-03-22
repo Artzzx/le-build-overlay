@@ -1,0 +1,19 @@
+{
+  "window": {
+    "x": null,
+    "y": null,
+    "width": 260,
+    "height": 400
+  },
+  "display": {
+    "fontSize": 13,
+    "opacity": 0.88
+  },
+  "hotkeys": {
+    "toggle": "F1",
+    "advanceModifier": "",
+    "undoModifier": "Shift",
+    "settingsKey": "F2",
+    "configKey": "F5"
+  }
+}
