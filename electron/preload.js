@@ -60,4 +60,25 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onSettingsChanged: (callback) => {
     ipcRenderer.on('settings-changed', (_event, s) => callback(s));
   },
+
+  // ── Position mode ──────────────────────────────────────────────────────────
+
+  /** Called when main enters position mode (overlay becomes interactive). */
+  onEnterPositionMode: (callback) => {
+    ipcRenderer.on('enter-position-mode', () => callback());
+  },
+
+  /** Called when main exits position mode (overlay returns to click-through). */
+  onExitPositionMode: (callback) => {
+    ipcRenderer.on('exit-position-mode', () => callback());
+  },
+
+  /** Move the overlay window by a delta (pixels). */
+  moveWindow: (dx, dy) => ipcRenderer.send('move-window', { dx, dy }),
+
+  /** Resize the overlay window to specific pixel dimensions. */
+  resizeWindow: (width, height) => ipcRenderer.send('resize-window', { width, height }),
+
+  /** Signal main to exit position mode and save the current bounds. */
+  endPositionMode: () => ipcRenderer.send('end-position-mode'),
 });

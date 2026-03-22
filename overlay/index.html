@@ -36,6 +36,13 @@
   <!-- Main container — toggled hidden/visible by F1 hotkey -->
   <div id="overlay-root">
 
+    <!-- Position mode drag bar — only visible when position mode is active -->
+    <div id="position-bar" class="hidden">
+      <span class="pos-grip-icon">⠿</span>
+      <span class="pos-label">Drag to move</span>
+      <button id="pos-done-btn">&#10003; Done</button>
+    </div>
+
     <!-- Shown when no build is loaded (no config/build.json or it's empty) -->
     <div id="no-build-msg" class="no-build hidden">
       <span>No build loaded</span>
@@ -51,6 +58,12 @@
     </div>
 
   </div>
+
+  <!-- Corner resize grips — only visible in position mode -->
+  <div class="resize-grip grip-nw hidden" data-corner="nw"></div>
+  <div class="resize-grip grip-ne hidden" data-corner="ne"></div>
+  <div class="resize-grip grip-sw hidden" data-corner="sw"></div>
+  <div class="resize-grip grip-se hidden" data-corner="se"></div>
 
   <script src="app.js"></script>
 </body>

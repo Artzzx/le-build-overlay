@@ -38,10 +38,11 @@ const fs = require('fs');
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
-let overlayWin = null;
-let configWin  = null;
-let settingsWin = null;
-let overlayVisible = true;
+let overlayWin   = null;
+let configWin    = null;
+let settingsWin  = null;
+let overlayVisible  = true;
+let inPositionMode  = false;
 
 // Paths to runtime config files
 const BUILD_CONFIG_PATH    = path.join(__dirname, '..', 'config', 'build.json');
@@ -50,8 +51,8 @@ const SETTINGS_CONFIG_PATH = path.join(__dirname, '..', 'config', 'settings.json
 // Default settings — used if settings.json is missing or corrupt
 const DEFAULT_SETTINGS = {
   window:  { x: null, y: null, width: 260, height: 400 },
-  display: { fontSize: 13, opacity: 0.88 },
-  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5' },
+  display: { fontSize: 13, opacity: 0.88, showDescription: true, alwaysShowProgress: false },
+  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3' },
 };
 
 // In-memory settings (loaded at startup, mutated on save)
@@ -102,6 +103,31 @@ function applySettings() {
   registerHotkeys();
 }
 
+// ─── Position mode ────────────────────────────────────────────────────────────
+
+function enterPositionMode() {
+  if (!overlayWin || overlayWin.isDestroyed()) return;
+  inPositionMode = true;
+  overlayWin.setIgnoreMouseEvents(false);
+  overlayWin.setFocusable(true);
+  overlayWin.focus(); // bring to front so mouse events are received
+  overlayWin.webContents.send('enter-position-mode');
+}
+
+function exitPositionMode() {
+  if (!overlayWin || overlayWin.isDestroyed()) return;
+  inPositionMode = false;
+  // Save current window bounds to settings
+  const [x, y] = overlayWin.getPosition();
+  const [width, height] = overlayWin.getSize();
+  settings.window = { x, y, width, height };
+  fs.writeFileSync(SETTINGS_CONFIG_PATH, JSON.stringify(settings, null, 2), 'utf-8');
+  // Restore click-through
+  overlayWin.setIgnoreMouseEvents(true, { forward: true });
+  overlayWin.setFocusable(false);
+  overlayWin.webContents.send('exit-position-mode');
+}
+
 // ─── Window creation ─────────────────────────────────────────────────────────
 
 function createOverlayWindow() {
@@ -131,6 +157,11 @@ function createOverlayWindow() {
 
   // Make the window fully click-through — mouse events pass to whatever is behind it
   overlayWin.setIgnoreMouseEvents(true, { forward: true });
+
+  // Send initial settings to renderer once it loads so display toggles apply on first render
+  overlayWin.webContents.once('did-finish-load', () => {
+    overlayWin.webContents.send('settings-changed', settings);
+  });
 
   overlayWin.on('closed', () => { overlayWin = null; });
 }
@@ -207,13 +238,13 @@ function registerHotkeys() {
     // Skip registration if advance and undo keys conflict
     if (advKey !== undoKey) {
       globalShortcut.register(advKey, () => {
-        if (!overlayWin || !overlayVisible) return;
+        if (!overlayWin || !overlayVisible || inPositionMode) return;
         overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
       });
     }
 
     globalShortcut.register(undoKey, () => {
-      if (!overlayWin || !overlayVisible) return;
+      if (!overlayWin || !overlayVisible || inPositionMode) return;
       // If advance and undo share the same key (no modifier), this acts as advance only
       if (advKey === undoKey) {
         overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
@@ -240,6 +271,16 @@ function registerHotkeys() {
       createConfigWindow();
     }
   });
+
+  // Toggle position mode (drag & resize overlay)
+  globalShortcut.register(hk.positionKey, () => {
+    if (!overlayWin || !overlayVisible) return;
+    if (inPositionMode) {
+      exitPositionMode();
+    } else {
+      enterPositionMode();
+    }
+  });
 }
 
 // ─── IPC handlers ────────────────────────────────────────────────────────────
@@ -255,6 +296,27 @@ ipcMain.handle('save-settings', (event, updated) => {
     console.error('[main] save-settings error:', err.message);
     return { success: false, error: err.message };
   }
+});
+
+ipcMain.on('move-window', (event, { dx, dy }) => {
+  if (!overlayWin || overlayWin.isDestroyed()) return;
+  const [x, y] = overlayWin.getPosition();
+  overlayWin.setPosition(x + Math.round(dx), y + Math.round(dy));
+});
+
+ipcMain.on('resize-window', (event, { width, height }) => {
+  if (!overlayWin || overlayWin.isDestroyed()) return;
+  const [x, y] = overlayWin.getPosition();
+  overlayWin.setBounds({ x, y, width: Math.max(180, width), height: Math.max(200, height) });
+});
+
+ipcMain.on('end-position-mode', () => {
+  exitPositionMode();
+});
+
+ipcMain.handle('start-position-mode', () => {
+  enterPositionMode();
+  return { success: true };
 });
 
 ipcMain.on('save-build', (event, buildJson) => {

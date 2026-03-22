@@ -7,13 +7,16 @@
   },
   "display": {
     "fontSize": 13,
-    "opacity": 0.88
+    "opacity": 0.88,
+    "showDescription": true,
+    "alwaysShowProgress": false
   },
   "hotkeys": {
     "toggle": "F1",
     "advanceModifier": "",
     "undoModifier": "Shift",
     "settingsKey": "F2",
-    "configKey": "F5"
+    "configKey": "F5",
+    "positionKey": "F3"
   }
 }

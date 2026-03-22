@@ -11,72 +11,73 @@
 
 const DEFAULTS = {
   window:  { x: null, y: null, width: 260, height: 400 },
-  display: { fontSize: 13, opacity: 0.88 },
-  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5' },
+  display: { fontSize: 13, opacity: 0.88, showDescription: true, alwaysShowProgress: false },
+  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3' },
 };
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
-const winX        = document.getElementById('win-x');
-const winY        = document.getElementById('win-y');
-const winWidth    = document.getElementById('win-width');
-const winHeight   = document.getElementById('win-height');
-const fontSizeEl  = document.getElementById('font-size');
-const fontSizeVal = document.getElementById('font-size-val');
-const opacityEl   = document.getElementById('opacity');
-const opacityVal  = document.getElementById('opacity-val');
-const hkToggle    = document.getElementById('hk-toggle');
-const hkAdvMod    = document.getElementById('hk-advance-mod');
-const hkUndoMod   = document.getElementById('hk-undo-mod');
-const hkSettings  = document.getElementById('hk-settings');
-const hkConfig    = document.getElementById('hk-config');
-const saveBtn     = document.getElementById('save-btn');
-const resetBtn    = document.getElementById('reset-btn');
-const statusEl    = document.getElementById('status');
+const fontSizeEl      = document.getElementById('font-size');
+const fontSizeVal     = document.getElementById('font-size-val');
+const opacityEl       = document.getElementById('opacity');
+const opacityVal      = document.getElementById('opacity-val');
+const showDescEl      = document.getElementById('show-desc');
+const alwaysProgressEl = document.getElementById('always-progress');
+const hkToggle        = document.getElementById('hk-toggle');
+const hkAdvMod        = document.getElementById('hk-advance-mod');
+const hkUndoMod       = document.getElementById('hk-undo-mod');
+const hkSettings      = document.getElementById('hk-settings');
+const hkConfig        = document.getElementById('hk-config');
+const hkPosition      = document.getElementById('hk-position');
+const saveBtn         = document.getElementById('save-btn');
+const resetBtn        = document.getElementById('reset-btn');
+const statusEl        = document.getElementById('status');
 
 // ─── Populate form ────────────────────────────────────────────────────────────
 
 function populate(settings) {
   const s = settings ?? DEFAULTS;
 
-  winX.value    = s.window.x    ?? '';
-  winY.value    = s.window.y    ?? '';
-  winWidth.value  = s.window.width;
-  winHeight.value = s.window.height;
-
   fontSizeEl.value = s.display.fontSize;
   fontSizeVal.textContent = s.display.fontSize;
   const opPct = Math.round(s.display.opacity * 100);
   opacityEl.value = opPct;
   opacityVal.textContent = `${opPct}%`;
+  showDescEl.checked      = s.display.showDescription ?? true;
+  alwaysProgressEl.checked = s.display.alwaysShowProgress ?? false;
 
-  hkToggle.value   = s.hotkeys.toggle;
-  hkAdvMod.value   = s.hotkeys.advanceModifier;
-  hkUndoMod.value  = s.hotkeys.undoModifier;
-  hkSettings.value = s.hotkeys.settingsKey;
-  hkConfig.value   = s.hotkeys.configKey;
+  hkToggle.value    = s.hotkeys.toggle;
+  hkAdvMod.value    = s.hotkeys.advanceModifier;
+  hkUndoMod.value   = s.hotkeys.undoModifier;
+  hkSettings.value  = s.hotkeys.settingsKey;
+  hkConfig.value    = s.hotkeys.configKey;
+  hkPosition.value  = s.hotkeys.positionKey ?? 'F3';
 }
 
 // ─── Read form → settings object ─────────────────────────────────────────────
 
 function readForm() {
+  // Preserve current window bounds from main (position mode manages these)
   return {
     window: {
-      x:      winX.value.trim()     ? parseInt(winX.value, 10)     : null,
-      y:      winY.value.trim()     ? parseInt(winY.value, 10)     : null,
-      width:  parseInt(winWidth.value, 10)  || 260,
-      height: parseInt(winHeight.value, 10) || 400,
+      x:      null,
+      y:      null,
+      width:  DEFAULTS.window.width,
+      height: DEFAULTS.window.height,
     },
     display: {
-      fontSize: parseInt(fontSizeEl.value, 10),
-      opacity:  parseInt(opacityEl.value, 10) / 100,
+      fontSize:          parseInt(fontSizeEl.value, 10),
+      opacity:           parseInt(opacityEl.value, 10) / 100,
+      showDescription:   showDescEl.checked,
+      alwaysShowProgress: alwaysProgressEl.checked,
     },
     hotkeys: {
-      toggle:          hkToggle.value.trim()   || 'F1',
+      toggle:          hkToggle.value.trim()    || 'F1',
       advanceModifier: hkAdvMod.value,
       undoModifier:    hkUndoMod.value,
-      settingsKey:     hkSettings.value.trim() || 'F2',
-      configKey:       hkConfig.value.trim()   || 'F5',
+      settingsKey:     hkSettings.value.trim()  || 'F2',
+      configKey:       hkConfig.value.trim()    || 'F5',
+      positionKey:     hkPosition.value.trim()  || 'F3',
     },
   };
 }
@@ -103,7 +104,13 @@ opacityEl.addEventListener('input', () => {
 saveBtn.addEventListener('click', async () => {
   saveBtn.disabled = true;
   try {
-    const result = await window.settingsAPI.saveSettings(readForm());
+    // Fetch current window bounds from main so we don't overwrite them
+    const current = await window.settingsAPI.getSettings();
+    const form = readForm();
+    // Preserve the window bounds that position mode manages
+    form.window = current.window ?? DEFAULTS.window;
+
+    const result = await window.settingsAPI.saveSettings(form);
     if (result.success) {
       showStatus('Settings saved.', 'success');
     } else {
