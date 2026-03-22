@@ -23,4 +23,15 @@ contextBridge.exposeInMainWorld('configAPI', {
    */
   loadBuild: (jsonString, buildName) =>
     ipcRenderer.invoke('load-build', { jsonString, buildName }),
+
+  /**
+   * Fetch a build from a Maxroll planner URL.
+   * The actual HTTP request runs in the main process (avoids CORS).
+   *
+   * @param {string} url - e.g. https://maxroll.gg/last-epoch/planner/abc123
+   * @returns {Promise<{ success: boolean, json?: string, error?: string }>}
+   *   json is the raw Maxroll JSON string, ready to pass to loadBuild()
+   */
+  fetchBuildUrl: (url) =>
+    ipcRenderer.invoke('fetch-build-url', url),
 });
