@@ -359,6 +359,59 @@ html, body {
   display: block;
 }
 
+/* ─── Phase bar ──────────────────────────────────────────────────────────── */
+
+.phase-bar {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--gold);
+  text-align: center;
+  padding: 3px 8px;
+  border-top: 1px solid var(--border);
+  letter-spacing: 0.04em;
+}
+
+/* ─── Transition panel ───────────────────────────────────────────────────── */
+
+.transition-panel {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.transition-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.transition-warn {
+  font-size: 11px;
+  color: #f87171;
+  font-weight: 600;
+}
+
+.transition-row {
+  font-size: 11px;
+  color: var(--text);
+  padding-left: 8px;
+}
+
+.transition-ok {
+  font-size: 11px;
+  color: var(--green);
+}
+
+.transition-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  font-style: italic;
+}
+
 /* ─── Utilities ──────────────────────────────────────────────────────────── */
 
 .hidden {

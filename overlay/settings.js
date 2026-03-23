@@ -12,7 +12,7 @@
 const DEFAULTS = {
   window:  { x: null, y: null, width: 260, height: 400 },
   display: { fontSize: 13, opacity: 0.88, showDescription: true, alwaysShowProgress: false },
-  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3' },
+  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3', phaseNextKey: 'F6', phasePrevKey: 'Shift+F6' },
 };
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
@@ -29,6 +29,8 @@ const hkUndoMod       = document.getElementById('hk-undo-mod');
 const hkSettings      = document.getElementById('hk-settings');
 const hkConfig        = document.getElementById('hk-config');
 const hkPosition      = document.getElementById('hk-position');
+const hkPhaseNext     = document.getElementById('hk-phase-next');
+const hkPhasePrev     = document.getElementById('hk-phase-prev');
 const saveBtn         = document.getElementById('save-btn');
 const resetBtn        = document.getElementById('reset-btn');
 const statusEl        = document.getElementById('status');
@@ -51,7 +53,9 @@ function populate(settings) {
   hkUndoMod.value   = s.hotkeys.undoModifier;
   hkSettings.value  = s.hotkeys.settingsKey;
   hkConfig.value    = s.hotkeys.configKey;
-  hkPosition.value  = s.hotkeys.positionKey ?? 'F3';
+  hkPosition.value  = s.hotkeys.positionKey  ?? 'F3';
+  hkPhaseNext.value = s.hotkeys.phaseNextKey ?? 'F6';
+  hkPhasePrev.value = s.hotkeys.phasePrevKey ?? 'Shift+F6';
 }
 
 // ─── Read form → settings object ─────────────────────────────────────────────
@@ -76,8 +80,10 @@ function readForm() {
       advanceModifier: hkAdvMod.value,
       undoModifier:    hkUndoMod.value,
       settingsKey:     hkSettings.value.trim()  || 'F2',
-      configKey:       hkConfig.value.trim()    || 'F5',
-      positionKey:     hkPosition.value.trim()  || 'F3',
+      configKey:       hkConfig.value.trim()       || 'F5',
+      positionKey:     hkPosition.value.trim()     || 'F3',
+      phaseNextKey:    hkPhaseNext.value.trim()    || 'F6',
+      phasePrevKey:    hkPhasePrev.value.trim()    || 'Shift+F6',
     },
   };
 }

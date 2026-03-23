@@ -52,7 +52,7 @@ const SETTINGS_CONFIG_PATH = path.join(__dirname, '..', 'config', 'settings.json
 const DEFAULT_SETTINGS = {
   window:  { x: null, y: null, width: 260, height: 400 },
   display: { fontSize: 13, opacity: 0.88, showDescription: true, alwaysShowProgress: false },
-  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3' },
+  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3', phaseNextKey: 'F6', phasePrevKey: 'Shift+F6' },
 };
 
 // In-memory settings (loaded at startup, mutated on save)
@@ -168,8 +168,8 @@ function createOverlayWindow() {
 
 function createConfigWindow() {
   configWin = new BrowserWindow({
-    width: 520,
-    height: 420,
+    width: 560,
+    height: 580,
     title: 'LE Build Overlay — Load Build',
     transparent: false,
     frame: true,
@@ -281,6 +281,20 @@ function registerHotkeys() {
       enterPositionMode();
     }
   });
+
+  // Phase switching — next / previous
+  if (hk.phaseNextKey) {
+    globalShortcut.register(hk.phaseNextKey, () => {
+      if (!overlayWin || !overlayVisible || inPositionMode) return;
+      overlayWin.webContents.send('hotkey', { action: 'phase', direction: +1 });
+    });
+  }
+  if (hk.phasePrevKey) {
+    globalShortcut.register(hk.phasePrevKey, () => {
+      if (!overlayWin || !overlayVisible || inPositionMode) return;
+      overlayWin.webContents.send('hotkey', { action: 'phase', direction: -1 });
+    });
+  }
 }
 
 // ─── IPC handlers ────────────────────────────────────────────────────────────
@@ -365,6 +379,44 @@ ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
     return { success: true };
   } catch (err) {
     console.error('[main] load-build error:', err.message);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('load-loadout', async (event, { phases, loadoutName }) => {
+  // Config window sends an array of { name, json } phase descriptors.
+  // We parse each phase, validate the loadout, persist it, and notify the overlay.
+  try {
+    const { parseLoadout, saveBuild } = require('../parser/maxroll');
+
+    let skillsDb = {};
+    let classesDb = { classes: {}, masteriesByClass: {}, passiveTreeByClass: {} };
+    try {
+      const reconPath = path.join(__dirname, '..', 'db', 'data', 'skill_tree_reconciled.json');
+      const rawNodes = JSON.parse(fs.readFileSync(reconPath, 'utf-8'));
+      for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
+        if (!skillsDb[treeID]) skillsDb[treeID] = { name: treeName, nodes: {} };
+        skillsDb[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
+      }
+    } catch { /* DB not yet extracted — skill names fall back to skillKey */ }
+    try {
+      const classesPath = path.join(__dirname, '..', 'db', 'data', 'classes.json');
+      classesDb = JSON.parse(fs.readFileSync(classesPath, 'utf-8'));
+    } catch { /* DB not yet extracted */ }
+
+    const loadout = parseLoadout(phases, skillsDb, classesDb, loadoutName || 'Imported Loadout');
+    saveBuild(loadout, BUILD_CONFIG_PATH);
+
+    if (overlayWin && !overlayWin.isDestroyed()) {
+      overlayWin.webContents.send('reload-build');
+    }
+    if (configWin && !configWin.isDestroyed()) {
+      configWin.close();
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('[main] load-loadout error:', err.message);
     return { success: false, error: err.message };
   }
 });

@@ -12,15 +12,15 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { groupHistory, validateBuild, validateTrack, initializeBuild } = require('../parser/build-schema');
-const { parseBuild, mergeRawLines, advanceTrack, undoTrack, getCurrentNode, resolveClassName, resolveSkillName } = require('../parser/maxroll');
+const { groupHistory, validateBuild, validateLoadout, validateTrack, initializeBuild } = require('../parser/build-schema');
+const { parseBuild, parseLoadout, mergeRawLines, advanceTrack, undoTrack, getCurrentNode, resolveClassName, resolveSkillName } = require('../parser/maxroll');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const SAMPLE_MAXROLL = {
   passives: { history: [1, 1, 1, 6, 6, 6, 6, 6, 4, 4], position: 10 },
   class: 3,
-  mastery: 7,   // 7 = Void Knight in real classes.json
+  mastery: 2,   // 2 = Void Knight (per-class relative ID for Sentinel)
   skillTrees: {
     fl44: { history: [4, 4, 14, 11, 12], position: 5 },
     fi9:  { history: [3, 3, 7], position: 3 },
@@ -42,10 +42,13 @@ const SAMPLE_SKILLS_DB = {
   }},
 };
 
-// Classes DB fixture: includes passiveTreeByClass so lookupNode can resolve passives.
+// Classes DB fixture: uses masteriesByClass (per-class relative IDs 1–3).
+// Matches the format in db/data/classes.json — Maxroll uses relative IDs, NOT global ones.
 const SAMPLE_CLASSES_DB = {
   classes: { 3: 'Sentinel' },
-  masteries: { 7: { name: 'Void Knight', classId: 3 } },
+  masteriesByClass: {
+    3: { 1: 'Forge Guard', 2: 'Void Knight', 3: 'Paladin' },
+  },
   passiveTreeByClass: { 3: 'kn-1' },
 };
 
@@ -208,7 +211,7 @@ describe('parseBuild', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB, 'My Build');
     assert.equal(build.name, 'My Build');
     assert.equal(build.classId, 3);
-    assert.equal(build.masteryId, 7);
+    assert.equal(build.masteryId, 2);
     assert.equal(build.tracks.length, 3); // 1 passive + 2 skills
   });
 
@@ -347,19 +350,26 @@ describe('getCurrentNode', () => {
 // ─── resolveClassName / resolveSkillName ──────────────────────────────────────
 
 describe('resolveClassName', () => {
-  test('resolves class and mastery names', () => {
-    const result = resolveClassName(3, 7, SAMPLE_CLASSES_DB); // masteryId 7 = Void Knight
+  test('resolves class and mastery names using per-class relative IDs', () => {
+    // Maxroll uses per-class relative mastery IDs (1–3), not global sequential IDs.
+    // Sentinel (class 3) mastery 2 = Void Knight.
+    const result = resolveClassName(3, 2, SAMPLE_CLASSES_DB);
     assert.equal(result, 'Sentinel — Void Knight');
   });
 
   test('falls back gracefully when DB is null', () => {
-    const result = resolveClassName(3, 7, null);
+    const result = resolveClassName(3, 2, null);
     assert.equal(result, 'Class 3');
   });
 
   test('falls back to ID when class not in DB', () => {
     const result = resolveClassName(99, 1, SAMPLE_CLASSES_DB);
     assert.ok(result.includes('99'));
+  });
+
+  test('falls back to mastery ID when mastery not in DB', () => {
+    const result = resolveClassName(3, 99, SAMPLE_CLASSES_DB);
+    assert.ok(result.includes('Mastery 99'));
   });
 });
 
@@ -380,12 +390,164 @@ describe('resolveSkillName', () => {
 // ─── initializeBuild ──────────────────────────────────────────────────────────
 
 describe('initializeBuild', () => {
-  test('resets all currentSteps to 0', () => {
+  test('resets all currentSteps to 0 (single-phase)', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
     const advanced = advanceTrack(advanceTrack(build, 0), 1);
     const reset = initializeBuild(advanced);
     for (const track of reset.tracks) {
       assert.equal(track.currentStep, 0);
     }
+  });
+
+  test('resets all phases\' currentSteps to 0 (multi-phase)', () => {
+    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
+    const advanced = advanceTrack(build, 0);
+    const loadout = {
+      name: 'Test',
+      classId: build.classId,
+      masteryId: build.masteryId,
+      currentPhase: 0,
+      phases: [
+        { name: 'Phase 1', tracks: advanced.tracks },
+        { name: 'Phase 2', tracks: build.tracks },
+      ],
+    };
+    const reset = initializeBuild(loadout);
+    assert.equal(reset.currentPhase, 0);
+    for (const phase of reset.phases) {
+      for (const track of phase.tracks) {
+        assert.equal(track.currentStep, 0);
+      }
+    }
+  });
+});
+
+// ─── validateLoadout ──────────────────────────────────────────────────────────
+
+describe('validateLoadout', () => {
+  function makeLoadout(overrides = {}) {
+    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
+    return {
+      name: 'Test Loadout',
+      classId: build.classId,
+      masteryId: build.masteryId,
+      currentPhase: 0,
+      phases: [{ name: 'Phase 1', tracks: build.tracks }],
+      ...overrides,
+    };
+  }
+
+  test('valid loadout passes without throwing', () => {
+    const loadout = makeLoadout();
+    assert.doesNotThrow(() => validateLoadout(loadout));
+  });
+
+  test('returns the loadout for chaining', () => {
+    const loadout = makeLoadout();
+    assert.strictEqual(validateLoadout(loadout), loadout);
+  });
+
+  test('throws if phases is empty', () => {
+    assert.throws(() => validateLoadout(makeLoadout({ phases: [] })), /phases/);
+  });
+
+  test('throws if currentPhase out of range', () => {
+    assert.throws(() => validateLoadout(makeLoadout({ currentPhase: 5 })), /currentPhase/);
+  });
+
+  test('throws if a phase has no tracks', () => {
+    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
+    const bad = makeLoadout({ phases: [{ name: 'P1', tracks: [] }] });
+    assert.throws(() => validateLoadout(bad), /tracks/);
+  });
+
+  test('throws if loadout is null', () => {
+    assert.throws(() => validateLoadout(null), /non-null/);
+  });
+
+  test('two-phase loadout validates successfully', () => {
+    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
+    const loadout = makeLoadout({
+      phases: [
+        { name: 'Leveling', tracks: build.tracks },
+        { name: 'Endgame',  tracks: build.tracks },
+      ],
+    });
+    assert.doesNotThrow(() => validateLoadout(loadout));
+  });
+});
+
+// ─── parseLoadout ─────────────────────────────────────────────────────────────
+
+describe('parseLoadout', () => {
+  const PHASE1_JSON = JSON.stringify(SAMPLE_MAXROLL);
+  const PHASE2_JSON = JSON.stringify({
+    ...SAMPLE_MAXROLL,
+    skillTrees: {
+      fl44: { history: [4, 4, 14, 11, 12, 12], position: 6 },
+    },
+  });
+
+  test('parses two phases into a loadout', () => {
+    const loadout = parseLoadout(
+      [{ name: 'Leveling', json: PHASE1_JSON }, { name: 'Endgame', json: PHASE2_JSON }],
+      SAMPLE_SKILLS_DB,
+      SAMPLE_CLASSES_DB,
+      'My Loadout'
+    );
+    assert.equal(loadout.name, 'My Loadout');
+    assert.equal(loadout.phases.length, 2);
+    assert.equal(loadout.phases[0].name, 'Leveling');
+    assert.equal(loadout.phases[1].name, 'Endgame');
+    assert.equal(loadout.currentPhase, 0);
+    assert.equal(loadout.classId, 3);
+    assert.equal(loadout.masteryId, 2);
+  });
+
+  test('all tracks in each phase start at currentStep 0', () => {
+    const loadout = parseLoadout(
+      [{ name: 'P1', json: PHASE1_JSON }, { name: 'P2', json: PHASE2_JSON }],
+      SAMPLE_SKILLS_DB,
+      SAMPLE_CLASSES_DB
+    );
+    for (const phase of loadout.phases) {
+      for (const track of phase.tracks) {
+        assert.equal(track.currentStep, 0);
+      }
+    }
+  });
+
+  test('single-phase loadout is valid', () => {
+    const loadout = parseLoadout(
+      [{ name: 'Only Phase', json: PHASE1_JSON }],
+      SAMPLE_SKILLS_DB,
+      SAMPLE_CLASSES_DB
+    );
+    assert.equal(loadout.phases.length, 1);
+  });
+
+  test('throws when phases use different classes', () => {
+    const mismatch = JSON.stringify({ ...SAMPLE_MAXROLL, class: 4 }); // Rogue instead of Sentinel
+    assert.throws(
+      () => parseLoadout(
+        [{ name: 'P1', json: PHASE1_JSON }, { name: 'P2', json: mismatch }],
+        SAMPLE_SKILLS_DB,
+        SAMPLE_CLASSES_DB
+      ),
+      /class\/mastery/
+    );
+  });
+
+  test('throws when phaseInputs is empty', () => {
+    assert.throws(() => parseLoadout([], SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB), /non-empty/);
+  });
+
+  test('falls back to "Phase N" when phase name is missing', () => {
+    const loadout = parseLoadout(
+      [{ name: '', json: PHASE1_JSON }],
+      SAMPLE_SKILLS_DB,
+      SAMPLE_CLASSES_DB
+    );
+    assert.equal(loadout.phases[0].name, 'Phase 1');
   });
 });
