@@ -317,6 +317,7 @@ function handleAdvance(trackIndex) {
   const track = state.build?.tracks?.[trackIndex];
   if (!track) return;
 
+  if (isTrackUnresolved(track)) return; // DB loaded but skill unknown — block advance
   if (track.currentStep >= track.history.length) return; // already completed
 
   // Update state (immutable-ish)
@@ -336,6 +337,7 @@ function handleAdvance(trackIndex) {
 function handleUndo(trackIndex) {
   const track = state.build?.tracks?.[trackIndex];
   if (!track || track.currentStep <= 0) return;
+  if (isTrackUnresolved(track)) return; // DB loaded but skill unknown — block undo
 
   state.build = {
     ...state.build,
@@ -386,6 +388,39 @@ function render() {
  * @returns {HTMLElement}
  */
 function renderTrack(track, index) {
+  // ── Unresolved: DB loaded but this skill/class has no data ────────────────
+  if (isTrackUnresolved(track)) {
+    const div = document.createElement('div');
+    div.className = 'track unresolved';
+    div.dataset.trackIndex = index;
+
+    const header = document.createElement('div');
+    header.className = 'track-header';
+
+    const badge = document.createElement('span');
+    badge.className = `track-badge ${track.type}`;
+    badge.textContent = track.type === 'passive' ? 'P' : 'S';
+    header.appendChild(badge);
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'track-name';
+    nameEl.textContent = track.label;
+    header.appendChild(nameEl);
+
+    const infoEl = document.createElement('span');
+    infoEl.className = 'track-unresolved-label';
+    infoEl.textContent = 'no data';
+    header.appendChild(infoEl);
+
+    const hotkeyEl = document.createElement('span');
+    hotkeyEl.className = 'track-hotkey';
+    hotkeyEl.textContent = String(index + 1);
+    header.appendChild(hotkeyEl);
+
+    div.appendChild(header);
+    return div;
+  }
+
   const groups = groupHistory(track.history);
   const isCompleted = track.currentStep >= track.history.length;
   const isExpanded = index === state.expandedTrack && !isCompleted;
@@ -525,6 +560,31 @@ function flashTrack(trackIndex) {
   el.classList.add('flashing');
 
   setTimeout(() => el.classList.remove('flashing'), 250);
+}
+
+// ─── Track resolution check ───────────────────────────────────────────────────
+
+/**
+ * Returns true if the DB is loaded AND this specific track has no data in it.
+ * A false return means either the DB isn't loaded yet (normal state, not an error)
+ * or the track does have data (fully resolved).
+ *
+ * Skill tracks are unresolved when their skillKey is missing from the reconciled DB
+ * (e.g. a new skill added in a patch before the extractor has been re-run).
+ * Passive tracks are considered unresolved only when the class tree is entirely absent.
+ *
+ * @param {object} track - normalized track object
+ * @returns {boolean}
+ */
+function isTrackUnresolved(track) {
+  if (!state.db) return false; // DB not loaded yet — normal startup state
+  if (track.type === 'skill') {
+    return !state.db.skills?.[track.skillKey];
+  }
+  // Passive: check the class tree exists
+  const classId = String(state.build?.classId ?? 0);
+  const treeId  = state.db.classes?.passiveTreeByClass?.[classId];
+  return !treeId || !state.db.passives?.[treeId];
 }
 
 // ─── Utility (mirrored from build-schema.js — no require() in renderer) ──────
