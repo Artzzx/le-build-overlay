@@ -454,13 +454,19 @@ function renderTrack(track, index) {
   header.appendChild(badge);
 
   // Node / track name — format: "Skill Label — Node Name" (or just label when completed)
+  // For passive tracks, recompute the label from classId/masteryId using the DB so that
+  // existing build.json files with the wrong mastery name display correctly without re-parse.
+  const trackLabel = track.type === 'passive'
+    ? resolvePassiveLabel(state.build.classId, state.build.masteryId) ?? track.label
+    : track.label;
+
   const nameEl = document.createElement('span');
   nameEl.className = 'track-name';
   if (isCompleted) {
-    nameEl.textContent = track.label;
+    nameEl.textContent = trackLabel;
   } else {
     const nodeName = node?.nodeName || node?.name;
-    nameEl.textContent = nodeName ? `${track.label} \u2014 ${nodeName}` : track.label;
+    nameEl.textContent = nodeName ? `${trackLabel} \u2014 ${nodeName}` : trackLabel;
   }
   header.appendChild(nameEl);
 
@@ -560,6 +566,29 @@ function flashTrack(trackIndex) {
   el.classList.add('flashing');
 
   setTimeout(() => el.classList.remove('flashing'), 250);
+}
+
+// ─── Passive label resolution ─────────────────────────────────────────────────
+
+/**
+ * Build the correct passive track label from classId + masteryId using the DB.
+ * Maxroll uses per-class relative mastery IDs (1–3), looked up via
+ * db.classes.masteriesByClass[classId][masteryId].
+ *
+ * Returns null if the DB isn't loaded yet (caller falls back to track.label).
+ *
+ * @param {number} classId
+ * @param {number} masteryId
+ * @returns {string|null}
+ */
+function resolvePassiveLabel(classId, masteryId) {
+  if (!state.db?.classes) return null;
+  const cId = String(classId ?? 0);
+  const mId = String(masteryId ?? 0);
+  const className   = state.db.classes.classes?.[cId];
+  const masteryName = state.db.classes.masteriesByClass?.[cId]?.[mId];
+  if (!className || !masteryName) return null;
+  return `${className} \u2014 ${masteryName} Passives`;
 }
 
 // ─── Track resolution check ───────────────────────────────────────────────────
