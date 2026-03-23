@@ -69,8 +69,25 @@ async function init() {
 
     // Load user's active build (may not exist on first run)
     state.build = await loadBuild();
+
+    // Fetch initial settings from main so display toggles apply on the very first render.
+    // This is necessary because the 'settings-changed' IPC sent by did-finish-load can
+    // arrive before subscribeToSettings() registers its listener (during the awaits above).
+    if (window.electronAPI?.getSettings) {
+      const s = await window.electronAPI.getSettings();
+      if (s) state.settings = s;
+    }
   } catch (err) {
     console.error('[app] Initialization error:', err);
+  }
+
+  // Apply CSS variables and always-progress class before first render
+  if (state.settings?.display) {
+    const d = state.settings.display;
+    document.documentElement.style.setProperty('--font-size-base', `${d.fontSize}px`);
+    document.documentElement.style.setProperty('--bg', `rgba(6, 8, 14, ${d.opacity})`);
+    const overlayRoot = document.getElementById('overlay-root');
+    overlayRoot?.classList.toggle('always-progress', d.alwaysShowProgress ?? false);
   }
 
   render();
@@ -401,13 +418,14 @@ function renderTrack(track, index) {
   badge.textContent = track.type === 'passive' ? 'P' : 'S';
   header.appendChild(badge);
 
-  // Node / track name
+  // Node / track name — format: "Skill Label — Node Name" (or just label when completed)
   const nameEl = document.createElement('span');
   nameEl.className = 'track-name';
   if (isCompleted) {
     nameEl.textContent = track.label;
   } else {
-    nameEl.textContent = node?.nodeName || node?.name || track.label;
+    const nodeName = node?.nodeName || node?.name;
+    nameEl.textContent = nodeName ? `${track.label} \u2014 ${nodeName}` : track.label;
   }
   header.appendChild(nameEl);
 
@@ -426,10 +444,10 @@ function renderTrack(track, index) {
   div.appendChild(header);
 
   // ── Inline progress (always-progress mode, hidden when expanded) ──────────
-  if (!isCompleted && currentGroup && node && node.maxPoints > 0) {
+  if (!isCompleted && currentGroup && currentGroup.count > 0) {
     const inlineEl = document.createElement('div');
     inlineEl.className = 'track-progress-inline';
-    buildProgressContent(inlineEl, pointsInNode, node, track.type);
+    buildProgressContent(inlineEl, pointsInNode, currentGroup.count, track.type);
     div.appendChild(inlineEl);
   }
 
@@ -448,8 +466,8 @@ function renderTrack(track, index) {
     }
 
     // Point dots + pts label
-    if (currentGroup && node.maxPoints > 0) {
-      buildProgressContent(body, pointsInNode, node, track.type);
+    if (currentGroup && currentGroup.count > 0) {
+      buildProgressContent(body, pointsInNode, currentGroup.count, track.type);
     }
 
     div.appendChild(body);
@@ -463,21 +481,21 @@ function renderTrack(track, index) {
  * Shared by the expanded body and the always-visible inline progress.
  *
  * @param {HTMLElement} container
- * @param {number} pointsInNode - points already applied to current node
- * @param {object} node - resolved node info (maxPoints, etc.)
+ * @param {number} pointsInNode - points already applied within current step
+ * @param {number} stepCount - total points required by this build step (group.count)
  * @param {string} trackType - 'passive' | 'skill' (for dot color class)
  */
-function buildProgressContent(container, pointsInNode, node, trackType) {
+function buildProgressContent(container, pointsInNode, stepCount, trackType) {
   const ptsEl = document.createElement('div');
   ptsEl.className = 'track-pts';
-  ptsEl.textContent = `${pointsInNode} / ${node.maxPoints} pts`;
+  ptsEl.textContent = `${pointsInNode} / ${stepCount} pts`;
   container.appendChild(ptsEl);
 
-  if (node.maxPoints > 1) {
+  if (stepCount > 1) {
     const dotsEl = document.createElement('div');
     dotsEl.className = 'track-dots';
 
-    for (let p = 0; p < node.maxPoints; p++) {
+    for (let p = 0; p < stepCount; p++) {
       const dot = document.createElement('span');
       if (p < pointsInNode) {
         dot.className = `dot filled ${trackType}`;
