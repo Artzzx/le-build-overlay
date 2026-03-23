@@ -12,7 +12,7 @@
 const DEFAULTS = {
   window:  { x: null, y: null, width: 260, height: 400 },
   display: { fontSize: 13, opacity: 0.88, showDescription: true, alwaysShowProgress: false },
-  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3', phaseNextKey: 'F6', phasePrevKey: 'Shift+F6' },
+  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3', phaseNextKey: 'F6', phasePrevKey: 'Shift+F6', hotkeyMode: 'direct', latchKey: '`' },
 };
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
@@ -31,6 +31,9 @@ const hkConfig        = document.getElementById('hk-config');
 const hkPosition      = document.getElementById('hk-position');
 const hkPhaseNext     = document.getElementById('hk-phase-next');
 const hkPhasePrev     = document.getElementById('hk-phase-prev');
+const hkMode          = document.getElementById('hk-mode');
+const hkLatch         = document.getElementById('hk-latch');
+const latchKeyRow     = document.getElementById('latch-key-row');
 const saveBtn         = document.getElementById('save-btn');
 const resetBtn        = document.getElementById('reset-btn');
 const statusEl        = document.getElementById('status');
@@ -56,6 +59,13 @@ function populate(settings) {
   hkPosition.value  = s.hotkeys.positionKey  ?? 'F3';
   hkPhaseNext.value = s.hotkeys.phaseNextKey ?? 'F6';
   hkPhasePrev.value = s.hotkeys.phasePrevKey ?? 'Shift+F6';
+  hkMode.value      = s.hotkeys.hotkeyMode   ?? 'direct';
+  hkLatch.value     = s.hotkeys.latchKey     ?? '`';
+  updateLatchKeyVisibility();
+}
+
+function updateLatchKeyVisibility() {
+  if (latchKeyRow) latchKeyRow.style.display = hkMode.value === 'latch' ? '' : 'none';
 }
 
 // ─── Read form → settings object ─────────────────────────────────────────────
@@ -84,6 +94,8 @@ function readForm() {
       positionKey:     hkPosition.value.trim()     || 'F3',
       phaseNextKey:    hkPhaseNext.value.trim()    || 'F6',
       phasePrevKey:    hkPhasePrev.value.trim()    || 'Shift+F6',
+      hotkeyMode:      hkMode.value               || 'direct',
+      latchKey:        hkLatch.value.trim()        || '`',
     },
   };
 }
@@ -96,7 +108,9 @@ function showStatus(msg, cls) {
   setTimeout(() => { statusEl.textContent = ''; statusEl.className = ''; }, 2500);
 }
 
-// ─── Live preview for sliders ─────────────────────────────────────────────────
+// ─── Live preview ─────────────────────────────────────────────────────────────
+
+hkMode.addEventListener('change', updateLatchKeyVisibility);
 
 fontSizeEl.addEventListener('input', () => {
   fontSizeVal.textContent = fontSizeEl.value;

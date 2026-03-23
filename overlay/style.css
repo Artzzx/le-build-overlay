@@ -412,6 +412,20 @@ html, body {
   font-style: italic;
 }
 
+/* ─── Advance (latch) mode ───────────────────────────────────────────────── */
+
+/* Teal border pulse when advance mode is armed — signals "1–6 are live" */
+#overlay-root.advance-mode-active {
+  border-color: rgba(45, 212, 191, 0.7);
+  box-shadow: 0 0 8px rgba(45, 212, 191, 0.25);
+  animation: advance-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes advance-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(45, 212, 191, 0.25); }
+  50%       { box-shadow: 0 0 16px rgba(45, 212, 191, 0.5); }
+}
+
 /* ─── Utilities ──────────────────────────────────────────────────────────── */
 
 .hidden {

@@ -74,6 +74,7 @@ async function init() {
   subscribeToReload();
   subscribeToSettings();
   subscribeToPositionMode();
+  subscribeToAdvanceMode();
   initPositionModeUI();
 }
 
@@ -185,6 +186,29 @@ function subscribeToReload() {
 function subscribeToSettings() {
   if (!window.electronAPI?.onSettingsChanged) return;
   window.electronAPI.onSettingsChanged((s) => applyDisplaySettings(s));
+}
+
+function subscribeToAdvanceMode() {
+  if (!window.electronAPI?.onAdvanceMode) return;
+  window.electronAPI.onAdvanceMode(({ active }) => {
+    const root = document.getElementById('overlay-root');
+    root?.classList.toggle('advance-mode-active', active);
+    const hint = document.getElementById('hotkey-hint');
+    if (hint) {
+      const lk = state.settings?.hotkeys?.latchKey ?? '`';
+      if (active) {
+        hint.textContent = `\u25cf READY \u00b7 1\u20136 advance \u00b7 Shift+N undo \u00b7 ${lk} cancel`;
+      } else {
+        // Restore normal hint based on whether we have multiple phases
+        const phases = state.build?.phases;
+        if (phases && phases.length > 1) {
+          hint.textContent = `F1 hide \u00b7 ${lk} arm \u00b7 1\u20136 advance \u00b7 F6 phase`;
+        } else {
+          hint.textContent = `F1 hide \u00b7 ${lk} arm \u00b7 1\u20136 advance`;
+        }
+      }
+    }
+  });
 }
 
 function applyDisplaySettings(s) {
@@ -480,10 +504,18 @@ function render() {
     }
   }
 
-  // ── Hotkey hint bar (update for multi-phase) ───────────────────────────────
+  // ── Hotkey hint bar (update for latch mode and multi-phase) ──────────────
   const hint = document.getElementById('hotkey-hint');
   if (hint) {
-    if (phases && phases.length > 1) {
+    const isLatch = state.settings?.hotkeys?.hotkeyMode === 'latch';
+    const latchKey = state.settings?.hotkeys?.latchKey ?? '`';
+    if (isLatch) {
+      if (phases && phases.length > 1) {
+        hint.textContent = `F1 hide \u00b7 ${latchKey} arm \u00b7 1\u20136 adv \u00b7 F6 phase`;
+      } else {
+        hint.textContent = `F1 hide \u00b7 ${latchKey} arm \u00b7 1\u20136 advance`;
+      }
+    } else if (phases && phases.length > 1) {
       hint.textContent = 'F1 hide \u00b7 1\u20136 advance \u00b7 Shift+N undo \u00b7 F6 phase';
     } else {
       hint.textContent = 'F1 hide \u00b7 1\u20136 advance \u00b7 Shift+N undo';

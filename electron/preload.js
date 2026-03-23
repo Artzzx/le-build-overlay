@@ -88,4 +88,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @returns {Promise<object>}
    */
   getSettings: () => ipcRenderer.invoke('get-settings'),
+
+  /**
+   * Subscribe to advance-mode toggle events (latch mode only).
+   * @param {function} callback - receives { active: boolean }
+   */
+  onAdvanceMode: (callback) => {
+    ipcRenderer.on('advance-mode', (_event, payload) => callback(payload));
+  },
 });

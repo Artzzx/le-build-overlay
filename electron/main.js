@@ -43,6 +43,8 @@ let configWin    = null;
 let settingsWin  = null;
 let overlayVisible  = true;
 let inPositionMode  = false;
+let advanceModeActive = false;  // latch mode: true while 1–6 are armed
+let advanceModeTimer  = null;   // auto-deactivate timeout handle
 
 // Paths to runtime config files
 const BUILD_CONFIG_PATH    = path.join(__dirname, '..', 'config', 'build.json');
@@ -52,7 +54,7 @@ const SETTINGS_CONFIG_PATH = path.join(__dirname, '..', 'config', 'settings.json
 const DEFAULT_SETTINGS = {
   window:  { x: null, y: null, width: 260, height: 400 },
   display: { fontSize: 13, opacity: 0.88, showDescription: true, alwaysShowProgress: false },
-  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3', phaseNextKey: 'F6', phasePrevKey: 'Shift+F6' },
+  hotkeys: { toggle: 'F1', advanceModifier: '', undoModifier: 'Shift', settingsKey: 'F2', configKey: 'F5', positionKey: 'F3', phaseNextKey: 'F6', phasePrevKey: 'Shift+F6', hotkeyMode: 'direct', latchKey: '`' },
 };
 
 // In-memory settings (loaded at startup, mutated on save)
@@ -98,7 +100,8 @@ function applySettings() {
     // Notify renderer about display settings (font size, opacity)
     overlayWin.webContents.send('settings-changed', settings);
   }
-  // Re-register hotkeys whenever settings change
+  // Re-register hotkeys whenever settings change (exit latch mode first)
+  if (advanceModeActive) exitAdvanceMode();
   globalShortcut.unregisterAll();
   registerHotkeys();
 }
@@ -212,6 +215,66 @@ function createSettingsWindow() {
   settingsWin.on('closed', () => { settingsWin = null; });
 }
 
+// ─── Advance (latch) mode ─────────────────────────────────────────────────────
+
+/**
+ * Arm the 1–6 hotkeys for one session of advancing.
+ * Called when the latch key is pressed in 'latch' hotkeyMode.
+ * The overlay will show a visual "READY" indicator via IPC.
+ */
+function enterAdvanceMode() {
+  if (advanceModeActive) return;
+  advanceModeActive = true;
+
+  const hk = settings.hotkeys;
+  for (let i = 1; i <= 6; i++) {
+    const trackIndex = i - 1;
+    const advKey = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
+    const undoKey = hk.undoModifier   ? `${hk.undoModifier}+${i}`   : `${i}`;
+
+    if (advKey !== undoKey) {
+      globalShortcut.register(advKey, () => {
+        if (!overlayWin || !overlayVisible || inPositionMode) return;
+        overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
+      });
+    }
+    globalShortcut.register(undoKey, () => {
+      if (!overlayWin || !overlayVisible || inPositionMode) return;
+      if (advKey === undoKey) {
+        overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
+      } else {
+        overlayWin.webContents.send('hotkey', { action: 'undo', trackIndex });
+      }
+    });
+  }
+
+  overlayWin?.webContents.send('advance-mode', { active: true });
+
+  // Auto-deactivate after 5 seconds of inactivity
+  clearTimeout(advanceModeTimer);
+  advanceModeTimer = setTimeout(exitAdvanceMode, 5000);
+}
+
+/**
+ * Disarm the 1–6 hotkeys and return to normal (non-intercepting) state.
+ */
+function exitAdvanceMode() {
+  if (!advanceModeActive) return;
+  clearTimeout(advanceModeTimer);
+  advanceModeTimer = null;
+  advanceModeActive = false;
+
+  const hk = settings.hotkeys;
+  for (let i = 1; i <= 6; i++) {
+    const advKey = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
+    const undoKey = hk.undoModifier   ? `${hk.undoModifier}+${i}`   : `${i}`;
+    globalShortcut.unregister(advKey);
+    if (advKey !== undoKey) globalShortcut.unregister(undoKey);
+  }
+
+  overlayWin?.webContents.send('advance-mode', { active: false });
+}
+
 // ─── Global hotkeys ──────────────────────────────────────────────────────────
 
 function registerHotkeys() {
@@ -229,29 +292,46 @@ function registerHotkeys() {
     overlayWin.webContents.send('hotkey', { action: 'toggle', visible: overlayVisible });
   });
 
-  // Advance / undo tracks 1–6
-  for (let i = 1; i <= 6; i++) {
-    const trackIndex = i - 1; // 0-based internally
-    const advKey = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
-    const undoKey = hk.undoModifier   ? `${hk.undoModifier}+${i}`   : `${i}`;
-
-    // Skip registration if advance and undo keys conflict
-    if (advKey !== undoKey) {
-      globalShortcut.register(advKey, () => {
+  if (hk.hotkeyMode === 'latch') {
+    // ── Latch mode: 1–6 are NOT registered globally; only the latch key is. ──
+    // Pressing the latch key arms/disarms advance mode. While armed, 1–6 work
+    // (registerAdvanceModeKeys is called dynamically), so normal typing is
+    // never intercepted when the overlay is idle.
+    if (hk.latchKey) {
+      globalShortcut.register(hk.latchKey, () => {
         if (!overlayWin || !overlayVisible || inPositionMode) return;
-        overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
+        if (advanceModeActive) {
+          exitAdvanceMode();
+        } else {
+          enterAdvanceMode();
+        }
       });
     }
+  } else {
+    // ── Direct mode (default): 1–6 always registered, fire immediately. ─────
+    for (let i = 1; i <= 6; i++) {
+      const trackIndex = i - 1; // 0-based internally
+      const advKey = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
+      const undoKey = hk.undoModifier   ? `${hk.undoModifier}+${i}`   : `${i}`;
 
-    globalShortcut.register(undoKey, () => {
-      if (!overlayWin || !overlayVisible || inPositionMode) return;
-      // If advance and undo share the same key (no modifier), this acts as advance only
-      if (advKey === undoKey) {
-        overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
-      } else {
-        overlayWin.webContents.send('hotkey', { action: 'undo', trackIndex });
+      // Skip registration if advance and undo keys conflict
+      if (advKey !== undoKey) {
+        globalShortcut.register(advKey, () => {
+          if (!overlayWin || !overlayVisible || inPositionMode) return;
+          overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
+        });
       }
-    });
+
+      globalShortcut.register(undoKey, () => {
+        if (!overlayWin || !overlayVisible || inPositionMode) return;
+        // If advance and undo share the same key (no modifier), this acts as advance only
+        if (advKey === undoKey) {
+          overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
+        } else {
+          overlayWin.webContents.send('hotkey', { action: 'undo', trackIndex });
+        }
+      });
+    }
   }
 
   // Open settings window
