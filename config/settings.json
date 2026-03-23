@@ -1,15 +1,15 @@
 {
   "window": {
-    "x": null,
-    "y": null,
-    "width": 260,
-    "height": 400
+    "x": -1,
+    "y": -1,
+    "width": 265,
+    "height": 466
   },
   "display": {
     "fontSize": 13,
     "opacity": 0.88,
-    "showDescription": true,
-    "alwaysShowProgress": false
+    "showDescription": false,
+    "alwaysShowProgress": true
   },
   "hotkeys": {
     "toggle": "F1",
