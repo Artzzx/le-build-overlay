@@ -81,4 +81,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /** Signal main to exit position mode and save the current bounds. */
   endPositionMode: () => ipcRenderer.send('end-position-mode'),
+
+  /**
+   * Fetch the current settings object from the main process.
+   * Used at startup to apply display settings before the first render.
+   * @returns {Promise<object>}
+   */
+  getSettings: () => ipcRenderer.invoke('get-settings'),
 });
