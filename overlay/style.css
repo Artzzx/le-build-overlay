@@ -62,7 +62,8 @@
 /* ─── Body / window ─────────────────────────────────────────────────────── */
 
 html, body {
-  width: var(--width);
+  width: 100%;             /* fill whatever the Electron window is resized to */
+  min-width: 180px;
   background: transparent;  /* Electron transparent window */
   overflow: hidden;
   user-select: none;
@@ -72,7 +73,8 @@ html, body {
 /* ─── Overlay root ───────────────────────────────────────────────────────── */
 
 #overlay-root {
-  width: var(--width);
+  width: 100%;             /* always fill the window — resize mode can grow it */
+  min-width: 180px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -136,7 +138,7 @@ html, body {
   border: 1px solid var(--blue-dim);
 }
 
-/* Node name (truncated if too long) */
+/* Node name — wraps if the window is too narrow, shows fully when wide enough */
 .track-name {
   flex: 1;
   white-space: nowrap;
@@ -144,6 +146,7 @@ html, body {
   text-overflow: ellipsis;
   font-size: var(--font-size-base);
   letter-spacing: 0.02em;
+  min-width: 0;  /* allow flex child to shrink below content size */
 }
 
 /* Progress counter: e.g. "42/113" */
@@ -322,6 +325,27 @@ html, body {
 .grip-ne { top: 0;    right: 0;  cursor: ne-resize; }
 .grip-sw { bottom: 0; left: 0;   cursor: sw-resize; }
 .grip-se { bottom: 0; right: 0;  cursor: se-resize; }
+
+/* ─── Unresolved track (skill not found in DB) ───────────────────────────── */
+
+/* Entire row is dimmed — hotkey still visible, but blocked */
+.track.unresolved .track-header {
+  opacity: 0.35;
+}
+
+/* Small italic badge to signal the missing data */
+.track-unresolved-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  font-style: italic;
+  flex-shrink: 0;
+  margin-left: 2px;
+  border: 1px solid var(--border);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
 
 /* ─── Inline progress (always-progress mode) ─────────────────────────────── */
 
