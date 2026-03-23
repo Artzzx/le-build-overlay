@@ -219,7 +219,10 @@ function parseBuild(rawInput, skillsDb, classesDb, buildName = 'Imported Build')
 function resolveClassName(classId, masteryId, classesDb) {
   if (!classesDb) return `Class ${classId}`;
   const className = classesDb.classes?.[classId] ?? `Class ${classId}`;
-  const masteryName = classesDb.masteries?.[masteryId]?.name ?? `Mastery ${masteryId}`;
+  // Maxroll uses per-class relative mastery IDs (1–3), not global sequential IDs.
+  // masteriesByClass[classId][masteryId] is the correct lookup.
+  const masteryName =
+    classesDb.masteriesByClass?.[classId]?.[masteryId] ?? `Mastery ${masteryId}`;
   return `${className} — ${masteryName}`;
 }
 

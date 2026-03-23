@@ -1,5 +1,5 @@
 {
-  "_comment": "Manually maintained — class/mastery IDs are stable across patches. passiveTreeByClass maps Maxroll classId to the treeID key in passives.json.",
+  "_comment": "Manually maintained — class/mastery IDs are stable across patches. passiveTreeByClass maps Maxroll classId to the treeID key in passives.json. masteriesByClass uses Maxroll's per-class relative mastery IDs (1-3) — confirmed: Sentinel 2=Void Knight, Rogue 3=Falconer.",
   "classes": {
     "1": "Acolyte",
     "2": "Mage",
@@ -7,22 +7,12 @@
     "4": "Rogue",
     "5": "Primalist"
   },
-  "masteries": {
-    "1": { "name": "Lich",        "classId": 1 },
-    "2": { "name": "Necromancer", "classId": 1 },
-    "3": { "name": "Warlock",     "classId": 1 },
-    "4": { "name": "Sorcerer",    "classId": 2 },
-    "5": { "name": "Runemaster",  "classId": 2 },
-    "6": { "name": "Spellblade",  "classId": 2 },
-    "7": { "name": "Void Knight", "classId": 3 },
-    "8": { "name": "Forge Guard", "classId": 3 },
-    "9": { "name": "Paladin",     "classId": 3 },
-    "10": { "name": "Marksman",   "classId": 4 },
-    "11": { "name": "Bladedancer","classId": 4 },
-    "12": { "name": "Falconer",   "classId": 4 },
-    "13": { "name": "Beastmaster","classId": 5 },
-    "14": { "name": "Druid",      "classId": 5 },
-    "15": { "name": "Shaman",     "classId": 5 }
+  "masteriesByClass": {
+    "1": { "1": "Lich",        "2": "Necromancer", "3": "Warlock"    },
+    "2": { "1": "Sorcerer",    "2": "Runemaster",  "3": "Spellblade" },
+    "3": { "1": "Forge Guard", "2": "Void Knight", "3": "Paladin"    },
+    "4": { "1": "Marksman",    "2": "Bladedancer", "3": "Falconer"   },
+    "5": { "1": "Beastmaster", "2": "Druid",       "3": "Shaman"     }
   },
   "passiveTreeByClass": {
     "1": "ac-1",
