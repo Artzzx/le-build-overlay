@@ -212,17 +212,19 @@ describe('db.getClassName', () => {
 });
 
 describe('db.getMasteryName', () => {
-  test('returns mastery name for known ID', () => {
+  // Maxroll uses per-class relative mastery IDs (1–3), NOT global IDs.
+  // Sentinel (classId 3), mastery 2 = Void Knight.
+  test('returns mastery name for known classId + per-class masteryId', () => {
     const db = freshDb();
     db.load();
-    const name = db.getMasteryName(7); // 7 = Void Knight (Sentinel mastery)
+    const name = db.getMasteryName(3, 2); // Sentinel mastery 2 = Void Knight
     assert.equal(name, 'Void Knight');
   });
 
   test('returns null for unknown mastery ID', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getMasteryName(99), null);
+    assert.equal(db.getMasteryName(3, 99), null);
   });
 });
 

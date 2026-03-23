@@ -141,16 +141,73 @@ function groupHistory(history) {
 }
 
 /**
- * Creates a fresh build object with all currentSteps reset to 0.
- * Useful when loading a new build from Maxroll.
- * @param {object} build - partially constructed build (no currentStep required)
- * @returns {object} build with currentStep: 0 on every track
+ * Creates a fresh build/loadout object with all currentSteps reset to 0.
+ * Works for both single-phase builds (tracks[]) and multi-phase loadouts (phases[]).
+ * @param {object} build - partially constructed build or loadout
+ * @returns {object} with currentStep: 0 on every track in every phase
  */
 function initializeBuild(build) {
+  if (Array.isArray(build.phases)) {
+    return {
+      ...build,
+      currentPhase: 0,
+      phases: build.phases.map(phase => ({
+        ...phase,
+        tracks: phase.tracks.map(track => ({ ...track, currentStep: 0 })),
+      })),
+    };
+  }
   return {
     ...build,
     tracks: build.tracks.map(track => ({ ...track, currentStep: 0 })),
   };
+}
+
+/**
+ * Validates a multi-phase loadout object.
+ * Throws a descriptive Error if invalid.
+ * @param {object} loadout
+ * @returns {object} the same loadout object (pass-through for chaining)
+ */
+function validateLoadout(loadout) {
+  if (!loadout || typeof loadout !== 'object') {
+    throw new Error('Loadout must be a non-null object');
+  }
+  if (typeof loadout.name !== 'string') {
+    throw new Error('loadout.name must be a string');
+  }
+  if (typeof loadout.classId !== 'number') {
+    throw new Error('loadout.classId must be a number');
+  }
+  if (typeof loadout.masteryId !== 'number') {
+    throw new Error('loadout.masteryId must be a number');
+  }
+  if (!Array.isArray(loadout.phases) || loadout.phases.length === 0) {
+    throw new Error('loadout.phases must be a non-empty array');
+  }
+  if (
+    typeof loadout.currentPhase !== 'number' ||
+    loadout.currentPhase < 0 ||
+    loadout.currentPhase >= loadout.phases.length
+  ) {
+    throw new Error(
+      `loadout.currentPhase must be a valid index into phases (got ${loadout.currentPhase}, length ${loadout.phases.length})`
+    );
+  }
+
+  loadout.phases.forEach((phase, i) => {
+    if (!phase || typeof phase !== 'object') {
+      throw new Error(`phases[${i}] must be an object`);
+    }
+    if (typeof phase.name !== 'string') {
+      throw new Error(`phases[${i}].name must be a string`);
+    }
+    // Validate tracks by delegating to validateBuild logic (reuse track validation)
+    const fakeBuild = { name: phase.name, classId: loadout.classId, masteryId: loadout.masteryId, tracks: phase.tracks };
+    validateBuild(fakeBuild);
+  });
+
+  return loadout;
 }
 
 // ─── Empty build template ─────────────────────────────────────────────────────
@@ -170,6 +227,7 @@ function emptyBuild() {
 
 module.exports = {
   validateBuild,
+  validateLoadout,
   validateTrack,
   groupHistory,
   initializeBuild,

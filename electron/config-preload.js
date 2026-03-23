@@ -14,7 +14,18 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('configAPI', {
   /**
-   * Parse and load a Maxroll build JSON string.
+   * Parse and load a multi-phase loadout.
+   * main.js validates, saves to config/build.json, and notifies the overlay.
+   *
+   * @param {Array<{ name: string, json: string }>} phases - one entry per phase
+   * @param {string} loadoutName - optional display name for the loadout
+   * @returns {Promise<{ success: boolean, error?: string }>}
+   */
+  loadLoadout: (phases, loadoutName) =>
+    ipcRenderer.invoke('load-loadout', { phases, loadoutName }),
+
+  /**
+   * Parse and load a single-phase Maxroll build JSON string (legacy / compat).
    * main.js validates, saves to config/build.json, and notifies the overlay.
    *
    * @param {string} jsonString - raw Maxroll JSON (string)
@@ -23,15 +34,4 @@ contextBridge.exposeInMainWorld('configAPI', {
    */
   loadBuild: (jsonString, buildName) =>
     ipcRenderer.invoke('load-build', { jsonString, buildName }),
-
-  /**
-   * Fetch a build from a Maxroll planner URL.
-   * The actual HTTP request runs in the main process (avoids CORS).
-   *
-   * @param {string} url - e.g. https://maxroll.gg/last-epoch/planner/abc123
-   * @returns {Promise<{ success: boolean, json?: string, error?: string }>}
-   *   json is the raw Maxroll JSON string, ready to pass to loadBuild()
-   */
-  fetchBuildUrl: (url) =>
-    ipcRenderer.invoke('fetch-build-url', url),
 });

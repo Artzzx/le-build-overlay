@@ -14,33 +14,21 @@
  *     - 'toggle'   → show/hide #overlay-root
  *     - 'advance'  → increment track's currentStep, re-render, flash, persist
  *     - 'undo'     → decrement track's currentStep, re-render, persist
+ *     - 'phase'    → switch to next/previous phase (loadout feature)
  *  5. On reload-build event: re-initialize from disk
  *
- * ─── State model ─────────────────────────────────────────────────────────────
+ * ─── Data model ──────────────────────────────────────────────────────────────
  *
- *  state.build         — full normalized build object (see build-schema.js)
- *  state.db            — { passives, skills, classes } parsed from db/data/skill_tree_reconciled.json + classes.json
- *  state.expandedTrack — index of the track row currently expanded (0-based)
- *  state.visible       — whether the overlay div is showing
+ *  config/build.json now stores a multi-phase LOADOUT:
+ *  {
+ *    name, classId, masteryId, currentPhase,
+ *    phases: [{ name, tracks: [...] }, ...]
+ *  }
  *
- * ─── Rendering ───────────────────────────────────────────────────────────────
+ *  Old single-phase format ({ name, classId, masteryId, tracks }) is auto-wrapped
+ *  by normalizeBuild() on load so all downstream code uses the loadout shape.
  *
- *  The DOM is fully re-rendered on each state change (simple, predictable).
- *  Each track renders as:
- *    [collapsed] .track-badge + .track-name + .track-progress + .track-hotkey
- *    [expanded]  + .track-body (description + point dots)
- *
- * ─── Data flow for a hotkey press ────────────────────────────────────────────
- *
- *  main.js globalShortcut → IPC 'hotkey' → preload.js onHotkey → app.js handler
- *  → advance/undo in state.build → re-render → electronAPI.saveBuild(state.build)
- *
- * ─── Important: no require() ─────────────────────────────────────────────────
- *
- *  This file runs in the renderer (web context). All Node.js functionality
- *  (file I/O, path resolution) must go through electronAPI (preload.js bridge).
- *  Build data is loaded via fetch() from relative paths, which works because
- *  Electron loads index.html via file:// protocol with the project root as base.
+ *  activeTracks() returns the tracks for the currently active phase.
  */
 
 'use strict';
@@ -48,31 +36,23 @@
 // ─── State ────────────────────────────────────────────────────────────────────
 
 const state = {
-  build: null,           // normalized build (from config/build.json)
+  build: null,           // loadout: { name, classId, masteryId, currentPhase, phases }
   db: null,              // { passives, skills, classes }
   expandedTrack: 0,      // 0-based index of expanded track row
   visible: true,         // overlay visibility
   settings: null,        // last-received settings object (for display toggles)
   positionMode: false,   // true while drag/resize mode is active
+  transition: null,      // { fromName, toName, unspecNeeded } | null
+  _transitionTimer: null,
 };
 
 // ─── Initialization ───────────────────────────────────────────────────────────
 
-/**
- * Entry point — called once on page load.
- * Loads data files, renders UI, subscribes to IPC events.
- */
 async function init() {
   try {
-    // Load DB data (may be empty if extractor hasn't been run yet)
-    state.db = await loadDb();
-
-    // Load user's active build (may not exist on first run)
+    state.db    = await loadDb();
     state.build = await loadBuild();
 
-    // Fetch initial settings from main so display toggles apply on the very first render.
-    // This is necessary because the 'settings-changed' IPC sent by did-finish-load can
-    // arrive before subscribeToSettings() registers its listener (during the awaits above).
     if (window.electronAPI?.getSettings) {
       const s = await window.electronAPI.getSettings();
       if (s) state.settings = s;
@@ -81,7 +61,6 @@ async function init() {
     console.error('[app] Initialization error:', err);
   }
 
-  // Apply CSS variables and always-progress class before first render
   if (state.settings?.display) {
     const d = state.settings.display;
     document.documentElement.style.setProperty('--font-size-base', `${d.fontSize}px`);
@@ -100,46 +79,57 @@ async function init() {
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
 
-/**
- * Load the active build from config/build.json.
- * Returns null if the file doesn't exist or is invalid.
- *
- * NOTE: In Electron, fetch() with a relative URL resolves against the
- * file:// path of index.html. The relative path '../config/build.json'
- * navigates up from overlay/ to the project root, then into config/.
- *
- * @returns {object|null}
- */
 async function loadBuild() {
   try {
     const res = await fetch('../config/build.json');
     if (!res.ok) return null;
-    return await res.json();
+    const raw = await res.json();
+    return normalizeBuild(raw);
   } catch {
     return null;
   }
 }
 
 /**
- * Load all game data JSONs from db/data/.
- * Returns an object with passives/skills/classes, each empty if file missing.
- *
- * @returns {{ passives: object, skills: object, classes: object }}
+ * Ensure build.json is always in the multi-phase loadout format.
+ * Old single-phase format ({ tracks }) is auto-wrapped so all code
+ * downstream uses the same shape.
  */
+function normalizeBuild(raw) {
+  if (!raw) return null;
+  if (raw.phases) return raw;               // already loadout format
+  if (raw.tracks) {                          // old single-phase format
+    return {
+      name:         raw.name,
+      classId:      raw.classId,
+      masteryId:    raw.masteryId,
+      currentPhase: 0,
+      phases: [{ name: 'Main', tracks: raw.tracks }],
+    };
+  }
+  return null;
+}
+
+/**
+ * Returns the tracks array for the currently active phase.
+ * @returns {object[]|null}
+ */
+function activeTracks() {
+  return state.build?.phases?.[state.build.currentPhase]?.tracks ?? null;
+}
+
 async function loadDb() {
   const [rawNodes, classes] = await Promise.all([
     fetchJson('../db/data/skill_tree_reconciled.json', []),
     fetchJson('../db/data/classes.json', { classes: {}, masteries: {} }),
   ]);
 
-  // Parse flat array into { [treeID]: { name, nodes: { [nodeID]: node } } }
   const trees = {};
   for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
     if (!trees[treeID]) trees[treeID] = { name: treeName, nodes: {} };
     trees[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
   }
 
-  // passives and skills share the same unified map
   return { passives: trees, skills: trees, classes };
 }
 
@@ -162,11 +152,10 @@ function subscribeToHotkeys() {
   }
 
   window.electronAPI.onHotkey((payload) => {
-    const { action, trackIndex, visible } = payload;
+    const { action, trackIndex, visible, direction } = payload;
 
     if (action === 'toggle') {
       state.visible = visible;
-      // The window itself is hidden/shown by main.js; this just syncs internal state
       return;
     }
 
@@ -176,6 +165,8 @@ function subscribeToHotkeys() {
       handleAdvance(trackIndex);
     } else if (action === 'undo') {
       handleUndo(trackIndex);
+    } else if (action === 'phase') {
+      switchPhase(direction);
     }
   });
 }
@@ -185,6 +176,8 @@ function subscribeToReload() {
   window.electronAPI.onReloadBuild(async () => {
     state.build = await loadBuild();
     state.expandedTrack = 0;
+    state.transition = null;
+    clearTimeout(state._transitionTimer);
     render();
   });
 }
@@ -194,21 +187,14 @@ function subscribeToSettings() {
   window.electronAPI.onSettingsChanged((s) => applyDisplaySettings(s));
 }
 
-/**
- * Apply display settings as CSS custom properties and re-render if needed.
- * @param {object} s - settings object from main
- */
 function applyDisplaySettings(s) {
   if (!s?.display) return;
   state.settings = s;
   const root = document.documentElement;
   root.style.setProperty('--font-size-base', `${s.display.fontSize}px`);
-  const bg = `rgba(6, 8, 14, ${s.display.opacity})`;
-  root.style.setProperty('--bg', bg);
-  // Toggle always-progress class on overlay root
+  root.style.setProperty('--bg', `rgba(6, 8, 14, ${s.display.opacity})`);
   const overlayRoot = document.getElementById('overlay-root');
   overlayRoot?.classList.toggle('always-progress', s.display.alwaysShowProgress ?? false);
-  // Re-render so description / inline progress toggles take effect immediately
   render();
 }
 
@@ -222,91 +208,59 @@ function subscribeToPositionMode() {
 
 function enterPositionMode() {
   state.positionMode = true;
-  const overlayRoot = document.getElementById('overlay-root');
-  overlayRoot?.classList.add('position-mode');
+  document.getElementById('overlay-root')?.classList.add('position-mode');
   document.getElementById('position-bar')?.classList.remove('hidden');
   document.querySelectorAll('.resize-grip').forEach(g => g.classList.remove('hidden'));
 }
 
 function exitPositionMode() {
   state.positionMode = false;
-  const overlayRoot = document.getElementById('overlay-root');
-  overlayRoot?.classList.remove('position-mode');
+  document.getElementById('overlay-root')?.classList.remove('position-mode');
   document.getElementById('position-bar')?.classList.add('hidden');
   document.querySelectorAll('.resize-grip').forEach(g => g.classList.add('hidden'));
 }
 
-/**
- * Wire up drag (position bar) and resize (corner grips) mouse event handlers.
- * Called once on init after DOM is ready.
- */
 function initPositionModeUI() {
-  const posBar = document.getElementById('position-bar');
+  const posBar  = document.getElementById('position-bar');
   const doneBtn = document.getElementById('pos-done-btn');
-
   if (!posBar || !doneBtn) return;
 
-  // ── Drag to move ─────────────────────────────────────────────────────────
   let dragging = false;
   let lastX = 0, lastY = 0;
 
   posBar.addEventListener('mousedown', (e) => {
-    if (e.target === doneBtn) return; // don't start drag when clicking Done
-    dragging = true;
-    lastX = e.screenX;
-    lastY = e.screenY;
-    e.preventDefault();
+    if (e.target === doneBtn) return;
+    dragging = true; lastX = e.screenX; lastY = e.screenY; e.preventDefault();
   });
-
   document.addEventListener('mousemove', (e) => {
     if (!dragging) return;
-    const dx = e.screenX - lastX;
-    const dy = e.screenY - lastY;
-    lastX = e.screenX;
-    lastY = e.screenY;
-    window.electronAPI?.moveWindow?.(dx, dy);
+    window.electronAPI?.moveWindow?.(e.screenX - lastX, e.screenY - lastY);
+    lastX = e.screenX; lastY = e.screenY;
   });
-
   document.addEventListener('mouseup', () => { dragging = false; });
 
-  // ── Done button ───────────────────────────────────────────────────────────
-  doneBtn.addEventListener('click', () => {
-    window.electronAPI?.endPositionMode?.();
-  });
+  doneBtn.addEventListener('click', () => window.electronAPI?.endPositionMode?.());
 
-  // ── Resize grips ──────────────────────────────────────────────────────────
   document.querySelectorAll('.resize-grip').forEach((grip) => {
-    const corner = grip.dataset.corner; // 'nw' | 'ne' | 'sw' | 'se'
+    const corner = grip.dataset.corner;
     let resizing = false;
     let startX = 0, startY = 0, startW = 0, startH = 0;
 
     grip.addEventListener('mousedown', (e) => {
-      resizing = true;
-      startX = e.screenX;
-      startY = e.screenY;
-      startW = window.innerWidth;
-      startH = window.innerHeight;
-      e.preventDefault();
-      e.stopPropagation();
+      resizing = true; startX = e.screenX; startY = e.screenY;
+      startW = window.innerWidth; startH = window.innerHeight;
+      e.preventDefault(); e.stopPropagation();
     });
-
     document.addEventListener('mousemove', (e) => {
       if (!resizing) return;
-      const dx = e.screenX - startX;
-      const dy = e.screenY - startY;
-      let newW = startW;
-      let newH = startH;
-      // East edges grow right, west edges grow left (invert dx)
+      const dx = e.screenX - startX, dy = e.screenY - startY;
+      let newW = startW, newH = startH;
       if (corner.includes('e')) newW = startW + dx;
       if (corner.includes('w')) newW = startW - dx;
       if (corner.includes('s')) newH = startH + dy;
       if (corner.includes('n')) newH = startH - dy;
-      window.electronAPI?.resizeWindow?.(
-        Math.max(180, Math.round(newW)),
-        Math.max(200, Math.round(newH))
-      );
+      window.electronAPI?.resizeWindow?.(Math.max(180, Math.round(newW)), Math.max(200, Math.round(newH)));
     });
-
     document.addEventListener('mouseup', () => { resizing = false; });
   });
 }
@@ -314,17 +268,25 @@ function initPositionModeUI() {
 // ─── Hotkey handlers ──────────────────────────────────────────────────────────
 
 function handleAdvance(trackIndex) {
-  const track = state.build?.tracks?.[trackIndex];
+  // Dismiss transition panel on any interaction
+  if (state.transition) { state.transition = null; clearTimeout(state._transitionTimer); }
+
+  const tracks = activeTracks();
+  const track  = tracks?.[trackIndex];
   if (!track) return;
+  if (isTrackUnresolved(track)) return;
+  if (track.currentStep >= track.history.length) return;
 
-  if (isTrackUnresolved(track)) return; // DB loaded but skill unknown — block advance
-  if (track.currentStep >= track.history.length) return; // already completed
-
-  // Update state (immutable-ish)
+  const cp = state.build.currentPhase;
   state.build = {
     ...state.build,
-    tracks: state.build.tracks.map((t, i) =>
-      i === trackIndex ? { ...t, currentStep: t.currentStep + 1 } : t
+    phases: state.build.phases.map((phase, i) =>
+      i !== cp ? phase : {
+        ...phase,
+        tracks: phase.tracks.map((t, j) =>
+          j === trackIndex ? { ...t, currentStep: t.currentStep + 1 } : t
+        ),
+      }
     ),
   };
 
@@ -335,20 +297,138 @@ function handleAdvance(trackIndex) {
 }
 
 function handleUndo(trackIndex) {
-  const track = state.build?.tracks?.[trackIndex];
-  if (!track || track.currentStep <= 0) return;
-  if (isTrackUnresolved(track)) return; // DB loaded but skill unknown — block undo
+  if (state.transition) { state.transition = null; clearTimeout(state._transitionTimer); }
 
+  const tracks = activeTracks();
+  const track  = tracks?.[trackIndex];
+  if (!track || track.currentStep <= 0) return;
+  if (isTrackUnresolved(track)) return;
+
+  const cp = state.build.currentPhase;
   state.build = {
     ...state.build,
-    tracks: state.build.tracks.map((t, i) =>
-      i === trackIndex ? { ...t, currentStep: t.currentStep - 1 } : t
+    phases: state.build.phases.map((phase, i) =>
+      i !== cp ? phase : {
+        ...phase,
+        tracks: phase.tracks.map((t, j) =>
+          j === trackIndex ? { ...t, currentStep: t.currentStep - 1 } : t
+        ),
+      }
     ),
   };
 
   state.expandedTrack = trackIndex;
   render();
   persistBuild();
+}
+
+// ─── Phase switching ──────────────────────────────────────────────────────────
+
+/**
+ * Switch to the next (+1) or previous (-1) phase, wrapping around.
+ * Computes a transition summary and applies smart carry-over of progress.
+ */
+function switchPhase(direction) {
+  if (state.transition) { state.transition = null; clearTimeout(state._transitionTimer); }
+  if (!state.build?.phases) return;
+
+  const total = state.build.phases.length;
+  if (total <= 1) return;
+
+  const from = state.build.currentPhase;
+  const to   = ((from + direction) % total + total) % total;
+
+  const transition = computeTransition(from, to);
+  const newPhases  = applyCarryOver(state.build.phases, from, to);
+
+  state.build = { ...state.build, currentPhase: to, phases: newPhases };
+  state.expandedTrack = 0;
+  state.transition = transition;
+
+  render();
+  persistBuild();
+
+  // Auto-clear transition panel: 15s when unspec needed, 3s otherwise
+  const delay = transition.unspecNeeded.length > 0 ? 15000 : 3000;
+  clearTimeout(state._transitionTimer);
+  state._transitionTimer = setTimeout(() => {
+    state.transition = null;
+    render();
+  }, delay);
+}
+
+/**
+ * Compute what the user needs to do when switching from → to phase.
+ * Returns { fromName, toName, unspecNeeded: [{label, amount, isRemove}] }
+ */
+function computeTransition(fromIdx, toIdx) {
+  const fromTracks = state.build.phases[fromIdx].tracks;
+  const toTracks   = state.build.phases[toIdx].tracks;
+  const unspecNeeded = [];
+
+  // Skills shared between phases: check if common prefix covers all progress
+  toTracks.forEach(toT => {
+    const fromT = fromTracks.find(t =>
+      toT.type === 'passive' ? t.type === 'passive' : t.skillKey === toT.skillKey
+    );
+    if (!fromT || fromT.currentStep === 0) return;
+
+    const common = commonPrefixLength(fromT.history, toT.history);
+    if (fromT.currentStep > common) {
+      unspecNeeded.push({
+        label:    toT.label,
+        amount:   fromT.currentStep - common,
+        isRemove: false,
+      });
+    }
+  });
+
+  // Skills in old phase NOT in new phase — user must remove from skill bar
+  fromTracks.forEach(fromT => {
+    if (fromT.type === 'passive' || fromT.currentStep === 0) return;
+    const inTo = toTracks.find(t => t.skillKey === fromT.skillKey);
+    if (!inTo) {
+      unspecNeeded.push({ label: fromT.label, amount: fromT.currentStep, isRemove: true });
+    }
+  });
+
+  return {
+    fromName: state.build.phases[fromIdx].name,
+    toName:   state.build.phases[toIdx].name,
+    unspecNeeded,
+  };
+}
+
+/**
+ * Returns the number of leading elements that are identical in arrays a and b.
+ */
+function commonPrefixLength(a, b) {
+  let i = 0;
+  const len = Math.min(a.length, b.length);
+  while (i < len && a[i] === b[i]) i++;
+  return i;
+}
+
+/**
+ * Apply carry-over: set the to-phase's currentStep for each track to
+ * min(fromStep, commonPrefixLength). Skills not in the from phase start at 0.
+ */
+function applyCarryOver(phases, fromIdx, toIdx) {
+  const fromTracks = phases[fromIdx].tracks;
+  return phases.map((phase, i) => {
+    if (i !== toIdx) return phase;
+    return {
+      ...phase,
+      tracks: phase.tracks.map(toT => {
+        const fromT = fromTracks.find(t =>
+          toT.type === 'passive' ? t.type === 'passive' : t.skillKey === toT.skillKey
+        );
+        if (!fromT) return { ...toT, currentStep: 0 };
+        const common = commonPrefixLength(fromT.history, toT.history);
+        return { ...toT, currentStep: Math.min(fromT.currentStep, common) };
+      }),
+    };
+  });
 }
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
@@ -361,34 +441,105 @@ function persistBuild() {
 // ─── Rendering ────────────────────────────────────────────────────────────────
 
 function render() {
-  const root = document.getElementById('overlay-root');
   const noBuildMsg = document.getElementById('no-build-msg');
-  const tracksEl = document.getElementById('tracks');
+  const tracksEl   = document.getElementById('tracks');
+  const phaseBar   = document.getElementById('phase-bar');
 
-  if (!state.build || !state.build.tracks?.length) {
-    noBuildMsg.classList.remove('hidden');
-    tracksEl.innerHTML = '';
+  const tracks = activeTracks();
+
+  if (!tracks || !tracks.length) {
+    noBuildMsg?.classList.remove('hidden');
+    if (tracksEl) tracksEl.innerHTML = '';
+    phaseBar?.classList.add('hidden');
     return;
   }
 
-  noBuildMsg.classList.add('hidden');
-  tracksEl.innerHTML = '';
+  noBuildMsg?.classList.add('hidden');
 
-  state.build.tracks.forEach((track, index) => {
-    const el = renderTrack(track, index);
-    tracksEl.appendChild(el);
-  });
+  // ── Phase bar ──────────────────────────────────────────────────────────────
+  const phases = state.build?.phases;
+  if (phaseBar) {
+    if (phases && phases.length > 1) {
+      const cur = state.build.currentPhase;
+      phaseBar.classList.remove('hidden');
+      phaseBar.textContent = `\u25c4 ${cur + 1}/${phases.length} ${phases[cur].name} \u25ba`;
+    } else {
+      phaseBar.classList.add('hidden');
+    }
+  }
+
+  // ── Transition panel or normal tracks ─────────────────────────────────────
+  if (tracksEl) {
+    tracksEl.innerHTML = '';
+    if (state.transition) {
+      renderTransitionPanel(tracksEl, state.transition);
+    } else {
+      tracks.forEach((track, index) => {
+        tracksEl.appendChild(renderTrack(track, index));
+      });
+    }
+  }
+
+  // ── Hotkey hint bar (update for multi-phase) ───────────────────────────────
+  const hint = document.getElementById('hotkey-hint');
+  if (hint) {
+    if (phases && phases.length > 1) {
+      hint.textContent = 'F1 hide \u00b7 1\u20136 advance \u00b7 Shift+N undo \u00b7 F6 phase';
+    } else {
+      hint.textContent = 'F1 hide \u00b7 1\u20136 advance \u00b7 Shift+N undo';
+    }
+  }
+}
+
+/**
+ * Render the transition panel that shows after a phase switch.
+ * Replaces normal tracks until dismissed.
+ */
+function renderTransitionPanel(container, t) {
+  const div = document.createElement('div');
+  div.className = 'transition-panel';
+
+  const title = document.createElement('div');
+  title.className = 'transition-title';
+  title.textContent = `\u2192 ${t.toName}`;
+  div.appendChild(title);
+
+  if (t.unspecNeeded.length === 0) {
+    const ok = document.createElement('div');
+    ok.className = 'transition-ok';
+    ok.textContent = 'No changes needed';
+    div.appendChild(ok);
+  } else {
+    const warn = document.createElement('div');
+    warn.className = 'transition-warn';
+    warn.textContent = '\u26a0 Unspec required:';
+    div.appendChild(warn);
+
+    t.unspecNeeded.forEach(u => {
+      const row = document.createElement('div');
+      row.className = 'transition-row';
+      if (u.isRemove) {
+        row.textContent = `\u2715 Remove ${u.label} from skill bar`;
+      } else {
+        row.textContent = `\u21a9 ${u.label}: remove ${u.amount} pt${u.amount !== 1 ? 's' : ''}`;
+      }
+      div.appendChild(row);
+    });
+  }
+
+  const hint = document.createElement('div');
+  hint.className = 'transition-hint';
+  hint.textContent = 'Clears automatically\u2026';
+  div.appendChild(hint);
+
+  container.appendChild(div);
 }
 
 /**
  * Build the DOM element for a single track row.
- *
- * @param {object} track - normalized track object
- * @param {number} index - 0-based index (used for hotkey label)
- * @returns {HTMLElement}
  */
 function renderTrack(track, index) {
-  // ── Unresolved: DB loaded but this skill/class has no data ────────────────
+  // ── Unresolved: DB loaded but skill has no data ──────────────────────────
   if (isTrackUnresolved(track)) {
     const div = document.createElement('div');
     div.className = 'track unresolved';
@@ -421,41 +572,33 @@ function renderTrack(track, index) {
     return div;
   }
 
-  const groups = groupHistory(track.history);
+  const groups      = groupHistory(track.history);
   const isCompleted = track.currentStep >= track.history.length;
-  const isExpanded = index === state.expandedTrack && !isCompleted;
+  const isExpanded  = index === state.expandedTrack && !isCompleted;
 
-  // Find which group contains the current flat history position
   const currentGroup = groups.find(
     g => track.currentStep >= g.startIdx && track.currentStep < g.startIdx + g.count
   ) ?? null;
 
-  // How many points within the current node have been allocated
   const pointsInNode = currentGroup ? track.currentStep - currentGroup.startIdx : 0;
+  const node         = currentGroup ? resolveNode(currentGroup.nodeId, track) : null;
 
-  // Resolve current node info from DB
-  const node = currentGroup ? resolveNode(currentGroup.nodeId, track) : null;
-
-  // Wrapper div
+  // Wrapper
   const div = document.createElement('div');
   div.className = 'track'
-    + (isExpanded ? ' expanded' : '')
+    + (isExpanded  ? ' expanded'  : '')
     + (isCompleted ? ' completed' : '');
   div.dataset.trackIndex = index;
 
-  // ── Header ──────────────────────────────────────────────────────────────
+  // ── Header ────────────────────────────────────────────────────────────────
   const header = document.createElement('div');
   header.className = 'track-header';
 
-  // [P] or [S] badge
   const badge = document.createElement('span');
   badge.className = `track-badge ${track.type}`;
   badge.textContent = track.type === 'passive' ? 'P' : 'S';
   header.appendChild(badge);
 
-  // Node / track name — format: "Skill Label — Node Name" (or just label when completed)
-  // For passive tracks, recompute the label from classId/masteryId using the DB so that
-  // existing build.json files with the wrong mastery name display correctly without re-parse.
   const trackLabel = track.type === 'passive'
     ? resolvePassiveLabel(state.build.classId, state.build.masteryId) ?? track.label
     : track.label;
@@ -470,13 +613,11 @@ function renderTrack(track, index) {
   }
   header.appendChild(nameEl);
 
-  // Progress: currentStep / totalGroups
   const progressEl = document.createElement('span');
   progressEl.className = 'track-progress';
   progressEl.textContent = `${track.currentStep}/${track.history.length}`;
   header.appendChild(progressEl);
 
-  // Hotkey number
   const hotkeyEl = document.createElement('span');
   hotkeyEl.className = 'track-hotkey';
   hotkeyEl.textContent = String(index + 1);
@@ -484,7 +625,7 @@ function renderTrack(track, index) {
 
   div.appendChild(header);
 
-  // ── Inline progress (always-progress mode, hidden when expanded) ──────────
+  // ── Inline progress (always-progress mode) ────────────────────────────────
   if (!isCompleted && currentGroup && currentGroup.count > 0) {
     const inlineEl = document.createElement('div');
     inlineEl.className = 'track-progress-inline';
@@ -492,12 +633,11 @@ function renderTrack(track, index) {
     div.appendChild(inlineEl);
   }
 
-  // ── Body (expanded only) ─────────────────────────────────────────────────
+  // ── Expanded body ─────────────────────────────────────────────────────────
   if (isExpanded && node) {
     const body = document.createElement('div');
     body.className = 'track-body';
 
-    // Description (respects showDescription setting)
     const showDesc = state.settings?.display?.showDescription ?? true;
     if (node.description && showDesc) {
       const descEl = document.createElement('div');
@@ -506,7 +646,6 @@ function renderTrack(track, index) {
       body.appendChild(descEl);
     }
 
-    // Point dots + pts label
     if (currentGroup && currentGroup.count > 0) {
       buildProgressContent(body, pointsInNode, currentGroup.count, track.type);
     }
@@ -519,12 +658,6 @@ function renderTrack(track, index) {
 
 /**
  * Append pts label + dots to a container element.
- * Shared by the expanded body and the always-visible inline progress.
- *
- * @param {HTMLElement} container
- * @param {number} pointsInNode - points already applied within current step
- * @param {number} stepCount - total points required by this build step (group.count)
- * @param {string} trackType - 'passive' | 'skill' (for dot color class)
  */
 function buildProgressContent(container, pointsInNode, stepCount, trackType) {
   const ptsEl = document.createElement('div');
@@ -535,52 +668,28 @@ function buildProgressContent(container, pointsInNode, stepCount, trackType) {
   if (stepCount > 1) {
     const dotsEl = document.createElement('div');
     dotsEl.className = 'track-dots';
-
     for (let p = 0; p < stepCount; p++) {
       const dot = document.createElement('span');
-      if (p < pointsInNode) {
-        dot.className = `dot filled ${trackType}`;
-      } else if (p === pointsInNode) {
-        dot.className = 'dot current';
-      } else {
-        dot.className = 'dot empty';
-      }
+      if (p < pointsInNode)     dot.className = `dot filled ${trackType}`;
+      else if (p === pointsInNode) dot.className = 'dot current';
+      else                         dot.className = 'dot empty';
       dotsEl.appendChild(dot);
     }
     container.appendChild(dotsEl);
   }
 }
 
-/**
- * Flash a track row with a green border for 200ms (visual feedback on advance).
- * @param {number} trackIndex
- */
 function flashTrack(trackIndex) {
-  const trackEls = document.querySelectorAll('.track');
-  const el = trackEls[trackIndex];
+  const el = document.querySelectorAll('.track')[trackIndex];
   if (!el) return;
-
-  el.classList.remove('flashing'); // reset if already flashing
-  // Force reflow to re-trigger animation
+  el.classList.remove('flashing');
   void el.offsetWidth;
   el.classList.add('flashing');
-
   setTimeout(() => el.classList.remove('flashing'), 250);
 }
 
 // ─── Passive label resolution ─────────────────────────────────────────────────
 
-/**
- * Build the correct passive track label from classId + masteryId using the DB.
- * Maxroll uses per-class relative mastery IDs (1–3), looked up via
- * db.classes.masteriesByClass[classId][masteryId].
- *
- * Returns null if the DB isn't loaded yet (caller falls back to track.label).
- *
- * @param {number} classId
- * @param {number} masteryId
- * @returns {string|null}
- */
 function resolvePassiveLabel(classId, masteryId) {
   if (!state.db?.classes) return null;
   const cId = String(classId ?? 0);
@@ -593,24 +702,11 @@ function resolvePassiveLabel(classId, masteryId) {
 
 // ─── Track resolution check ───────────────────────────────────────────────────
 
-/**
- * Returns true if the DB is loaded AND this specific track has no data in it.
- * A false return means either the DB isn't loaded yet (normal state, not an error)
- * or the track does have data (fully resolved).
- *
- * Skill tracks are unresolved when their skillKey is missing from the reconciled DB
- * (e.g. a new skill added in a patch before the extractor has been re-run).
- * Passive tracks are considered unresolved only when the class tree is entirely absent.
- *
- * @param {object} track - normalized track object
- * @returns {boolean}
- */
 function isTrackUnresolved(track) {
-  if (!state.db) return false; // DB not loaded yet — normal startup state
+  if (!state.db) return false;
   if (track.type === 'skill') {
     return !state.db.skills?.[track.skillKey];
   }
-  // Passive: check the class tree exists
   const classId = String(state.build?.classId ?? 0);
   const treeId  = state.db.classes?.passiveTreeByClass?.[classId];
   return !treeId || !state.db.passives?.[treeId];
@@ -618,13 +714,6 @@ function isTrackUnresolved(track) {
 
 // ─── Utility (mirrored from build-schema.js — no require() in renderer) ──────
 
-/**
- * Collapse flat history array into grouped steps.
- * (Duplicated from build-schema.js because renderer can't require Node modules.)
- *
- * @param {number[]} history
- * @returns {{ nodeId: number, count: number, startIdx: number }[]}
- */
 function groupHistory(history) {
   const groups = [];
   let i = 0;
@@ -637,16 +726,6 @@ function groupHistory(history) {
   return groups;
 }
 
-/**
- * Resolve nodeId → node info from the in-memory db.
- *
- * Passive: uses state.build.classId → passiveTreeByClass → treeID → node
- * Skill:   uses track.skillKey (= treeID) → node
- *
- * @param {number} nodeId
- * @param {object} track
- * @returns {object|null}
- */
 function resolveNode(nodeId, track) {
   if (!state.db) return null;
   const key = String(nodeId);
@@ -654,9 +733,8 @@ function resolveNode(nodeId, track) {
     const classId = String(state.build?.classId ?? 0);
     const treeId  = state.db.classes?.passiveTreeByClass?.[classId];
     return treeId ? (state.db.passives?.[treeId]?.nodes?.[key] ?? null) : null;
-  } else {
-    return state.db.skills?.[track.skillKey]?.nodes?.[key] ?? null;
   }
+  return state.db.skills?.[track.skillKey]?.nodes?.[key] ?? null;
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────

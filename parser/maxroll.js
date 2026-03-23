@@ -56,7 +56,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { validateBuild, groupHistory, initializeBuild } = require('./build-schema');
+const { validateBuild, validateLoadout, groupHistory, initializeBuild } = require('./build-schema');
 
 // ─── Multi-line merge ─────────────────────────────────────────────────────────
 
@@ -409,10 +409,61 @@ function lookupNode(nodeId, track, db, build) {
   }
 }
 
+// ─── Multi-phase loadout parser ───────────────────────────────────────────────
+
+/**
+ * Parse an array of phase inputs (each with a name + raw Maxroll JSON) into a
+ * multi-phase loadout object suitable for saving to config/build.json.
+ *
+ * All phases must belong to the same class and mastery — throws otherwise.
+ *
+ * @param {Array<{ name: string, json: string }>} phaseInputs
+ * @param {object} skillsDb  - Contents of db/data/skills.json
+ * @param {object} classesDb - Contents of db/data/classes.json
+ * @param {string} [loadoutName] - Human-readable loadout name
+ * @returns {object} Validated loadout ({ name, classId, masteryId, currentPhase, phases })
+ * @throws {Error} If any phase is invalid or classes/masteries don't match
+ */
+function parseLoadout(phaseInputs, skillsDb, classesDb, loadoutName = 'Imported Loadout') {
+  if (!Array.isArray(phaseInputs) || phaseInputs.length === 0) {
+    throw new Error('phaseInputs must be a non-empty array of { name, json } objects');
+  }
+
+  let baseClassId   = null;
+  let baseMasteryId = null;
+
+  const phases = phaseInputs.map(({ name: phaseName, json }, idx) => {
+    const build = parseBuild(json, skillsDb, classesDb, phaseName || `Phase ${idx + 1}`);
+
+    if (baseClassId === null) {
+      baseClassId   = build.classId;
+      baseMasteryId = build.masteryId;
+    } else if (build.classId !== baseClassId || build.masteryId !== baseMasteryId) {
+      throw new Error(
+        `Phase ${idx + 1} uses a different class/mastery than Phase 1. ` +
+        `All phases in a loadout must use the same class and mastery.`
+      );
+    }
+
+    return { name: phaseName || `Phase ${idx + 1}`, tracks: build.tracks };
+  });
+
+  const loadout = {
+    name: loadoutName,
+    classId:   baseClassId,
+    masteryId: baseMasteryId,
+    currentPhase: 0,
+    phases,
+  };
+
+  return validateLoadout(loadout);
+}
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 module.exports = {
   parseBuild,
+  parseLoadout,
   mergeRawLines,
   loadBuildFromFile,
   saveBuild,

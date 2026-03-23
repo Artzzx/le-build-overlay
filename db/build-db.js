@@ -53,7 +53,7 @@
  *   db.getSkillName('es6ai')       // → "Erasing Strike" | null
  *   db.getPassiveTreeId(3)         // classId → "kn-1"
  *   db.getClassName(3)             // → "Sentinel" | null
- *   db.getMasteryName(7)           // → "Void Knight" | null
+ *   db.getMasteryName(3, 2)         // → "Void Knight" | null  (classId, per-class masteryId)
  *   db.all()                       // → { passives, skills, classes }
  */
 
@@ -185,11 +185,15 @@ function getClassName(classId) {
 }
 
 /**
- * @param {number|string} masteryId
+ * Get a mastery name using the per-class relative mastery ID (1–3).
+ * Maxroll JSON uses per-class relative IDs, NOT global sequential IDs.
+ *
+ * @param {number|string} classId   — e.g. 3 for Sentinel
+ * @param {number|string} masteryId — per-class relative mastery ID (1–3)
  * @returns {string|null}  e.g. "Void Knight"
  */
-function getMasteryName(masteryId) {
-  return _classes.masteries?.[String(masteryId)]?.name ?? null;
+function getMasteryName(classId, masteryId) {
+  return _classes.masteriesByClass?.[String(classId)]?.[String(masteryId)] ?? null;
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
