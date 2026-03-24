@@ -26,12 +26,28 @@ contextBridge.exposeInMainWorld('configAPI', {
 
   /**
    * Parse and load a single-phase Maxroll build JSON string (legacy / compat).
-   * main.js validates, saves to config/build.json, and notifies the overlay.
-   *
    * @param {string} jsonString - raw Maxroll JSON (string)
    * @param {string} buildName  - optional display name for the build
    * @returns {Promise<{ success: boolean, error?: string }>}
    */
   loadBuild: (jsonString, buildName) =>
     ipcRenderer.invoke('load-build', { jsonString, buildName }),
+
+  // ── Template save / load ─────────────────────────────────────────────────
+
+  /** Save raw form inputs as a named template in config/saves/. */
+  saveTemplate: (loadoutName, phases) =>
+    ipcRenderer.invoke('save-template', { loadoutName, phases }),
+
+  /** List all saved templates (metadata only — no raw JSON). */
+  listTemplates: () =>
+    ipcRenderer.invoke('list-templates'),
+
+  /** Return the full template data for a given filename. */
+  loadTemplate: (filename) =>
+    ipcRenderer.invoke('load-template', { filename }),
+
+  /** Permanently delete a saved template file. */
+  deleteTemplate: (filename) =>
+    ipcRenderer.invoke('delete-template', { filename }),
 });

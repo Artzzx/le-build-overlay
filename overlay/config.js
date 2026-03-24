@@ -18,11 +18,15 @@ const MAX_PHASES = 5;
 
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 
-const phaseListEl   = document.getElementById('phase-list');
-const addPhaseBtn   = document.getElementById('add-phase-btn');
-const loadBtn       = document.getElementById('load-btn');
-const loadoutNameEl = document.getElementById('loadout-name');
-const statusEl      = document.getElementById('status');
+const phaseListEl       = document.getElementById('phase-list');
+const addPhaseBtn       = document.getElementById('add-phase-btn');
+const loadBtn           = document.getElementById('load-btn');
+const saveTemplateBtn   = document.getElementById('save-template-btn');
+const loadoutNameEl     = document.getElementById('loadout-name');
+const statusEl          = document.getElementById('status');
+const templateSelectEl  = document.getElementById('template-select');
+const templateLoadBtn   = document.getElementById('template-load-btn');
+const templateDelBtn    = document.getElementById('template-del-btn');
 
 // ─── Phase card management ────────────────────────────────────────────────────
 
@@ -187,6 +191,138 @@ function clearStatus() {
   statusEl.className   = '';
 }
 
+// ─── Saved templates ─────────────────────────────────────────────────────────
+
+/**
+ * Reload the template dropdown from disk.
+ */
+async function refreshTemplates() {
+  if (!window.configAPI?.listTemplates) return;
+  const result = await window.configAPI.listTemplates();
+  templateSelectEl.innerHTML = '';
+
+  if (!result.success || result.list.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '— no saved templates —';
+    templateSelectEl.appendChild(opt);
+    templateLoadBtn.disabled = true;
+    templateDelBtn.disabled  = true;
+    return;
+  }
+
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '— select a template —';
+  templateSelectEl.appendChild(placeholder);
+
+  for (const { filename, loadoutName, savedAt, phaseCount } of result.list) {
+    const opt = document.createElement('option');
+    opt.value = filename;
+    const date = savedAt ? new Date(savedAt).toLocaleDateString() : '';
+    opt.textContent = `${loadoutName} (${phaseCount} phase${phaseCount !== 1 ? 's' : ''}${date ? ' · ' + date : ''})`;
+    templateSelectEl.appendChild(opt);
+  }
+
+  const hasSelection = () => !!templateSelectEl.value;
+  templateLoadBtn.disabled = !hasSelection();
+  templateDelBtn.disabled  = !hasSelection();
+}
+
+/**
+ * Pre-fill the form with a saved template's data.
+ * Does NOT immediately load the loadout — user must still click "Load Loadout".
+ */
+async function fillFromTemplate() {
+  const filename = templateSelectEl.value;
+  if (!filename || !window.configAPI?.loadTemplate) return;
+
+  const result = await window.configAPI.loadTemplate(filename);
+  if (!result.success) {
+    showError(`Could not load template: ${result.error}`);
+    return;
+  }
+
+  const { loadoutName, phases } = result.template;
+
+  // Clear existing phase cards
+  phaseListEl.innerHTML = '';
+  phaseCount = 0;
+
+  // Set loadout name
+  loadoutNameEl.value = loadoutName || '';
+
+  // Recreate phase cards from template
+  for (const phase of (phases || [])) {
+    addPhase();
+    const card = phaseListEl.querySelectorAll('.phase-card')[phaseCount - 1];
+    if (!card) continue;
+    const nameInput = card.querySelector('.phase-name-input');
+    const textarea  = card.querySelector('.phase-json');
+    if (nameInput) nameInput.value = phase.name || '';
+    if (textarea)  textarea.value  = phase.json  || '';
+  }
+
+  clearStatus();
+  showSuccess('Template loaded into form. Edit if needed, then click "Load Loadout".');
+}
+
+/**
+ * Save the current form inputs as a reusable template.
+ */
+async function handleSaveTemplate() {
+  if (!window.configAPI?.saveTemplate) return;
+
+  const loadoutName = loadoutNameEl.value.trim() || 'Unnamed Loadout';
+  const cards = phaseListEl.querySelectorAll('.phase-card');
+  const phases = [];
+
+  for (const card of cards) {
+    const nameInput = card.querySelector('.phase-name-input');
+    const textarea  = card.querySelector('.phase-json');
+    phases.push({
+      name: nameInput?.value.trim() || `Phase ${phases.length + 1}`,
+      json: textarea?.value.trim() || '',
+    });
+  }
+
+  saveTemplateBtn.disabled    = true;
+  saveTemplateBtn.textContent = 'Saving…';
+
+  try {
+    const result = await window.configAPI.saveTemplate(loadoutName, phases);
+    if (result.success) {
+      clearStatus();
+      showSuccess(`Template "${loadoutName}" saved.`);
+      await refreshTemplates();
+    } else {
+      showError(`Save failed: ${result.error}`);
+    }
+  } finally {
+    saveTemplateBtn.disabled    = false;
+    saveTemplateBtn.textContent = 'Save Template';
+  }
+}
+
+/**
+ * Delete the currently selected saved template after confirmation.
+ */
+async function handleDeleteTemplate() {
+  const filename = templateSelectEl.value;
+  if (!filename || !window.configAPI?.deleteTemplate) return;
+
+  const name = templateSelectEl.options[templateSelectEl.selectedIndex]?.textContent ?? filename;
+  if (!confirm(`Delete saved template "${name}"?`)) return;
+
+  const result = await window.configAPI.deleteTemplate(filename);
+  if (result.success) {
+    await refreshTemplates();
+    clearStatus();
+  } else {
+    showError(`Delete failed: ${result.error}`);
+  }
+}
+
 // ─── Submit ───────────────────────────────────────────────────────────────────
 
 async function handleLoad() {
@@ -244,6 +380,15 @@ async function handleLoad() {
 
 addPhaseBtn.addEventListener('click', addPhase);
 loadBtn.addEventListener('click', handleLoad);
+saveTemplateBtn.addEventListener('click', handleSaveTemplate);
+templateLoadBtn.addEventListener('click', fillFromTemplate);
+templateDelBtn.addEventListener('click', handleDeleteTemplate);
+
+templateSelectEl.addEventListener('change', () => {
+  const has = !!templateSelectEl.value;
+  templateLoadBtn.disabled = !has;
+  templateDelBtn.disabled  = !has;
+});
 
 // Ctrl+Enter from loadout name field also submits
 loadoutNameEl.addEventListener('keydown', (e) => {
@@ -253,3 +398,4 @@ loadoutNameEl.addEventListener('keydown', (e) => {
 // ─── Init — start with one phase card open ────────────────────────────────────
 
 addPhase();
+refreshTemplates();

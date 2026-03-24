@@ -326,6 +326,74 @@
       color: var(--green);
     }
 
+    /* ── Warning bar ──────────────────────────────────────── */
+
+    .warning-bar {
+      background: rgba(248, 113, 113, 0.08);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      border-radius: 3px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #f87171;
+      flex-shrink: 0;
+      line-height: 1.4;
+    }
+
+    /* ── Saved templates row ──────────────────────────────── */
+
+    .templates-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      padding: 6px 0 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .templates-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    #template-select {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 4px 6px;
+      border-radius: 2px;
+      outline: none;
+      min-width: 0;
+    }
+
+    #template-select:focus { border-color: var(--border-focus); }
+
+    #template-select option { background: var(--bg-input); }
+
+    .templates-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      font-family: var(--font);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 2px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .templates-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
+    .templates-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .templates-btn.del:hover { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.08); }
+
     /* ── Footer ───────────────────────────────────────────── */
 
     .footer {
@@ -354,6 +422,22 @@
 
   <h1>Load Loadout</h1>
 
+  <!-- ── Warning ───────────────────────────────────────────────────────────── -->
+  <div class="warning-bar">
+    ⚠ Loading a loadout replaces the active build and resets all track progress to 0.
+    Save a template first if you want to re-edit the export codes later.
+  </div>
+
+  <!-- ── Saved templates ───────────────────────────────────────────────────── -->
+  <div class="templates-row">
+    <span class="templates-label">Saved</span>
+    <select id="template-select">
+      <option value="">— no saved templates —</option>
+    </select>
+    <button class="templates-btn" id="template-load-btn" disabled title="Fill form with this template">Fill</button>
+    <button class="templates-btn del" id="template-del-btn" disabled title="Delete this template">✕</button>
+  </div>
+
   <!-- ── Loadout name ───────────────────────────────────────────────────────── -->
   <div class="name-row">
     <label for="loadout-name">Loadout Name</label>
@@ -375,7 +459,8 @@
   <!-- ── Footer ────────────────────────────────────────────────────────────── -->
   <div class="footer">
     <button id="load-btn">Load Loadout</button>
-    <span class="hint">Ctrl+Enter to load &nbsp;·&nbsp; F5 reopen</span>
+    <button class="secondary" id="save-template-btn" title="Save form inputs as a reusable template">Save Template</button>
+    <span class="hint">Ctrl+Enter to load</span>
   </div>
 
   <script src="config.js"></script>
