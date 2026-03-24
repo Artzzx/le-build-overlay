@@ -49,6 +49,7 @@ let advanceModeTimer  = null;   // auto-deactivate timeout handle
 // Paths to runtime config files
 const BUILD_CONFIG_PATH    = path.join(__dirname, '..', 'config', 'build.json');
 const SETTINGS_CONFIG_PATH = path.join(__dirname, '..', 'config', 'settings.json');
+const SAVES_DIR            = path.join(__dirname, '..', 'config', 'saves');
 
 // Default settings — used if settings.json is missing or corrupt
 const DEFAULT_SETTINGS = {
@@ -172,7 +173,7 @@ function createOverlayWindow() {
 function createConfigWindow() {
   configWin = new BrowserWindow({
     width: 560,
-    height: 580,
+    height: 680,
     title: 'LE Build Overlay — Load Build',
     transparent: false,
     frame: true,
@@ -501,16 +502,83 @@ ipcMain.handle('load-loadout', async (event, { phases, loadoutName }) => {
   }
 });
 
-ipcMain.handle('fetch-build-url', async (event, url) => {
-  // Config window requests a build from a Maxroll planner URL.
-  // We fetch from the main process to avoid CORS restrictions in the renderer.
+// ─── Loadout template persistence ────────────────────────────────────────────
+// Templates store raw form inputs (loadout name + phase JSON strings) so the
+// user can re-open and edit them later without losing the original export codes.
+// They live in config/saves/ and are separate from config/build.json (the live
+// loadout with progress). Loading a template into the overlay always resets
+// all currentStep progress to 0.
+
+function ensureSavesDir() {
+  if (!fs.existsSync(SAVES_DIR)) fs.mkdirSync(SAVES_DIR, { recursive: true });
+}
+
+function templateFilename(loadoutName) {
+  const safe = (loadoutName || 'unnamed').replace(/[^a-z0-9_\-]/gi, '_').slice(0, 40);
+  return `${safe}_${Date.now()}.json`;
+}
+
+ipcMain.handle('save-template', (event, { loadoutName, phases }) => {
   try {
-    const { fetchFromUrl } = require('../parser/fetch-build');
-    const buildObj = await fetchFromUrl(url);
-    // Return the raw Maxroll JSON string — config.js passes it straight to load-build
-    return { success: true, json: JSON.stringify(buildObj) };
+    ensureSavesDir();
+    const template = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      loadoutName: loadoutName || 'Unnamed Loadout',
+      phases,
+    };
+    const filename = templateFilename(loadoutName);
+    fs.writeFileSync(path.join(SAVES_DIR, filename), JSON.stringify(template, null, 2), 'utf-8');
+    return { success: true, filename };
   } catch (err) {
-    console.error('[main] fetch-build-url error:', err.message);
+    console.error('[main] save-template error:', err.message);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('list-templates', () => {
+  try {
+    ensureSavesDir();
+    const files = fs.readdirSync(SAVES_DIR).filter(f => f.endsWith('.json'));
+    const list = [];
+    for (const filename of files) {
+      try {
+        const raw = JSON.parse(fs.readFileSync(path.join(SAVES_DIR, filename), 'utf-8'));
+        list.push({
+          filename,
+          loadoutName: raw.loadoutName ?? filename,
+          savedAt:     raw.savedAt ?? null,
+          phaseCount:  Array.isArray(raw.phases) ? raw.phases.length : 0,
+        });
+      } catch { /* skip corrupt files */ }
+    }
+    // Most-recently saved first
+    list.sort((a, b) => (b.savedAt ?? '') < (a.savedAt ?? '') ? -1 : 1);
+    return { success: true, list };
+  } catch (err) {
+    console.error('[main] list-templates error:', err.message);
+    return { success: false, list: [], error: err.message };
+  }
+});
+
+ipcMain.handle('load-template', (event, { filename }) => {
+  try {
+    const filePath = path.join(SAVES_DIR, path.basename(filename)); // prevent path traversal
+    const raw = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    return { success: true, template: raw };
+  } catch (err) {
+    console.error('[main] load-template error:', err.message);
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('delete-template', (event, { filename }) => {
+  try {
+    const filePath = path.join(SAVES_DIR, path.basename(filename));
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    return { success: true };
+  } catch (err) {
+    console.error('[main] delete-template error:', err.message);
     return { success: false, error: err.message };
   }
 });
