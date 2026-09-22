@@ -1,7 +1,13 @@
 node_modules/
+
+# Runtime state (written by the app)
 config/build.json
+config/settings.json
+config/saves/
+
+# Game data — full extraction output is regenerated per patch.
+# db/data/skill_tree_reconciled.sample.json IS committed (fallback + tests).
+db/data/skill_tree_reconciled.json
+Global Tree Data.json
 extractor/skillkey-map.json
 EXTRACTION_GUIDE.md
-Global Tree Data.json
-settings.json
-skill_tree_reconciled.json

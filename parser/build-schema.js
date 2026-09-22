@@ -19,7 +19,8 @@
  *       label:       string     — display name (e.g. "Passives", "Erasing Strike")
  *       history:     number[]   — ordered nodeId allocation sequence
  *       totalSteps:  number     — length of history (used for progress display)
- *       currentStep: number     — 0-based index into grouped steps (persisted)
+ *       currentStep: number     — flat count of history entries allocated
+ *                                 (0 = none, history.length = complete; persisted)
  *       skillKey?:   string     — only present when type === "skill" (e.g. "fl44")
  *     }
  *   ]
@@ -35,7 +36,12 @@
  *     { nodeId: 4, count: 2, startIdx: 4 },
  *   ]
  *
- * currentStep indexes into this grouped array, NOT into the raw history array.
+ * currentStep counts FLAT history entries (one per point), not groups. The
+ * group containing the next point is the one where
+ * startIdx <= currentStep < startIdx + count.
+ *
+ * A multi-phase LOADOUT (what config/build.json actually stores) wraps this:
+ *   { name, classId, masteryId, currentPhase, phases: [{ name, tracks }] }
  */
 
 'use strict';
@@ -111,34 +117,9 @@ function validateBuild(build) {
 
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
-/**
- * Collapses a flat history array into grouped allocation steps.
- * Each group represents "allocate N points to nodeId".
- *
- * @param {number[]} history - raw flat history array from Maxroll
- * @returns {{ nodeId: number, count: number, startIdx: number }[]}
- *
- * @example
- * groupHistory([6,6,6,6,4,4,4]) →
- * [
- *   { nodeId: 6, count: 4, startIdx: 0 },
- *   { nodeId: 4, count: 3, startIdx: 4 },
- * ]
- */
-function groupHistory(history) {
-  const groups = [];
-  let i = 0;
-  while (i < history.length) {
-    const nodeId = history[i];
-    let count = 0;
-    while (i < history.length && history[i] === nodeId) {
-      count++;
-      i++;
-    }
-    groups.push({ nodeId, count, startIdx: i - count });
-  }
-  return groups;
-}
+// groupHistory lives in shared/tree-utils.js (also used by the renderer);
+// re-exported here for existing callers.
+const { groupHistory } = require('../shared/tree-utils');
 
 /**
  * Creates a fresh build/loadout object with all currentSteps reset to 0.
