@@ -11,3 +11,4 @@ db/data/skill_tree_reconciled.json
 Global Tree Data.json
 extractor/skillkey-map.json
 EXTRACTION_GUIDE.md
+__pycache__/
