@@ -3,29 +3,17 @@
  * ────────────────
  * Node / tree artwork + UI glyphs.
  *
- * ─── Game icon contract ──────────────────────────────────────────────────────
- * Drop images under assets/icons/ and run `npm run icons` to (re)generate
- * assets/icons/manifest.json:
- *
- *   assets/icons/nodes/<treeID>/<nodeID>.(png|webp|jpg)   ← one per tree node
- *   assets/icons/trees/<treeID>.(png|webp|jpg)            ← tree / class emblem
- *
- *   manifest.json = { "nodes": { "es6ai/12": "nodes/es6ai/12.png", … },
- *                     "trees": { "es6ai": "trees/es6ai.png", … } }
- *
- * Anything missing from the manifest (or failing to load) falls back to a
- * generated glyph, so the UI never shows a broken image and never probes the
- * disk for files that don't exist.
+ * Artwork comes straight from the game data: every node row carries `icon`, a
+ * path relative to db/data/icons/ that extractor/extract.py has already checked
+ * exists. A null icon — or a file that fails to load — falls back to a
+ * generated glyph, so the UI never shows a broken image.
  */
 
 import { h, svg } from './dom.js';
 
-const ICON_BASE = '../assets/icons/';
-let manifest = { nodes: {}, trees: {} };
+const ICON_BASE = '../db/data/icons/';
 
-export function setIconManifest(m) {
-  manifest = { nodes: m?.nodes ?? {}, trees: m?.trees ?? {} };
-}
+const iconUrl = (rel) => ICON_BASE + rel.split('/').map(encodeURIComponent).join('/');
 
 // ─── Glyph placeholders ──────────────────────────────────────────────────────
 
@@ -57,21 +45,21 @@ function glyph(seed, label) {
   return h('span.glyph', { style: { '--glyph-hue': String(hue) }, 'aria-hidden': 'true' }, initials(label));
 }
 
-function art(path, seed, label) {
-  if (!path) return glyph(seed, label);
-  const img = h('img.art', { src: ICON_BASE + path, alt: '', draggable: 'false', decoding: 'async' });
+function art(icon, seed, label) {
+  if (!icon) return glyph(seed, label);
+  const img = h('img.art', { src: iconUrl(icon), alt: '', draggable: 'false', decoding: 'async' });
   img.addEventListener('error', () => img.replaceWith(glyph(seed, label)), { once: true });
   return img;
 }
 
-/** Artwork for one tree node (step.iconKey = "<treeID>/<nodeID>"). */
-export function nodeArt(iconKey, name) {
-  return art(manifest.nodes[iconKey], iconKey, name);
+/** Artwork for one step (ViewModel step: { icon, iconKey, name }). */
+export function nodeArt(step) {
+  return art(step.icon, step.iconKey, step.name);
 }
 
-/** Artwork for a whole tree (skill emblem / class crest). */
-export function treeArt(treeId, name) {
-  return art(manifest.trees[treeId], `tree:${treeId}`, name);
+/** Artwork for a whole tree (ViewModel lane: { treeIcon, treeId, title }). */
+export function treeArt(lane) {
+  return art(lane.treeIcon, `tree:${lane.treeId ?? lane.index}`, lane.title);
 }
 
 // ─── UI glyphs (24×24 stroke paths) ──────────────────────────────────────────

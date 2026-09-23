@@ -12,7 +12,7 @@
  *  - All renderer access goes through electron/preload.js (window.api).
  *
  * IPC (renderer → main, invoke):
- *   app:init                 → { db, build, settings, defaultSettings, icons, failedHotkeys, dataSource, version }
+ *   app:init                 → { db, build, settings, defaultSettings, failedHotkeys, dataSource, version }
  *   build:save    (build)    → { ok }
  *   build:preview ({ json }) → { ok, summary } | { ok:false, error }
  *   build:load    ({ phases, loadoutName }) → { ok, build } | { ok:false, error }
@@ -35,7 +35,6 @@ const { createStore, DEFAULT_SETTINGS } = require('./store');
 const { createHotkeys } = require('./hotkeys');
 
 const ROOT = path.join(__dirname, '..');
-const ICON_MANIFEST = path.join(ROOT, 'assets', 'icons', 'manifest.json');
 const EXAMPLE_BUILD = path.join(ROOT, 'config', 'build.example.json');
 const IS_DEV = process.argv.includes('--dev');
 
@@ -67,14 +66,6 @@ function loadGameData({ fresh = false } = {}) {
     gameData = { db: buildDb.all(), source: buildDb.source() };
   }
   return gameData;
-}
-
-function readIconManifest() {
-  try {
-    return JSON.parse(fs.readFileSync(ICON_MANIFEST, 'utf-8'));
-  } catch {
-    return null; // no icons yet — renderer draws glyph placeholders
-  }
 }
 
 // ─── Window ───────────────────────────────────────────────────────────────────
@@ -187,7 +178,6 @@ function registerIpc() {
       settings,
       defaultSettings: DEFAULT_SETTINGS,
       failedHotkeys: hotkeys.getFailures(),
-      icons: readIconManifest(),
       version: app.getVersion(),
     };
   });

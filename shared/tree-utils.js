@@ -34,7 +34,9 @@
   }
 
   /**
-   * Index flat reconciled rows into { [treeID]: { name, nodes: { [nodeId]: node } } }.
+   * Index flat reconciled rows into { [treeID]: { name, icon, nodes: { [nodeId]: node } } }.
+   * `icon` values are paths relative to db/data/icons/ (null = no art); a tree's
+   * icon is its root node's (skill trees only — passive trees have no root).
    *
    * The reconciled export can contain several rows for the same (treeID, nodeID)
    * — stale/removed node assets exported next to the live ones. Resolution rule:
@@ -49,14 +51,17 @@
     let duplicates = 0;
     for (const row of rows || []) {
       const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } = row;
-      if (!trees[treeID]) trees[treeID] = { name: treeName, nodes: {} };
+      const icon = typeof row.icon === 'string' && row.icon ? row.icon : null;
+      if (!trees[treeID]) trees[treeID] = { name: treeName, icon: null, nodes: {} };
+      // A skill tree's root node (id 0, no points) carries the skill's own icon.
+      if (nodeID === 0 && maxPoints === 0 && icon && !trees[treeID].icon) trees[treeID].icon = icon;
       const key = String(nodeID);
       const existing = trees[treeID].nodes[key];
       if (existing) {
         duplicates++;
         if (hasRealName(existing) || !hasRealName(row)) continue;
       }
-      trees[treeID].nodes[key] = { id: nodeID, nodeName, description, maxPoints, stats };
+      trees[treeID].nodes[key] = { id: nodeID, nodeName, description, maxPoints, stats, icon };
     }
     return { trees, duplicates };
   }

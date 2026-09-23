@@ -13,7 +13,7 @@
  */
 
 import { h, mount } from './dom.js';
-import { setIconManifest, ui } from './icons.js';
+import { ui } from './icons.js';
 import { renderLane, revealCurrent, keycap } from './lanes.js';
 import { renderInspector } from './inspector.js';
 import { openLoadout } from './loadout-dialog.js';
@@ -66,7 +66,6 @@ async function boot() {
   state.defaults = res.defaultSettings;
   state.dataSource = res.dataSource;
   state.failedHotkeys = res.failedHotkeys ?? [];
-  setIconManifest(res.icons);
 
   api.onHotkey(onGlobalHotkey);
   document.addEventListener('keydown', onKeyDown);

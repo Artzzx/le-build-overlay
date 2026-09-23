@@ -227,28 +227,3 @@ describe('createHotkeys.pause', () => {
   });
 });
 
-// ─── icon manifest ────────────────────────────────────────────────────────────
-
-describe('buildManifest', () => {
-  const { buildManifest } = require('../scripts/build-icon-manifest');
-
-  test('maps nodes/<tree>/<id>.<ext> and trees/<tree>.<ext>, prefers webp, skips bad names', () => {
-    const dir = tmpDir();
-    const touch = (rel) => { fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true }); fs.writeFileSync(path.join(dir, rel), ''); };
-    touch('nodes/es6ai/12.png');
-    touch('nodes/es6ai/12.webp');
-    touch('nodes/es6ai/007.jpg');
-    touch('nodes/es6ai/notes.png');
-    touch('nodes/es6ai/readme.txt');
-    touch('trees/es6ai.png');
-    const m = buildManifest(dir);
-    assert.deepEqual(m.nodes, { 'es6ai/12': 'nodes/es6ai/12.webp', 'es6ai/7': 'nodes/es6ai/007.jpg' });
-    assert.deepEqual(m.trees, { es6ai: 'trees/es6ai.png' });
-    assert.deepEqual(m.skipped, ['nodes/es6ai/notes.png']);
-    fs.rmSync(dir, { recursive: true, force: true });
-  });
-
-  test('missing folder yields an empty manifest', () => {
-    assert.deepEqual(buildManifest(path.join(os.tmpdir(), 'does-not-exist-xyz')), { nodes: {}, trees: {}, skipped: [] });
-  });
-});
