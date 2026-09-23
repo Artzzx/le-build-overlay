@@ -1,0 +1,81 @@
+/*
+ * app/styles/tokens.css — design tokens.
+ *
+ * Colour semantics are deliberately few, so they read at a glance mid-fight:
+ *   --now     green  → "allocate this next" (same green as the game's history bar)
+ *   --accent  per-lane identity colour (set inline per lane)
+ *   --done    muted  → already allocated
+ *   --warn / --danger → respec needed / problems
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #0a0c11;
+  --bg-raised: #0f1218;
+  --surface: #141820;
+  --surface-2: #1a1f29;
+  --surface-3: #222835;
+  --surface-hover: #1f2531;
+  --line: #242b37;
+  --line-2: #313a4a;
+
+  /* Text */
+  --text: #eef1f6;
+  --text-2: #b7bfcc;
+  --text-3: #8690a1;
+  --text-4: #5b6576;
+
+  /* Semantics */
+  --now: #3ddc97;
+  --now-strong: #5cf0ae;
+  --now-ink: #04160d;
+  --now-soft: rgba(61, 220, 151, 0.12);
+  --now-line: rgba(61, 220, 151, 0.45);
+  --done: #6b7587;
+  --warn: #ffc65c;
+  --warn-soft: rgba(255, 198, 92, 0.1);
+  --danger: #ff6b6b;
+  --danger-soft: rgba(255, 107, 107, 0.1);
+  --info: #6fb3ff;
+  --gold: #e3b55b;
+
+  /* Type */
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, "SF Mono", ui-monospace, Menlo, monospace;
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 19px;
+  --fs-2xl: 24px;
+
+  /* Geometry */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --gap: 12px;
+
+  /* Tiles */
+  --tile-sm: 34px;
+  --tile-md: 44px;
+  --tile-lg: 58px;
+  --tile-xl: 76px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 120ms;
+  --t-med: 220ms;
+
+  --shadow-1: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 12px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --focus: 0 0 0 2px var(--bg), 0 0 0 4px #7fb6ff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --t-fast: 0ms; --t-med: 0ms; }
+  *, *::before, *::after { animation-duration: 0ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}

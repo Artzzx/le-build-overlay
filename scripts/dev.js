@@ -1,9 +1,8 @@
 /**
  * scripts/dev.js
  * ───────────────
- * Development launcher for the overlay.
- * Starts Electron with DevTools open and a shorter hotkey set to avoid
- * conflicting with other apps while developing.
+ * Development launcher: starts the app with --dev, which opens DevTools
+ * (detached) and enables Electron logging.
  *
  * Usage:  node scripts/dev.js
  *   OR:   npm run dev
