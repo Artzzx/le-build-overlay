@@ -1,0 +1,1 @@
+pillow>=10.0   # extractor/convert_icons.py (WebP conversion)
