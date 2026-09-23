@@ -13,7 +13,7 @@ const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 
 const { groupHistory, validateBuild, validateLoadout, validateTrack, initializeBuild } = require('../parser/build-schema');
-const { parseBuild, parseLoadout, mergeRawLines, advanceTrack, undoTrack, getCurrentNode, resolveClassName, resolveSkillName } = require('../parser/maxroll');
+const { parseBuild, parseLoadout, mergeRawLines, resolveClassName, resolveSkillName } = require('../parser/maxroll');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -165,7 +165,7 @@ describe('mergeRawLines', () => {
     assert.ok(result.skillTrees.smbmb);
   });
 
-  test('merges real configraw.env.json format (6 lines)', () => {
+  test('merges real multi-line Maxroll paste (6 lines, see config/maxroll-paste.example.txt)', () => {
     const raw = [
       '{"passives":{"history":[6,6,6,6,6,6,6,6,1,7,7,7,7,7,8,8,8,8,8,0,3,3,3,3,3,3,3,3,20,20,20,20,20,25,25,21,21,21,21,21,30,30,30,30,30,33,22,22,22,22,36,39,39,39,39,41,41,41,41,41,44,22,22,22,40,46,46,46,46,46,45,45,22,50,50,50,50,50,50,50,50,78,78,78,78,78,28,31,31,31,31,28,28,28,28,31,37,37,37,37,37,79,82,82,82,82,82,0,0,0,0,0,0],"position":113},"class":4,"mastery":2}',
       '{"skillTrees":{"htsk5":{"history":[9,10,1,4,5,1,3,3,3,23,23,23,27,28,6,8,6,6,9,9,9,11,23,18,18,18],"position":26}}}',
@@ -261,91 +261,7 @@ describe('parseBuild', () => {
   });
 });
 
-// ─── advanceTrack / undoTrack ─────────────────────────────────────────────────
-
-describe('advanceTrack', () => {
-  test('increments currentStep by one flat history entry', () => {
-    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const updated = advanceTrack(build, 0);
-    assert.equal(updated.tracks[0].currentStep, 1); // one point, not one group
-    // original is unchanged (immutable)
-    assert.equal(build.tracks[0].currentStep, 0);
-  });
-
-  test('advancing through a multi-point node steps one point at a time', () => {
-    // fl44 history starts with [4, 4, 14, 11, 12] — node 4 has 2 consecutive entries
-    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const skillTrack = build.tracks.findIndex(t => t.skillKey === 'fl44');
-    const b1 = advanceTrack(build, skillTrack);
-    const b2 = advanceTrack(b1, skillTrack);
-    // After 2 advances we should be at step 2 (both points of node 4 allocated)
-    assert.equal(b2.tracks[skillTrack].currentStep, 2);
-    // Node 4 has maxPoints=4 but only 2 entries in history, so step 2 = moving to node 14
-    const node1 = getCurrentNode(b1, skillTrack, { passives: {}, skills: SAMPLE_SKILLS_DB, classes: SAMPLE_CLASSES_DB });
-    assert.ok(node1);
-    assert.equal(node1.pointsSoFar, 1); // 1 point of node 4 already applied
-  });
-
-  test('does not exceed history length (per-point advance)', () => {
-    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const histLen = build.tracks[0].history.length;
-    let b = build;
-    for (let i = 0; i < histLen + 5; i++) b = advanceTrack(b, 0);
-    assert.equal(b.tracks[0].currentStep, histLen);
-  });
-
-  test('returns same build if trackIndex out of range', () => {
-    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const result = advanceTrack(build, 99);
-    assert.equal(result, build);
-  });
-});
-
-describe('undoTrack', () => {
-  test('decrements currentStep', () => {
-    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const advanced = advanceTrack(build, 0);
-    const undone = undoTrack(advanced, 0);
-    assert.equal(undone.tracks[0].currentStep, 0);
-  });
-
-  test('does not go below 0', () => {
-    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const result = undoTrack(build, 0);
-    assert.equal(result.tracks[0].currentStep, 0);
-  });
-});
-
-// ─── getCurrentNode ───────────────────────────────────────────────────────────
-
-describe('getCurrentNode', () => {
-  // Build a db object matching the shape that lookupNode() expects
-  const TEST_DB = {
-    passives: { 'kn-1': { name: 'Knight', nodes: {} } }, // empty nodes — passive lookups not tested here
-    skills: SAMPLE_SKILLS_DB,
-    classes: SAMPLE_CLASSES_DB,
-  };
-
-  test('returns node info at step 0 for skill track', () => {
-    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const node = getCurrentNode(build, 1, TEST_DB); // track 1 = fl44 (Flay)
-    assert.ok(node);
-    assert.equal(node.name, 'Flay Marked For Death And Cull'); // fl44 node 4
-  });
-
-  test('returns null for completed track', () => {
-    const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    // Directly set currentStep to history.length (fully completed)
-    const completedBuild = {
-      ...build,
-      tracks: build.tracks.map((t, i) =>
-        i === 1 ? { ...t, currentStep: t.history.length } : t
-      ),
-    };
-    const node = getCurrentNode(completedBuild, 1, TEST_DB);
-    assert.equal(node, null);
-  });
-});
+// advance / undo / current-node tests live in tests/tree-utils.test.js
 
 // ─── resolveClassName / resolveSkillName ──────────────────────────────────────
 
@@ -392,7 +308,7 @@ describe('resolveSkillName', () => {
 describe('initializeBuild', () => {
   test('resets all currentSteps to 0 (single-phase)', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const advanced = advanceTrack(advanceTrack(build, 0), 1);
+    const advanced = { ...build, tracks: build.tracks.map((t, i) => i < 2 ? { ...t, currentStep: 1 } : t) };
     const reset = initializeBuild(advanced);
     for (const track of reset.tracks) {
       assert.equal(track.currentStep, 0);
@@ -401,7 +317,7 @@ describe('initializeBuild', () => {
 
   test('resets all phases\' currentSteps to 0 (multi-phase)', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    const advanced = advanceTrack(build, 0);
+    const advanced = { ...build, tracks: build.tracks.map((t, i) => i === 0 ? { ...t, currentStep: 1 } : t) };
     const loadout = {
       name: 'Test',
       classId: build.classId,

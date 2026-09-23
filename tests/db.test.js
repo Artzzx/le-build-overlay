@@ -6,13 +6,14 @@
  *
  * Run: npm test
  *
- * NOTE: Tests use real db/data/*.json values from extract.py output.
- * Key facts about the real data schema:
- *  - Passive nodes use field "id" (not "nodeId") and have NO description field
- *  - Skill nodes use field "id" (not "nodeId") and have NO description field
- *  - passives.json is keyed by treeID (e.g. "kn-1"), not flat nodeId
- *  - "fl44" = Flay, "fi9" = Fireball in real data (fl22 does not exist)
- *  - getPassive() now requires (classId, nodeId) — classId 3 = Sentinel (kn-1)
+ * NOTE: Tests run against whichever node file build-db loads — the full
+ * db/data/skill_tree_reconciled.json if present, else the committed
+ * skill_tree_reconciled.sample.json. The sample is a verbatim subset of the
+ * full file, so every assertion here must hold for both.
+ *
+ * Node shape after indexing: { id, nodeName, description, maxPoints, stats }
+ *  - trees are keyed by treeID ("kn-1" passive tree, "fl44" = Flay, "fi9" = Fireball)
+ *  - getPassive() takes (classId, nodeId) — classId 3 = Sentinel (kn-1)
  */
 
 'use strict';
@@ -60,14 +61,14 @@ describe('db.load + db.isPopulated', () => {
 // ─── getPassive ───────────────────────────────────────────────────────────────
 
 describe('db.getPassive', () => {
-  // classId 3 = Sentinel → tree "kn-1"; nodeId 0 = "Knight Strength And Protections"
+  // classId 3 = Sentinel → tree "kn-1"; nodeId 0 = "Juggernaut"
   test('returns passive node for known classId + nodeId (numbers)', () => {
     const db = freshDb();
     db.load();
     const node = db.getPassive(3, 0);
     assert.ok(node, 'expected Sentinel nodeId 0 to exist');
     assert.equal(node.id, 0);
-    assert.equal(node.name, 'Knight Strength And Protections');
+    assert.equal(node.nodeName, 'Juggernaut');
   });
 
   test('returns passive node with string arguments', () => {
@@ -96,8 +97,10 @@ describe('db.getPassive', () => {
     const node = db.getPassive(3, 0);
     assert.ok(node);
     assert.ok(typeof node.id === 'number');
-    assert.ok(typeof node.name === 'string');
+    assert.ok(typeof node.nodeName === 'string');
+    assert.ok(typeof node.description === 'string');
     assert.ok(typeof node.maxPoints === 'number');
+    assert.ok(Array.isArray(node.stats));
   });
 });
 
@@ -130,14 +133,14 @@ describe('db.getPassiveTreeId', () => {
 // ─── getSkillNode ─────────────────────────────────────────────────────────────
 
 describe('db.getSkillNode', () => {
-  // fl44 = "Flay" in real data; node 4 = "Flay Marked For Death And Cull"
+  // fl44 = "Flay"; node 4 = "Scent of Death"
   test('returns skill node for known skillKey + nodeId (numbers)', () => {
     const db = freshDb();
     db.load();
     const node = db.getSkillNode('fl44', 4);
     assert.ok(node, 'expected fl44 node 4 to exist');
     assert.equal(node.id, 4);
-    assert.equal(node.name, 'Flay Marked For Death And Cull');
+    assert.equal(node.nodeName, 'Scent of Death');
   });
 
   test('returns skill node with string arguments', () => {
@@ -145,7 +148,7 @@ describe('db.getSkillNode', () => {
     db.load();
     const node = db.getSkillNode('fl44', '4');
     assert.ok(node);
-    assert.equal(node.name, 'Flay Marked For Death And Cull');
+    assert.equal(node.nodeName, 'Scent of Death');
   });
 
   test('returns null for unknown skillKey', () => {
@@ -163,12 +166,14 @@ describe('db.getSkillNode', () => {
   test('skill node has expected shape', () => {
     const db = freshDb();
     db.load();
-    // fl44 node 14 = "Flay Crit Chance And Leech"
+    // fl44 node 14 = "Go For The Throat"
     const node = db.getSkillNode('fl44', 14);
     assert.ok(node);
     assert.ok(typeof node.id === 'number');
-    assert.ok(typeof node.name === 'string');
+    assert.ok(typeof node.nodeName === 'string');
+    assert.ok(typeof node.description === 'string');
     assert.ok(typeof node.maxPoints === 'number');
+    assert.ok(Array.isArray(node.stats));
   });
 });
 
@@ -264,5 +269,27 @@ describe('db.all', () => {
     const { classes } = db.all();
     assert.ok(classes.passiveTreeByClass, 'expected passiveTreeByClass in classes');
     assert.equal(classes.passiveTreeByClass['3'], 'kn-1');
+  });
+});
+
+// ─── data source ──────────────────────────────────────────────────────────────
+
+describe('db.source', () => {
+  test('reports which node file was loaded (full or committed sample)', () => {
+    const db = freshDb();
+    db.load();
+    assert.ok(
+      ['skill_tree_reconciled.json', 'skill_tree_reconciled.sample.json'].includes(db.source()),
+      `unexpected source: ${db.source()}`
+    );
+  });
+
+  test('every class has its passive tree available', () => {
+    const db = freshDb();
+    db.load();
+    for (const classId of [1, 2, 3, 4, 5]) {
+      const tree = db.all().passives[db.getPassiveTreeId(classId)];
+      assert.ok(tree && Object.keys(tree.nodes).length > 0, `expected passive tree for class ${classId}`);
+    }
   });
 });

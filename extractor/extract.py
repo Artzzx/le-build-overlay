@@ -2,9 +2,13 @@
 """
 extractor/extract.py
 ─────────────────────
+LEGACY — not part of the runtime pipeline. The app reads only
+db/data/skill_tree_reconciled.json, which reconcile_skill_trees.py builds
+directly from the MonoBehaviour export; it does NOT read this script's output.
+Kept for its Global Tree Data parsing (maxPoints/requirements), which could be
+used to disambiguate duplicate nodes in the reconciler.
+
 Produces db/data/skills.json and db/data/passives.json from two sources.
-Run reconcile_skill_trees.py afterward to produce the runtime file
-(db/data/skill_tree_reconciled.json) used by build-db.js and app.js.
 
 Sources:
 

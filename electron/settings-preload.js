@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('settingsAPI', {
    * Save updated settings to main process.
    * Main will persist, apply, and broadcast to overlay.
    * @param {object} settings - full settings object
-   * @returns {Promise<{ success: boolean, error?: string }>}
+   * @returns {Promise<{ success: boolean, error?: string, failedHotkeys?: string[] }>}
    */
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
 });

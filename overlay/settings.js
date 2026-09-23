@@ -102,10 +102,13 @@ function readForm() {
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
 
-function showStatus(msg, cls) {
+let statusTimer = null;
+
+function showStatus(msg, cls, durationMs = 2500) {
   statusEl.textContent = msg;
   statusEl.className = cls;
-  setTimeout(() => { statusEl.textContent = ''; statusEl.className = ''; }, 2500);
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => { statusEl.textContent = ''; statusEl.className = ''; }, durationMs);
 }
 
 // ─── Live preview ─────────────────────────────────────────────────────────────
@@ -131,7 +134,9 @@ saveBtn.addEventListener('click', async () => {
     form.window = current.window ?? DEFAULTS.window;
 
     const result = await window.settingsAPI.saveSettings(form);
-    if (result.success) {
+    if (result.success && result.failedHotkeys?.length) {
+      showStatus(`Saved, but these hotkeys could not be registered: ${result.failedHotkeys.join(', ')}`, 'error', 6000);
+    } else if (result.success) {
       showStatus('Settings saved.', 'success');
     } else {
       showStatus(result.error || 'Failed to save settings.', 'error');

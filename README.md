@@ -15,9 +15,12 @@ A transparent, always-on-top Electron overlay for **Last Epoch** that displays y
 ```
 
 - **F1** — toggle overlay visibility
-- **1–6** — advance that track one step
-- **Shift+1–6** — undo one step
-- **F5** — open build config window (paste Maxroll JSON here)
+- **1–6** — advance that track one point
+- **Shift+1–6** — undo one point
+- **F5** — open the loadout window (paste Maxroll / in-game export codes, one or more phases)
+- **F6 / Shift+F6** — next / previous phase
+- **F2** — settings (font, opacity, hotkeys, direct vs. latch mode)
+- **F3** — position mode (drag / resize the overlay)
 
 ---
 
@@ -28,44 +31,50 @@ npm install
 npm run dev
 ```
 
-Press F5, paste your Maxroll build JSON, and start playing.
+Press F5, paste your export codes, and start playing.
+
+Out of the box the overlay uses `db/data/skill_tree_reconciled.sample.json` — a small committed subset (all 5 passive trees + a handful of skills). Skills outside the sample show **"no data"** and can't be advanced until you generate the full data file (see below). To try it immediately:
+
+```bash
+cp config/build.example.json config/build.json
+npm run dev
+```
+
+Run tests with `npm test`.
 
 ---
 
 ## Data Pipeline
 
-The overlay needs enriched game data to show real node names and descriptions. Here's how that data flows:
-
 ```
-Game files (AssetStudio export)
-        │
-        ▼
-extractor/extract.py
-        │
-        └─► db/data/skill_tree_reconciled.json   ← only output, read by runtime
-                │
-                ▼
-        build-db.js + app.js
+Game files ──AssetStudio──► MonoBehaviour export (*Tree.json + SkillTreeNode #*.json)
+                                    │
+                                    ▼
+                  extractor/reconcile_skill_trees.py
+                                    │
+                                    ▼
+             db/data/skill_tree_reconciled.json   ← gitignored, ~2.5 MB
+                                    │   (falls back to skill_tree_reconciled.sample.json)
+                                    ▼
+          db/build-db.js (main) + overlay/app.js (renderer)
+                    both index it via shared/tree-utils.js
 ```
 
-**`skill_tree_reconciled.json`** is the single file the runtime reads — a flat array of every node across all skill and passive trees, each tagged with its `treeID`:
+**`skill_tree_reconciled.json`** is a flat array of every node across all skill and passive trees, each tagged with its `treeID`:
 
 ```json
-[
-  {
-    "treeID":      "ub5d9",
-    "treeName":    "Umbral Blades",
-    "nodeID":      5,
-    "nodeName":    "Hidden Blades",
-    "description": "Umbral Blades deals more damage...",
-    "maxPoints":   4,
-    "stats":       []
-  },
-  ...
-]
+{
+  "treeID":      "fl44",
+  "treeName":    "Flay",
+  "nodeID":      4,
+  "nodeName":    "Scent of Death",
+  "description": "Enemies hit by Flay are inflicted with Marked for Death…",
+  "maxPoints":   4,
+  "stats":       [{ "statName": "Kill Threshold", "value": "3%" }]
+}
 ```
 
-**Current state:** `extract.py` produces this file with ~68% of nodes having real display names (matched by root node name). The remaining ~32% fall back to internal names. The reconciliation work (see below) aims to close that gap.
+**Known data issues:** some `(treeID, nodeID)` pairs appear twice (a stale node asset exported next to the live one), and ~94 nodes have a blank or placeholder name. The app picks one deterministically (a real name beats a placeholder, otherwise the first row wins) and logs the count — but the pick can be the stale node. See CLAUDE.md → Known data-quality issues.
 
 ---
 
@@ -87,34 +96,33 @@ The goal is to find a strategy that reliably matches every node group to the cor
 ```
 le-build-overlay/
 ├── electron/
-│   ├── main.js               ← Electron main process, windows, global hotkeys
-│   ├── preload.js            ← Secure IPC bridge (contextBridge)
-│   ├── config-preload.js
-│   └── settings-preload.js
+│   ├── main.js               ← main process: windows, global hotkeys, IPC, file I/O
+│   ├── preload.js            ← overlay IPC bridge (contextBridge)
+│   ├── config-preload.js     ← loadout window bridge
+│   └── settings-preload.js   ← settings window bridge
 ├── overlay/
-│   ├── index.html            ← Transparent overlay UI
-│   ├── app.js                ← Renderer: state, rendering, IPC
-│   ├── config.html/js        ← Build paste UI (F5)
-│   ├── settings.html/js      ← Settings window
-│   └── style.css             ← Dark metallic theme
+│   ├── index.html / app.js / style.css   ← transparent overlay
+│   ├── config.html / config.js           ← loadout paste UI (F5)
+│   └── settings.html / settings.js       ← settings (F2)
+├── shared/
+│   └── tree-utils.js         ← pure logic shared by main + renderer (grouping, lookup, stepping, phases)
 ├── parser/
-│   ├── maxroll.js            ← Parse raw Maxroll JSON → normalized build
-│   └── build-schema.js       ← Build format validation
+│   ├── maxroll.js            ← raw Maxroll paste → normalized build / multi-phase loadout
+│   └── build-schema.js       ← validation
 ├── db/
-│   ├── build-db.js           ← Load/query db/data/ (reads skill_tree_reconciled.json)
+│   ├── build-db.js           ← loads db/data/
 │   └── data/
-│       ├── skill_tree_reconciled.json  ← RUNTIME DATA — flat node array
-│       ├── skills.json                 ← intermediate (nested by treeID)
-│       ├── passives.json               ← intermediate (nested by treeID)
-│       └── classes.json                ← classId/masteryId → names
+│       ├── skill_tree_reconciled.json         ← full data (gitignored, you generate it)
+│       ├── skill_tree_reconciled.sample.json  ← committed subset / fallback
+│       └── classes.json                       ← classId / masteryId → names, passive tree ids
 ├── extractor/
-│   └── extract.py            ← Regenerate db/data/ from game assets
+│   ├── reconcile_skill_trees.py  ← generates skill_tree_reconciled.json
+│   └── extract.py                ← legacy (outputs not used by the app)
 ├── config/
-│   ├── build.json            ← Active build (runtime state, gitignored)
-│   └── build.example.json
+│   ├── build.example.json        ← example 2-phase loadout
+│   └── maxroll-paste.example.txt ← example multi-line paste
+│   (build.json, settings.json, saves/ are runtime state — gitignored)
 └── tests/
-    ├── db.test.js
-    └── parser.test.js
 ```
 
 ---
@@ -148,7 +156,9 @@ Output: `C:\Tools\le_dump\DummyDll\` — only needed once per major engine updat
 
 ---
 
-### Step 2 — Export "Global Tree Data"
+### Step 2 — Export "Global Tree Data" (optional)
+
+> Only used by the legacy `extract.py`. The app's data comes from Steps 3–4; skip this unless you're working on the extractor.
 
 This one file contains every skill and passive tree: node IDs, maxPoints, requirements.
 
@@ -185,21 +195,19 @@ Takes 10–15 minutes. You can skip this step to get a working overlay with inte
 
 ---
 
-### Step 4 — Run extract.py
+### Step 4 — Run the reconciler
+
+`reconcile_skill_trees.py` needs the MonoBehaviour folder containing both the `*Tree.json` tree definitions and the `SkillTreeNode #*.json` files (Step 3):
 
 ```bash
-# Copy Global Tree Data into project root
-copy "C:\Tools\le_export\MonoBehaviour\Global Tree Data.json" "Global Tree Data.json"
-
-# Basic run (internal names only):
-python extractor/extract.py
-
-# Full run (with real display names):
-python extractor/extract.py --nodes C:\Tools\le_export\MonoBehaviour\Node
+python extractor/reconcile_skill_trees.py C:\Tools\le_export\MonoBehaviour db/data
 ```
 
-Writes one file to `db/data/`:
-- `skill_tree_reconciled.json` — flat node array, the only file the runtime reads
+Writes to `db/data/`:
+- `skill_tree_reconciled.json` — the file the app reads
+- `tree_summary.json`, `reconciliation_report.txt` — diagnostics (check the report for unmatched trees)
+
+> `extractor/extract.py` (Global Tree Data → `skills.json`/`passives.json`) is legacy: nothing reads its output.
 
 ---
 
@@ -207,27 +215,30 @@ Writes one file to `db/data/`:
 
 | What changed | Steps to redo |
 |---|---|
-| Skills or passives rebalanced | Steps 2 → 4 |
-| New skills added | Steps 2 → 4 (+ Step 3 for real names) |
-| Engine update | Steps 1 → 2 → 3 → 4 |
+| Skills or passives rebalanced | Steps 3 → 4 |
+| New skills added | Steps 3 → 4 |
+| Engine update | Steps 1 → 3 → 4 |
 
 ---
 
 ## Troubleshooting
 
-**"Global Tree Data.json not found"**
-Copy the file to the project root: `le-build-overlay/Global Tree Data.json`.
+**Tracks show "no data"**
+That skill (or passive tree) isn't in the loaded data. You're probably running on the committed sample — generate the full `db/data/skill_tree_reconciled.json` (Steps 3–4).
 
-**Overlay shows internal names like "Void Cleave Crit Multi And Mana On Crit"**
-Run Step 3 (full MonoBehaviour export) then re-run extract.py with `--nodes`.
+**A node shows the wrong name**
+Likely a duplicate `(treeID, nodeID)` in the reconciled data — the stale node won. Check `reconciliation_report.txt`; the fix belongs in `reconcile_skill_trees.py`.
 
-**extract.py reports unmatched groups**
-A skill was renamed in a patch. Add an entry to `DISPLAY_NAME_OVERRIDES` in `extract.py`:
+**Reconciler reports unmatched trees**
+A skill was renamed in a patch. Add an entry to `NAME_VARIANTS` in `reconcile_skill_trees.py`:
 ```python
-DISPLAY_NAME_OVERRIDES = {
-    'new display name': 'internal gdt name',
+NAME_VARIANTS = {
+    "SomeSkillTree.json": "root node display name (lowercase)",
 }
 ```
+
+**A hotkey doesn't work**
+Saving settings reports any key that couldn't be registered (invalid, or already taken by another app). Pick a different key.
 
 ---
 
