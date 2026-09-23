@@ -134,15 +134,15 @@
   }
 
   /**
-   * Move one track of the active phase by `delta` points (+1 advance, -1 undo),
-   * clamped to [0, history.length]. Returns the same loadout reference when
-   * nothing changes, otherwise a new object (inputs are never mutated).
+   * Set one track of the active phase to an absolute progress value, clamped to
+   * [0, history.length]. Returns the same loadout reference when nothing changes,
+   * otherwise a new object (inputs are never mutated).
    */
-  function stepTrack(loadout, trackIndex, delta) {
+  function setTrackProgress(loadout, trackIndex, value) {
     const cp = loadout?.currentPhase ?? 0;
     const track = loadout?.phases?.[cp]?.tracks?.[trackIndex];
-    if (!track) return loadout;
-    const next = Math.max(0, Math.min(track.history.length, track.currentStep + delta));
+    if (!track || !Number.isFinite(value)) return loadout;
+    const next = Math.max(0, Math.min(track.history.length, Math.trunc(value)));
     if (next === track.currentStep) return loadout;
     return {
       ...loadout,
@@ -151,6 +151,14 @@
         tracks: phase.tracks.map((t, j) => j === trackIndex ? { ...t, currentStep: next } : t),
       }),
     };
+  }
+
+  /** Move one track of the active phase by `delta` points (+1 advance, -1 undo). */
+  function stepTrack(loadout, trackIndex, delta) {
+    const cp = loadout?.currentPhase ?? 0;
+    const track = loadout?.phases?.[cp]?.tracks?.[trackIndex];
+    if (!track) return loadout;
+    return setTrackProgress(loadout, trackIndex, track.currentStep + delta);
   }
 
   // ─── Phase switching ────────────────────────────────────────────────────────
@@ -168,7 +176,7 @@
 
   /**
    * What the player must do when switching fromIdx → toIdx.
-   * @returns {{ fromName, toName, unspecNeeded: {label, amount, isRemove}[] }}
+   * @returns {{ fromName, toName, unspecNeeded: {label, type, skillKey, amount, isRemove}[] }}
    */
   function computeTransition(phases, fromIdx, toIdx) {
     const fromTracks = phases[fromIdx].tracks;
@@ -181,7 +189,7 @@
       if (!fromT || fromT.currentStep === 0) return;
       const common = commonPrefixLength(fromT.history, toT.history);
       if (fromT.currentStep > common) {
-        unspecNeeded.push({ label: toT.label, amount: fromT.currentStep - common, isRemove: false });
+        unspecNeeded.push({ label: toT.label, type: toT.type, skillKey: toT.skillKey, amount: fromT.currentStep - common, isRemove: false });
       }
     });
 
@@ -189,7 +197,7 @@
     fromTracks.forEach(fromT => {
       if (fromT.type === 'passive' || fromT.currentStep === 0) return;
       if (!toTracks.find(t => t.skillKey === fromT.skillKey)) {
-        unspecNeeded.push({ label: fromT.label, amount: fromT.currentStep, isRemove: true });
+        unspecNeeded.push({ label: fromT.label, type: fromT.type, skillKey: fromT.skillKey, amount: fromT.currentStep, isRemove: true });
       }
     });
 
@@ -221,6 +229,7 @@
     lookupNode,
     isTrackUnresolved,
     normalizeBuild,
+    setTrackProgress,
     stepTrack,
     commonPrefixLength,
     computeTransition,

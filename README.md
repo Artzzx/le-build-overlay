@@ -1,26 +1,31 @@
-# LE Build Overlay
+# LE Build Planner
 
-A transparent, always-on-top Electron overlay for **Last Epoch** that displays your build plan from [Maxroll](https://maxroll.gg/last-epoch/planner) and lets you advance step-by-step through passive and skill tree allocations using keyboard hotkeys — while playing, without alt-tabbing.
+A desktop companion for **Last Epoch**. Load your build from the [Maxroll planner](https://maxroll.gg/last-epoch/planner) (or the in-game export) and follow it point by point: every tree — the passive tree and all five skills — in one view, with the node to allocate **next** in each tree shown big and green.
 
-```
-┌─────────────────────────────┐
-│ [P] Juggernaut     42/113 1 │
-│ [S] Erasing Str    14/26  2 │
-│ [S] Void Reversal  20/20  3 │
-│ [S] Smite          12/18  4 │
-│ [S] Shield Rush     8/20  5 │
-│ [S] Anomaly         3/16  6 │
-│ F1 hide · 1-6 advance       │
-└─────────────────────────────┘
-```
+![LE Build Planner](docs/screenshot.png)
 
-- **F1** — toggle overlay visibility
-- **1–6** — advance that track one point
-- **Shift+1–6** — undo one point
-- **F5** — open the loadout window (paste Maxroll / in-game export codes, one or more phases)
-- **F6 / Shift+F6** — next / previous phase
-- **F2** — settings (font, opacity, hotkeys, direct vs. latch mode)
-- **F3** — position mode (drag / resize the overlay)
+Built to be read at a glance while you play:
+
+- **One lane per tree.** Each lane has three parts: the tree and its progress, the node to allocate next (with what comes after it), and the full path as a strip of nodes, like the game's own allocation history bar.
+- **Green always means "allocate this next".** Done nodes fade, and each tree keeps its colour in every phase.
+- **Tick points off without leaving the game.** Global hotkeys work while the game has focus. They're released when the app window is focused, so typing in the app always works.
+- **Phases.** Leveling → Endgame (up to 5). Switching phases keeps your progress where the trees overlap, and tells you exactly what to respec in game.
+- **Node details.** Description, per-point stats, and the route around any node. *Start from here* catches the app up to a character you've already levelled.
+- **Ready for node icons.** Drop images into `assets/icons/` (see [Node icons](#node-icons)); until then each node shows a generated glyph.
+
+### Controls
+
+| | In game (global) | In the app |
+|---|---|---|
+| Allocate a point | `1`–`6` | `1`–`6`, the **Allocate** button, or `Enter` on the focused tree |
+| Undo a point | `Shift`+`1`–`6` | `Shift`+`1`–`6`, the undo button, or `Backspace` |
+| Next / previous phase | `F6` / `Shift`+`F6` | click the phase, or `PgDn` / `PgUp` |
+| Show / hide the window | `F1` | — |
+| Move between trees / nodes | — | `↑` `↓` / `←` `→`, `Esc` to go back to Next up |
+| Load build · Settings | — | `Ctrl`+`O` · `Ctrl`+`,` |
+| Interface size | — | `Ctrl`+`=` / `Ctrl`+`-` / `Ctrl`+`0` |
+
+All global keys can be changed in Settings. **Arm first** mode keeps number keys free for game chat: press `` ` ``, then numbers work for 5 s.
 
 ---
 
@@ -28,19 +33,15 @@ A transparent, always-on-top Electron overlay for **Last Epoch** that displays y
 
 ```bash
 npm install
-npm run dev
+npm start          # or: npm run dev (opens DevTools)
+npm test
 ```
 
-Press F5, paste your export codes, and start playing.
+Click **Load build**, paste your export codes, and you're set. Or click **Try the example build**.
 
-Out of the box the overlay uses `db/data/skill_tree_reconciled.sample.json` — a small committed subset (all 5 passive trees + a handful of skills). Skills outside the sample show **"no data"** and can't be advanced until you generate the full data file (see below). To try it immediately:
+Your build, progress, settings and saved templates live in the per-user app data folder (`%APPDATA%/le-build-overlay` on Windows), not in the repo. Files from the old overlay's `config/` folder are migrated automatically on first launch.
 
-```bash
-cp config/build.example.json config/build.json
-npm run dev
-```
-
-Run tests with `npm test`.
+The app reads the game data from `db/data/`. Without the full extraction it falls back to `db/data/skill_tree_reconciled.sample.json`, a small committed subset (all 5 passive trees + a handful of skills), and the status bar says **Sample game data**. Skills outside the sample show **No tree data** until you run the extractor (below).
 
 ---
 
@@ -59,8 +60,10 @@ Game files ──AssetStudio──► MonoBehaviour export (*Tree.json + SkillTr
    db/data/skill_tree_reconciled.json + db/data/passives.json   ← gitignored
                                     │   (falls back to skill_tree_reconciled.sample.json)
                                     ▼
-          db/build-db.js (main) + overlay/app.js (renderer)
-                    both index it via shared/tree-utils.js
+          db/build-db.js (main process, indexed by shared/tree-utils.js)
+                                    │   IPC
+                                    ▼
+                               app window
 ```
 
 **`skill_tree_reconciled.json`** (all skill trees) and **`passives.json`** (the 5 class passive trees) are flat arrays of nodes with the same row shape, each tagged with its `treeID`:
@@ -99,35 +102,42 @@ The goal is to find a strategy that reliably matches every node group to the cor
 ```
 le-build-overlay/
 ├── electron/
-│   ├── main.js               ← main process: windows, global hotkeys, IPC, file I/O
-│   ├── preload.js            ← overlay IPC bridge (contextBridge)
-│   ├── config-preload.js     ← loadout window bridge
-│   └── settings-preload.js   ← settings window bridge
-├── overlay/
-│   ├── index.html / app.js / style.css   ← transparent overlay
-│   ├── config.html / config.js           ← loadout paste UI (F5)
-│   └── settings.html / settings.js       ← settings (F2)
-├── shared/
-│   └── tree-utils.js         ← pure logic shared by main + renderer (grouping, lookup, stepping, phases)
-├── parser/
-│   ├── maxroll.js            ← raw Maxroll paste → normalized build / multi-phase loadout
-│   └── build-schema.js       ← validation
-├── db/
-│   ├── build-db.js           ← loads db/data/
-│   └── data/
-│       ├── skill_tree_reconciled.json         ← full skill data (gitignored, you generate it)
-│       ├── passives.json                      ← class passive trees (gitignored, you generate it)
-│       ├── skill_tree_reconciled.sample.json  ← committed subset / fallback
-│       └── classes.json                       ← classId / masteryId → names, passive tree ids
-├── extractor/
-│   ├── nodes_flat.json           ← input: flat node export
-│   └── extract.py                ← cleans nodes_flat.json → db/data/ files
-├── config/
-│   ├── build.example.json        ← example 2-phase loadout
-│   └── maxroll-paste.example.txt ← example multi-line paste
-│   (build.json, settings.json, saves/ are runtime state — gitignored)
-└── tests/
+│   ├── main.js               ← main process: window, IPC, lifecycle
+│   ├── store.js              ← build / settings / templates in the user-data folder
+│   ├── hotkeys.js            ← global shortcuts (direct / arm-first, released while focused)
+│   └── preload.js            ← the only renderer bridge (window.api)
+├── app/                      ← the UI (vanilla JS modules, no framework, no bundler)
+│   ├── index.html
+│   ├── js/                   ← main, lanes, inspector, dialogs, icons, keys, dom
+│   └── styles/               ← tokens, app shell, lanes, dialogs
+├── shared/                   ← pure logic, used by main, the UI and the tests
+│   ├── tree-utils.js         ← indexing, grouping, stepping, phase carry-over
+│   └── view-model.js         ← what each lane shows (now / next / steps / colours)
+├── parser/                   ← Maxroll paste → normalized multi-phase loadout
+├── db/                       ← game data loader + db/data/
+├── extractor/                ← nodes_flat.json → db/data/ (run per patch)
+├── assets/icons/             ← optional node / tree artwork + manifest.json
+├── scripts/                  ← dev launcher, icon manifest builder
+├── config/                   ← build.example.json, maxroll-paste.example.txt
+└── tests/                    ← node:test (npm test)
 ```
+
+---
+
+## Node icons
+
+Every tile has an artwork slot. Add images and regenerate the manifest:
+
+```
+assets/icons/nodes/<treeID>/<nodeID>.png    ← one per node, e.g. nodes/es6ai/12.png
+assets/icons/trees/<treeID>.png             ← tree emblem / class crest (e.g. trees/kn-1.png)
+```
+
+```bash
+npm run icons     # writes assets/icons/manifest.json
+```
+
+`.webp`, `.png` and `.jpg` are supported (square, 64–128 px). Only files listed in the manifest are loaded; anything missing or unreadable falls back to the glyph, so partial icon sets are fine.
 
 ---
 
@@ -193,7 +203,7 @@ Exports all MonoBehaviour assets including `SkillTreeNode #*.json` files which c
   --log-output both
 ```
 
-Takes 10–15 minutes. You can skip this step to get a working overlay with internal names first.
+Takes 10–15 minutes. Without it the app has no display names or descriptions.
 
 > Move the `SkillTreeNode #*.json` files into a dedicated subfolder (e.g. `MonoBehaviour\Node\`) to keep them separate from tree definition files. The extractor scans recursively.
 
@@ -228,7 +238,7 @@ Trees without a root node get their name from `TREE_NAME_OVERRIDES` in `extract.
 
 ## Troubleshooting
 
-**Tracks show "no data"**
+**A tree shows "No tree data"**
 That skill (or passive tree) isn't in the loaded data. You're probably running on the committed sample — generate the full `db/data/skill_tree_reconciled.json` (Steps 3–4).
 
 **A node shows the wrong name**
@@ -238,7 +248,10 @@ Likely a `(treeID, nodeID)` collision in `nodes_flat.json` — the stale node wo
 Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `extract.py`.
 
 **A hotkey doesn't work**
-Saving settings reports any key that couldn't be registered (invalid, or already taken by another app). Pick a different key.
+The status bar and Settings report any key that couldn't be registered (already taken by another app). Record a different one in Settings.
+
+**Number keys don't reach game chat**
+That's *Direct* mode. Switch to *Arm first* in Settings.
 
 ---
 

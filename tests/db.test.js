@@ -133,22 +133,22 @@ describe('db.getPassiveTreeId', () => {
 // ─── getSkillNode ─────────────────────────────────────────────────────────────
 
 describe('db.getSkillNode', () => {
-  // fl44 = "Flay"; node 4 = "Scent of Death"
+  // fl44 = "Flay"; node 14 = "Go For The Throat" (not affected by id collisions)
   test('returns skill node for known skillKey + nodeId (numbers)', () => {
     const db = freshDb();
     db.load();
-    const node = db.getSkillNode('fl44', 4);
-    assert.ok(node, 'expected fl44 node 4 to exist');
-    assert.equal(node.id, 4);
-    assert.equal(node.nodeName, 'Scent of Death');
+    const node = db.getSkillNode('fl44', 14);
+    assert.ok(node, 'expected fl44 node 14 to exist');
+    assert.equal(node.id, 14);
+    assert.equal(node.nodeName, 'Go For The Throat');
   });
 
   test('returns skill node with string arguments', () => {
     const db = freshDb();
     db.load();
-    const node = db.getSkillNode('fl44', '4');
+    const node = db.getSkillNode('fl44', '14');
     assert.ok(node);
-    assert.equal(node.nodeName, 'Scent of Death');
+    assert.equal(node.nodeName, 'Go For The Throat');
   });
 
   test('returns null for unknown skillKey', () => {

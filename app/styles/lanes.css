@@ -1,0 +1,263 @@
+/* app/styles/lanes.css — tree lanes, node tiles, path strips. */
+
+.lanes {
+  container-type: inline-size;
+  container-name: lanes;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 2px 4px 8px 2px;
+  margin: -2px -4px -8px -2px;
+}
+
+/* ─── Lane ────────────────────────────────────────────────────────────────── */
+
+.lane {
+  --accent: var(--gold);
+  position: relative;
+  display: grid;
+  grid-template-columns: 216px 348px minmax(0, 1fr);
+  align-items: stretch;
+  min-height: 98px;
+  flex: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  overflow: hidden;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.lane::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--accent);
+  opacity: 0.85;
+}
+.lane.is-focused { border-color: var(--line-2); background: var(--surface-2); }
+.lane.is-focused::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.lane.is-complete { background: color-mix(in srgb, var(--surface) 70%, var(--bg)); }
+.lane.is-complete::before { opacity: 0.35; }
+.lane.is-unresolved::before { background: var(--warn); opacity: 0.6; }
+
+/* Identity column */
+.lane-id {
+  display: flex; flex-direction: column; justify-content: center; gap: 10px;
+  padding: 12px 14px 12px 18px;
+  border-right: 1px solid var(--line);
+  min-width: 0;
+}
+.lane-id-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.key-lane {
+  min-width: 26px; height: 26px; font-size: 13px;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line-2));
+}
+.tree-art { flex: none; width: var(--tile-sm); height: var(--tile-sm); border-radius: 9px; overflow: hidden; display: grid; }
+.tree-art .glyph { font-size: 12px; }
+.lane-titles { min-width: 0; }
+.lane-title { font: 650 var(--fs-md)/1.2 var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lane-sub { color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.lane-progress { display: grid; grid-template-columns: 1fr auto; row-gap: 5px; align-items: baseline; font-size: var(--fs-sm); color: var(--text-3); }
+.lane-count b { color: var(--text); font-size: var(--fs-md); }
+.lane-pct { font-size: var(--fs-xs); font-weight: 600; }
+.lane.is-complete .lane-pct { color: var(--now); }
+.bar { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--surface-3); overflow: hidden; }
+.bar-fill { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width var(--t-med) var(--ease); }
+
+/* NOW column */
+.lane-now {
+  display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  padding: 10px 12px 10px 14px;
+  border-right: 1px solid var(--line);
+  background: linear-gradient(90deg, var(--now-soft), transparent 75%);
+  min-width: 0;
+}
+.lane-now.flash { animation: flash 520ms var(--ease); }
+@keyframes flash {
+  0% { background-color: rgba(61, 220, 151, 0.32); }
+  100% { background-color: transparent; }
+}
+.now-label {
+  display: flex; align-items: center; gap: 7px;
+  color: var(--now);
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+}
+.now-body { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.now-tile { flex: none; padding: 0; border: 0; background: none; border-radius: 14px; }
+.now-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.now-name {
+  font: 650 var(--fs-lg)/1.2 var(--font-display);
+  color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.now-name-sm { font-size: var(--fs-md); white-space: normal; }
+.now-meta { color: var(--text-2); font-size: var(--fs-sm); }
+.now-then { display: flex; align-items: center; gap: 5px; color: var(--text-3); font-size: var(--fs-xs); min-width: 0; }
+.now-then .then-label { flex: none; }
+.now-then .then-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-2); }
+.now-then .then-count { flex: none; color: var(--text-3); }
+.now-actions { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none; }
+
+.btn-allocate {
+  display: grid; place-items: center; align-content: center; gap: 2px;
+  width: 78px; height: 50px; padding: 0;
+  border-radius: 12px;
+  border: 1px solid var(--now-line);
+  background: var(--now-soft);
+  color: var(--now);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.btn-allocate:hover { background: var(--now); color: var(--now-ink); }
+.btn-allocate:active { transform: scale(0.97); }
+.btn-allocate-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+.btn-undo { width: 30px; height: 26px; }
+
+.now-complete { background: none; }
+.now-complete .now-label { color: var(--text-3); }
+.now-missing { background: linear-gradient(90deg, var(--warn-soft), transparent 80%); }
+.now-missing .now-label { color: var(--warn); }
+
+/* Path strip */
+.lane-path {
+  position: relative;
+  display: flex; align-items: center;
+  min-width: 0;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+  padding: 0 18px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 36px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 36px), transparent 100%);
+}
+.lane-path::-webkit-scrollbar { display: none; }
+.strip { display: flex; align-items: center; gap: 0; margin: 0; padding: 14px 24px 14px 0; list-style: none; }
+
+.step { position: relative; display: flex; align-items: center; flex: none; }
+/* Connector to the previous step */
+.step + .step::before {
+  content: "";
+  width: 14px; height: 2px;
+  background: var(--line-2);
+}
+.step.is-done + .step::before,
+.step.is-current::before { background: color-mix(in srgb, var(--accent) 60%, transparent); }
+
+.step-btn { padding: 0; border: 0; background: none; border-radius: 12px; }
+.step-btn:hover .tile { transform: translateY(-2px); }
+.step.is-selected .tile { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--text); }
+
+/* ─── Node tile ───────────────────────────────────────────────────────────── */
+
+.tile {
+  --size: var(--tile-md);
+  --p: 0;
+  position: relative;
+  display: grid;
+  width: var(--size); height: var(--size);
+  border-radius: calc(var(--size) * 0.24);
+  flex: none;
+  transition: transform var(--t-fast) var(--ease), opacity var(--t-fast), filter var(--t-fast);
+}
+.tile-sm { --size: var(--tile-sm); }
+.tile-lg { --size: var(--tile-lg); }
+.tile-xl { --size: var(--tile-xl); }
+
+.tile-art {
+  display: grid;
+  overflow: hidden;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-3);
+}
+.tile-art > .art { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.glyph {
+  --glyph-hue: 210;
+  display: grid; place-items: center;
+  width: 100%; height: 100%;
+  background:
+    radial-gradient(120% 90% at 30% 20%, hsl(var(--glyph-hue) 45% 34%), transparent 70%),
+    linear-gradient(160deg, hsl(var(--glyph-hue) 30% 22%), hsl(var(--glyph-hue) 35% 11%));
+  color: hsl(var(--glyph-hue) 55% 86%);
+  font: 700 calc(var(--size, 44px) * 0.32)/1 var(--font-display);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* States */
+.tile.is-done { opacity: 0.5; filter: saturate(0.35); }
+.tile.is-upcoming { opacity: 0.92; }
+.step.is-next .tile { opacity: 1; }
+.step.is-next .tile-art { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.step.is-upcoming:not(.is-next) ~ .step.is-upcoming:not(.is-next) .tile { opacity: 0.8; }
+
+/* Current: green ring that fills with the points already put into this step */
+.tile.is-current::before {
+  content: "";
+  position: absolute; inset: -5px;
+  border-radius: calc(var(--size) * 0.24 + 5px);
+  background: conic-gradient(var(--now) calc(var(--p) * 360deg), rgba(61, 220, 151, 0.28) 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  padding: 3px;
+}
+.tile.is-current::after {
+  content: "";
+  position: absolute; inset: -5px;
+  border-radius: calc(var(--size) * 0.24 + 5px);
+  box-shadow: 0 0 18px rgba(61, 220, 151, 0.35);
+  pointer-events: none;
+}
+.step.is-current { margin: 0 5px; }
+.step.is-current .tile { transform: scale(1.06); }
+
+.tile-check {
+  position: absolute; top: -5px; right: -5px;
+  display: grid; place-items: center;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--surface-3); color: var(--text-2);
+  border: 1px solid var(--line-2);
+}
+.tile-badge {
+  position: absolute; right: -6px; bottom: -6px;
+  min-width: 20px; height: 18px; padding: 0 5px;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line-2);
+  color: var(--text);
+  font-size: 11px; font-weight: 700;
+}
+.tile.is-current .tile-badge { background: var(--now); color: var(--now-ink); border-color: var(--now); }
+
+/* ─── Responsive lanes (container width, so the inspector is accounted for) ──
+ * Narrow windows keep ALL trees visible: the strip is dropped and each lane
+ * becomes identity + NEXT UP. The full route stays one click away (inspector). */
+
+@container lanes (max-width: 780px) {
+  .lane { grid-template-columns: 188px minmax(0, 1fr); min-height: 92px; }
+  .lane-path { display: none; }
+  .lane-now { border-right: 0; }
+  .lane-id .tree-art { display: none; }
+}
+
+@container lanes (max-width: 560px) {
+  .lane { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .lane-id { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px 8px 16px; }
+  .lane-id-top { flex: 1; min-width: 0; }
+  .lane-sub { display: none; }
+  .lane-progress { width: 104px; flex: none; }
+  .lane-now { padding: 8px 12px 10px 16px; gap: 4px; }
+  .tile-lg { --size: 48px; }
+  .now-then { display: none; }
+  .btn-allocate { width: 64px; height: 44px; }
+  .btn-allocate-label { display: none; }
+}

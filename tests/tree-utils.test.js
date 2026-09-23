@@ -216,8 +216,8 @@ describe('computeTransition + applyCarryOver', () => {
     assert.equal(t.fromName, 'A');
     assert.equal(t.toName, 'B');
     assert.deepEqual(t.unspecNeeded, [
-      { label: 'Passives', amount: 2, isRemove: false }, // 4 allocated, only 2 shared
-      { label: 'fi9', amount: 1, isRemove: true },       // not in phase B
+      { label: 'Passives', type: 'passive', skillKey: undefined, amount: 2, isRemove: false }, // 4 allocated, only 2 shared
+      { label: 'fi9', type: 'skill', skillKey: 'fi9', amount: 1, isRemove: true },             // not in phase B
     ]);
   });
 
@@ -232,5 +232,24 @@ describe('computeTransition + applyCarryOver', () => {
   test('no unspec needed when nothing allocated', () => {
     const fresh = phases.map(p => ({ ...p, tracks: p.tracks.map(t => ({ ...t, currentStep: 0 })) }));
     assert.deepEqual(computeTransition(fresh, 0, 1).unspecNeeded, []);
+  });
+});
+
+// ─── setTrackProgress ─────────────────────────────────────────────────────────
+
+describe('setTrackProgress', () => {
+  const { setTrackProgress } = require('../shared/tree-utils');
+  const base = loadout([{ name: 'A', tracks: [passive([1, 1, 2]), skill('fl44', [4, 4])] }]);
+
+  test('sets an absolute value, clamped', () => {
+    assert.equal(setTrackProgress(base, 0, 2).phases[0].tracks[0].currentStep, 2);
+    assert.equal(setTrackProgress(base, 0, 99).phases[0].tracks[0].currentStep, 3);
+    assert.equal(setTrackProgress(base, 0, -4), base); // clamps to 0 = unchanged
+  });
+
+  test('same value or bad input returns the same reference', () => {
+    assert.equal(setTrackProgress(base, 0, 0), base);
+    assert.equal(setTrackProgress(base, 0, NaN), base);
+    assert.equal(setTrackProgress(base, 7, 1), base);
   });
 });
