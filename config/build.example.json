@@ -1,5 +1,5 @@
 {
-  "_comment": "Example 2-phase loadout for development/testing. Copy to config/build.json to use. Skill keys and node ids are real treeIDs/nodeIDs present in db/data/skill_tree_reconciled.sample.json, but the allocation order is illustrative, not a real guide.",
+  "_comment": "Example 2-phase loadout for development/testing. Load it from the app (Try the example build). Skill keys and node ids are real treeIDs/nodeIDs from db/data, but the allocation order is illustrative, not a real guide.",
   "name": "Void Knight Erasing Strike",
   "classId": 3,
   "masteryId": 2,

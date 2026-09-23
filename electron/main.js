@@ -12,7 +12,7 @@
  *  - All renderer access goes through electron/preload.js (window.api).
  *
  * IPC (renderer → main, invoke):
- *   app:init                 → { db, build, settings, defaultSettings, failedHotkeys, dataSource, version }
+ *   app:init                 → { db, build, settings, defaultSettings, failedHotkeys, missingData, version }
  *   build:save    (build)    → { ok }
  *   build:preview ({ json }) → { ok, summary } | { ok:false, error }
  *   build:load    ({ phases, loadoutName }) → { ok, build } | { ok:false, error }
@@ -63,7 +63,7 @@ function loadGameData({ fresh = false } = {}) {
   if (!gameData || fresh) {
     const buildDb = require('../db/build-db');
     buildDb.load(true);
-    gameData = { db: buildDb.all(), source: buildDb.source() };
+    gameData = { db: buildDb.all(), missing: buildDb.missingFiles() };
   }
   return gameData;
 }
@@ -170,10 +170,10 @@ function handle(channel, fn) {
 
 function registerIpc() {
   handle('app:init', () => {
-    const { db, source } = loadGameData({ fresh: true });
+    const { db, missing } = loadGameData({ fresh: true });
     return {
       db: { trees: db.skills, classes: db.classes },
-      dataSource: source,
+      missingData: missing,
       build: store.loadBuild(),
       settings,
       defaultSettings: DEFAULT_SETTINGS,

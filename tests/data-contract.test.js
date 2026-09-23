@@ -6,7 +6,7 @@
  * present, every classes.json mapping resolvable, and every `icon` pointing at
  * a real file in db/data/icons/.
  *
- * Checks the full extractor output when present, otherwise the committed sample.
+ * Checks the committed extractor outputs (skill_tree_reconciled.json + passives.json).
  */
 
 'use strict';
@@ -19,10 +19,8 @@ const path = require('path');
 const DATA = path.join(__dirname, '..', 'db', 'data');
 const ICONS = path.join(DATA, 'icons');
 const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
-const exists = (f) => fs.existsSync(path.join(DATA, f));
-
-const skillFile = exists('skill_tree_reconciled.json') ? 'skill_tree_reconciled.json' : 'skill_tree_reconciled.sample.json';
-const files = [skillFile, ...(exists('passives.json') ? ['passives.json'] : [])];
+const skillFile = 'skill_tree_reconciled.json';
+const files = [skillFile, 'passives.json'];
 const rows = files.flatMap(f => read(f).map(r => ({ ...r, _file: f })));
 const classes = read('classes.json');
 
@@ -37,7 +35,7 @@ describe(`data contract (${files.join(' + ')})`, () => {
         && typeof r.description === 'string'
         && Number.isInteger(r.maxPoints) && r.maxPoints >= 0
         && Array.isArray(r.stats) && r.stats.every(s => typeof s?.statName === 'string')
-        && (r.icon === undefined || r.icon === null || (typeof r.icon === 'string' && r.icon.length > 0));
+        && (r.icon === null || (typeof r.icon === 'string' && r.icon.length > 0));
       if (!ok) bad.push(`${r._file} ${r.treeID}:${r.nodeID}`);
     }
     assert.deepEqual(bad.slice(0, 10), []);
@@ -64,12 +62,14 @@ describe(`data contract (${files.join(' + ')})`, () => {
     }
   });
 
-  test('passives.json holds only class passive trees, and the skill file none of them', { skip: !exists('passives.json') && 'no passives.json' }, () => {
+  test('passives.json holds only class passive trees, and the skill file none of them', () => {
     const passiveIds = new Set(Object.values(classes.passiveTreeByClass));
     assert.ok(read('passives.json').every(r => passiveIds.has(r.treeID)));
-    if (skillFile === 'skill_tree_reconciled.json') {
-      assert.ok(read(skillFile).every(r => !passiveIds.has(r.treeID)));
-    }
+    assert.ok(read(skillFile).every(r => !passiveIds.has(r.treeID)));
+  });
+
+  test('every row carries the icon field (null or a path)', () => {
+    assert.deepEqual(rows.filter(r => !('icon' in r)).slice(0, 5).map(r => `${r.treeID}:${r.nodeID}`), []);
   });
 
   test('every icon points at an existing file inside db/data/icons', () => {

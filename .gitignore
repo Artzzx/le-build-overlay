@@ -1,16 +1,32 @@
+# ─── Dependencies & build output ─────────────────────────────────────────────
 node_modules/
+dist/
+out/
 
-# Runtime state (written by the app)
+# ─── Python / tooling ────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+*.log
+
+# ─── OS / editor ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# ─── Legacy runtime state (overlay era) ──────────────────────────────────────
+# The app now keeps build/settings/templates in the per-user data folder; these
+# only protect old local files from being committed by accident.
 config/build.json
 config/settings.json
 config/saves/
 
-# Game data — full extraction output is regenerated per patch.
-# db/data/skill_tree_reconciled.sample.json IS committed (fallback + tests).
-db/data/skill_tree_reconciled.json
-db/data/passives.json
+# ─── Raw game dumps (large, game-owned) ──────────────────────────────────────
+# Committed game data = extractor/nodes_flat.json (input) + db/data/ (outputs,
+# incl. icons/ as WebP — run extractor/convert_icons.py before committing).
 Global Tree Data.json
-extractor/skillkey-map.json
 EXTRACTION_GUIDE.md
-__pycache__/
-config/saves
+extractor/raw/
+extractor/skillkey-map.json

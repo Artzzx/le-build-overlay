@@ -36,13 +36,13 @@ le-build-overlay/
 ├── parser/                       ← maxroll.js (paste → loadout), build-schema.js (validators)
 ├── db/
 │   ├── build-db.js               ← loads db/data (main process + tests)
-│   └── data/                     ← skill_tree_reconciled.json + passives.json (gitignored), *.sample.json (committed), classes.json,
-│                                    icons/ (node art, referenced by each row's `icon`)
-├── extractor/                    ← nodes_flat.json (input) → extract.py → db/data/
+│   └── data/                     ← skill_tree_reconciled.json + passives.json (generated, committed), classes.json,
+│                                    icons/ (node art as WebP, committed, referenced by each row's `icon`)
+├── extractor/                    ← nodes_flat.json (input) → convert_icons.py + extract.py → db/data/; requirements.txt (Pillow)
 ├── scripts/                      ← dev.js (npm run dev)
 ├── config/                       ← build.example.json, maxroll-paste.example.txt (examples only)
 └── tests/                        ← node:test — db, parser, tree-utils, view-model, main-process (store/hotkeys),
-                                     extractor (runs extract.py on fixtures), data-contract (the real data files)
+                                     extractor + convert-icons (run the Python scripts on fixtures), data-contract (the real data files)
 ```
 
 ---
@@ -121,7 +121,7 @@ Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normal
 { passives: trees, skills: trees /* same object */, classes, duplicates }
 trees = { [treeID]: { name, icon, nodes: { [String(nodeID)]: { id, nodeName, description, maxPoints, stats, icon } } } }
 ```
-The committed `skill_tree_reconciled.sample.json` contains both passive rows and 12 skill trees, copied unchanged from the extractor output. It's the fallback for fresh clones/tests.
+Both files are committed (regenerate + commit after each patch). There is no fallback: if either is missing, `build-db.missingFiles()` reports it and the status bar shows **Game data missing**.
 
 ### classes.json (hand-maintained)
 `{ classes:{"3":"Sentinel"}, masteriesByClass:{"3":{"1":"Forge Guard","2":"Void Knight","3":"Paladin"}}, passiveTreeByClass:{"3":"kn-1"} }`
@@ -132,10 +132,18 @@ The committed `skill_tree_reconciled.sample.json` contains both passive rows and
 - **Fallback**: `icon: null`, or an image that fails to load, draws a glyph (initials, hue from a hash that skips the green band). Partial icon sets are fine.
 - **Rendering**: tiles get `.has-art` (thin rim + bottom shade over the image). Visual weight follows the reading order: current (green ring) and next are full brightness, later upcoming steps are dimmed, done steps are desaturated.
 
-### Data pipeline — `python extractor/extract.py [--verbose]`
+### Data pipeline (per game patch)
+```bash
+pip install -r extractor/requirements.txt       # once (Pillow)
+python extractor/convert_icons.py               # db/data/icons: PNG/JPG → 128 px WebP (~6× smaller), idempotent
+python extractor/extract.py [--verbose] [--strict]
+```
+Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together. `extract.py` warns if non-WebP icons are present; **never commit PNG icons** (git keeps every version forever).
+
+### `extract.py`
 Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `passives.json`. It drops orphan and placeholder rows, merges duplicates (keeping an icon from either copy), and derives `treeName` from the root node (or from `TREE_NAME_OVERRIDES`).
 
-- **Icons**: each input row's `icon` value is resolved against the images in `db/data/icons/` (`--icons-dir` to override), case-insensitively. It tries, in order: the relative path, the longest tail of an absolute/Windows path, the file name, then the file name without extension. Rows without a value fall back to `<treeID>/<nodeID>.<ext>`. A bare name that exists in several folders is ambiguous and is never guessed. Unresolved values become `null` and are reported (`--verbose` lists them); `--strict` makes them fail the run.
+- **Icons**: each input row's `icon` value is resolved against the images in `db/data/icons/` (`--icons-dir` to override), case-insensitively. It tries, in order: the relative path, the longest tail of an absolute/Windows path (both extension-agnostic, so `es6ai/12.png` finds `es6ai/12.webp` after conversion), the file name, then the file name without extension. Rows without a value fall back to `<treeID>/<nodeID>.<ext>`. A bare name that exists in several folders is ambiguous and is never guessed. Unresolved values become `null` and are reported (`--verbose` lists them); `--strict` makes them fail the run.
 - **Output contract**: `validate_output()` checks the exact field set, types, unique `(treeID, nodeID)`, all 5 passive trees present, no passive rows in the skill file, and that icon files exist. On any violation it writes **nothing** and exits 1. `tests/data-contract.test.js` checks the same things from the app's side.
 
 ### Known data-quality issues
@@ -180,15 +188,15 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 npm install
 npm start / npm run dev     # dev opens detached DevTools
 npm test                    # node --test tests/*.test.js
-python extractor/extract.py [--verbose] [--strict]   # regenerate db/data from extractor/nodes_flat.json
+python extractor/convert_icons.py && python extractor/extract.py   # regenerate db/data (see Data pipeline)
 ```
 
-- Tests run against the full data if present, otherwise the sample. Assertions must hold for both.
+- Tests run against the committed game data. The Python-backed tests skip themselves when python3 / Pillow are missing.
 - UI changes must be checked in the real app at several window sizes (e.g. 1920, 1440, 1100, 760, 460 px wide). Run it under `xvfb-run` with `LE_USER_DATA` pointing at a temp dir, and drive it via `webContents.executeJavaScript` / `sendInputEvent` + `capturePage`.
-- Regenerating the committed sample: all rows of `passives.json` + the skill trees `fl44 fi9 es6ai v01cv vr53sl an0my sr31hu htsk5 smbmb pun22 dqv5 srk21` from `skill_tree_reconciled.json`, copied unchanged, one row per line.
+- `.gitignore` policy: game data we produce is committed (`nodes_flat.json`, `db/data/**`); raw game dumps, runtime state, build output and tooling noise are ignored.
 
 ## Known Open Issues / Decisions
 1. **Duplicate nodes in data**: see above; needs an upstream exporter fix.
 2. **Direct hotkey mode is the default** and captures `1`–`6` system-wide while the game has focus (game chat digits). *Arm first* avoids that; consider making it the default.
 3. **No installer/packaging yet** (electron-builder etc.). Paths are already packaging-safe (userData for state, read-only app dir).
-4. **Icon files are not committed yet.** The pipeline and UI are ready; what to commit is pending (see the recommendation: optimise to 128 px WebP, about 6× smaller than the PNG exports).
+4. **Icon files not committed yet**: run `convert_icons.py` first, then commit `db/data/icons/`.

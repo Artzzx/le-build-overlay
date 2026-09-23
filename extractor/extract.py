@@ -26,7 +26,7 @@ Both outputs are flat arrays with the same row shape:
 
   Icon files live in db/data/icons/ (any layout, .png/.webp/.jpg). Each input
   row's `icon` value is resolved against those files, case-insensitively:
-    1. as a relative path          "es6ai/12.png"
+    1. as a relative path          "es6ai/12.png" (any extension: finds es6ai/12.webp)
     2. by its longest path tail    "C:\\export\\icons\\es6ai\\12.png" → "es6ai/12.png"
     3. by file name                "Sprite_VoidLens.png"
     4. by file name w/o extension  "Sprite_VoidLens"
@@ -194,7 +194,8 @@ class IconIndex:
 
     def __init__(self, icons_dir):
         self.dir = icons_dir
-        self.by_path, self.by_name, self.by_stem = {}, {}, {}
+        self.by_path, self.by_path_stem, self.by_name, self.by_stem = {}, {}, {}, {}
+        self.unconverted = []  # non-WebP files (run convert_icons.py before committing)
         self.ambiguous = set()
         if not icons_dir.is_dir():
             return
@@ -203,6 +204,10 @@ class IconIndex:
         for f in files:
             rel = f.relative_to(icons_dir).as_posix()
             self.by_path.setdefault(rel.lower(), rel)
+            # Extension-agnostic path: "es6ai/12.png" still finds "es6ai/12.webp" after conversion.
+            self.by_path_stem.setdefault(rel.rsplit('.', 1)[0].lower(), rel)
+            if f.suffix.lower() != '.webp':
+                self.unconverted.append(rel)
             for table, key in ((self.by_name, f.name.lower()), (self.by_stem, f.stem.lower())):
                 # Same key in another folder → ambiguous. (Same folder = same stem, other
                 # extension: the preferred extension, sorted first, wins.)
@@ -223,7 +228,8 @@ class IconIndex:
         if not parts:
             return None
         for i in range(len(parts)):                      # longest tail first
-            hit = self.by_path.get('/'.join(parts[i:]).lower())
+            tail = '/'.join(parts[i:]).lower()
+            hit = self.by_path.get(tail) or self.by_path_stem.get(tail.rsplit('.', 1)[0] if '.' in parts[-1] else tail)
             if hit:
                 return hit
         name = parts[-1].lower()
@@ -360,6 +366,9 @@ def main():
               f'{len(icon_index)} files in {args.icons_dir}')
         if icon_report['no value']:
             print(f'  {icon_report["no value"]} nodes have no icon value and no conventional file')
+        if icon_index.unconverted:
+            print(f'  WARNING: {len(icon_index.unconverted)} icons are not WebP — run '
+                  f'python extractor/convert_icons.py before committing (≈6× smaller)')
         if icon_index.ambiguous:
             print(f'  WARNING: {len(icon_index.ambiguous)} file names exist in several folders — '
                   f'those only resolve by relative path: {sorted(icon_index.ambiguous)[:5]}')

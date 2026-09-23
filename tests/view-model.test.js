@@ -2,7 +2,7 @@
  * tests/view-model.test.js
  * ─────────────────────────
  * Unit tests for shared/view-model.js — what the UI renders per lane.
- * Runs against the loaded DB (full data or committed sample; both contain the
+ * Runs against the committed game data (which contains the
  * trees used here).
  */
 
