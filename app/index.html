@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<!--
+  app/index.html — the LE Build Planner window.
+  All UI is built by app/js/main.js. Pure logic comes from shared/ (classic
+  scripts that define window.TreeUtils / window.ViewModel), loaded first.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LE Build Planner</title>
+  <link rel="stylesheet" href="styles/tokens.css" />
+  <link rel="stylesheet" href="styles/app.css" />
+  <link rel="stylesheet" href="styles/lanes.css" />
+  <link rel="stylesheet" href="styles/dialogs.css" />
+</head>
+<body>
+  <header id="topbar" class="topbar"></header>
+  <div id="banner" class="banner-slot" hidden></div>
+
+  <main id="workspace" class="workspace">
+    <div id="lanes" class="lanes" aria-label="Skill trees"></div>
+    <aside id="inspector" class="inspector" aria-label="Node details" aria-live="polite"></aside>
+  </main>
+
+  <footer id="statusbar" class="statusbar"></footer>
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <dialog id="dlg-loadout" class="dialog" aria-label="Load build"></dialog>
+  <dialog id="dlg-settings" class="dialog" aria-label="Settings"></dialog>
+
+  <script src="../shared/tree-utils.js"></script>
+  <script src="../shared/view-model.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

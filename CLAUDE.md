@@ -1,10 +1,12 @@
-# LE Build Overlay — Claude Code Context
+# LE Build Planner — Claude Code Context
 
 ## What This Project Is
 
-A transparent, always-on-top **Electron overlay** for the game **Last Epoch (LE)** that shows a player's build progression plan (from the Maxroll planner or in-game export) and lets them advance point-by-point with global hotkeys while playing — a "co-pilot" for allocating passive and skill tree points in the right order.
+A standalone **Electron desktop app** for the game **Last Epoch (LE)**. The player loads a build (Maxroll planner or in-game export codes) and follows it point by point. The main view shows **every tree at once** (the class passive tree and up to 5 skill trees), with the node to allocate **next** in each tree highlighted, what comes after it, and the full allocation path.
 
-The overlay is click-through (never interferes with gameplay) and is driven entirely by global hotkeys registered via Electron's `globalShortcut`.
+Design constraint that drives every UI decision: **the user is playing the game at the same time.** The window sits on a second monitor or next to a windowed game and is read in a half-second glance. That means large readable text, few colours with fixed meanings, and one-key actions. Global hotkeys let the player tick points off without leaving the game.
+
+The app used to be a transparent click-through overlay (`overlay/`). That code is gone; the repo/package name `le-build-overlay` is kept because the user-data folder path derives from it.
 
 ---
 
@@ -12,197 +14,155 @@ The overlay is click-through (never interferes with gameplay) and is driven enti
 
 ```
 le-build-overlay/
-├── CLAUDE.md                         ← YOU ARE HERE
-├── README.md                         ← user-facing setup + extraction guide
-├── package.json                      ← npm start / npm run dev / npm test
 ├── electron/
-│   ├── main.js                       ← main process: windows, hotkeys, IPC, file I/O
-│   ├── preload.js                    ← overlay bridge   → window.electronAPI
-│   ├── config-preload.js             ← config bridge    → window.configAPI
-│   └── settings-preload.js           ← settings bridge  → window.settingsAPI
-├── overlay/
-│   ├── index.html / app.js / style.css   ← overlay window (renderer)
-│   ├── config.html / config.js           ← F5 "Load Loadout" window (multi-phase paste + templates)
-│   └── settings.html / settings.js       ← F2 settings window
-├── shared/
-│   └── tree-utils.js                 ← PURE logic used by BOTH main (require) and renderer (<script>)
-├── parser/
-│   ├── maxroll.js                    ← raw Maxroll paste → normalized build / loadout
-│   └── build-schema.js               ← validators (validateBuild, validateLoadout, …)
+│   ├── main.js        ← window, IPC handlers, lifecycle, game-data cache
+│   ├── store.js       ← <userData>/build.json, settings.json, saves/ (atomic writes, migration)
+│   ├── hotkeys.js     ← global shortcuts: direct / latch ("arm first"), suspend while focused, pause
+│   └── preload.js     ← window.api — the ONLY renderer bridge (contextIsolation + sandbox)
+├── app/                          ← renderer: vanilla JS ES modules, no framework, no bundler
+│   ├── index.html                ← strict CSP; loads shared/*.js (classic) then js/main.js (module)
+│   ├── js/main.js                ← state, actions (allocate/undo/setCurrent/gotoPhase), rendering, keyboard, toasts
+│   ├── js/lanes.js               ← lane = identity · NEXT UP card · path strip; nodeTile(); laneAccent()
+│   ├── js/inspector.js           ← node details + route list
+│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): phases, live preview, templates
+│   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, hotkeys (key recorder)
+│   ├── js/icons.js               ← node/tree artwork via manifest, glyph fallback, UI svg icons
+│   ├── js/keys.js                ← KeyboardEvent → Electron accelerator, keyRecorder()
+│   ├── js/dom.js                 ← h(), mount(), svg(), richText()
+│   └── styles/                   ← tokens.css, app.css (shell), lanes.css, dialogs.css
+├── shared/                       ← PURE logic, UMD: require() in Node, window.* in the renderer
+│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over
+│   └── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
+├── parser/                       ← maxroll.js (paste → loadout), build-schema.js (validators)
 ├── db/
-│   ├── build-db.js                   ← loads db/data into memory (main process + tests)
-│   └── data/
-│       ├── skill_tree_reconciled.json         ← FULL skill node data (gitignored, regenerated per patch)
-│       ├── passives.json                      ← 5 class passive trees (gitignored, regenerated per patch)
-│       ├── skill_tree_reconciled.sample.json  ← COMMITTED subset; auto-fallback when full file absent
-│       └── classes.json                       ← hand-maintained class/mastery/passive-tree mapping
-├── extractor/
-│   ├── nodes_flat.json               ← INPUT: flat node export tagged with treeID (per patch)
-│   └── extract.py                    ← cleanup: nodes_flat.json → skill_tree_reconciled.json + passives.json
-├── config/
-│   ├── build.json                    ← live loadout + progress (gitignored runtime state)
-│   ├── settings.json                 ← user settings + window bounds (gitignored runtime state)
-│   ├── saves/                        ← saved loadout templates (gitignored)
-│   ├── build.example.json            ← 2-phase example loadout (resolves against the sample data)
-│   └── maxroll-paste.example.txt     ← real multi-line Maxroll paste (Rogue) for manual testing
-├── scripts/dev.js                    ← launches Electron with --dev
-└── tests/                            ← node:test — db, parser, tree-utils
+│   ├── build-db.js               ← loads db/data (main process + tests)
+│   └── data/                     ← skill_tree_reconciled.json + passives.json (gitignored), *.sample.json (committed), classes.json
+├── extractor/                    ← nodes_flat.json (input) → extract.py → db/data/
+├── assets/icons/                 ← optional artwork: nodes/<treeID>/<nodeID>.png, trees/<treeID>.png, manifest.json
+├── scripts/                      ← dev.js (npm run dev), build-icon-manifest.js (npm run icons)
+├── config/                       ← build.example.json, maxroll-paste.example.txt (examples only)
+└── tests/                        ← node:test — db, parser, tree-utils, view-model, main-process (store/hotkeys/icons)
 ```
 
 ---
 
-## Module Relationships
+## Data Flow
 
 ```
-config.js ──configAPI──► main.js ('load-loadout')
-                           ├─ db/build-db.js  (load(true) → { skills, classes })
-                           │     └─ shared/tree-utils.js makeDb()
-                           ├─ parser/maxroll.js parseLoadout → parseBuild → mergeRawLines
-                           │     └─ parser/build-schema.js validate* / initializeBuild
-                           ├─ writes config/build.json
-                           └─ sends 'reload-build' to overlay
-app.js (overlay renderer, window.TreeUtils from shared/tree-utils.js)
-   ├─ fetch ../config/build.json → normalizeBuild()
-   ├─ fetch ../db/data/skill_tree_reconciled.json (else .sample.json) + classes.json → makeDb()
-   ├─ 'hotkey' IPC → stepTrack() / switchPhase() (computeTransition + applyCarryOver)
-   └─ 'save-build' IPC after every change → main writes config/build.json
-settings.js ──settingsAPI──► main.js ('save-settings' → re-register hotkeys, returns failedHotkeys)
+Load build dialog ──api.previewPhase──► main: parseBuild (live validation per phase)
+                  ──api.loadLoadout───► main: parseLoadout → store.saveBuild → returns build
+app/js/main.js
+   ├─ api.init() → { db:{trees,classes}, build, settings, defaultSettings, icons, failedHotkeys, dataSource }
+   ├─ ViewModel.buildView(build, db) → lanes[] (steps with done/current/upcoming, now, next, colorSlot)
+   ├─ actions → TreeUtils.stepTrack / setTrackProgress / applyCarryOver → commit() → api.saveBuild
+   └─ api.onHotkey(): global keys → { action: 'advance'|'undo'|'phase'|'latch' }
 ```
 
-**Rule:** any logic that both main and the renderer need goes in `shared/tree-utils.js` (UMD: `module.exports` in Node, `window.TreeUtils` in the browser). It must stay pure — no `fs`, DOM or Electron. Don't re-implement grouping/lookup/stepping in `app.js`.
+**Rules**
+- Logic needed by more than one side (main, renderer, tests) goes in `shared/`. It must stay pure: no `fs`, no DOM, no Electron. Never re-implement grouping/lookup/stepping in `app/`.
+- The renderer never touches the filesystem. Everything goes through `window.api` (preload), and every invoke resolves to `{ ok: true, ... }` or `{ ok: false, error }`.
+- `commit(next, { lanes })` is the single path for build changes: it persists, rebuilds the view, and re-renders only the listed lanes (keeps strip scroll positions).
+- Render via `h()`/`mount()` only (textContent, never innerHTML with data). CSP forbids inline scripts/styles; set styles through the CSSOM (`h(..., { style: {...} })`).
 
 ---
 
 ## Key Domain Concepts
 
-### Tracks
-- **Passive track**: the class passive tree (exactly 1 per build/phase)
-- **Skill tracks**: one per equipped skill (up to 5)
-
-Each track has a flat `history[]` (ordered allocation) and `currentStep`.
+### Tracks → lanes
+- **Passive track**: the class passive tree (exactly 1 per phase). **Skill tracks**: one per skill (up to 5).
+- Each track: flat `history[]` (ordered node ids, one entry per point) + `currentStep`.
+- Lane `hotkey` = position + 1. Lane **colour** = `colorSlot` (passive 0, skills 1–5 by first appearance across *all* phases), so a skill keeps its colour when phases reorder or drop skills.
 
 ### currentStep is a FLAT point count
-`currentStep` = number of history entries allocated. `0` = nothing, `history.length` = complete. One hotkey press = one point. It is **not** a group index.
+`0` = nothing allocated, `history.length` = complete. One press = one point. **Not** a group index.
 
-### Grouped steps (derived, never stored)
-```js
-groupHistory([6,6,6,4,4]) → [{nodeId:6,count:3,startIdx:0},{nodeId:4,count:2,startIdx:3}]
-findCurrentGroup(groups, currentStep) // group where startIdx <= step < startIdx+count, or null if complete
-```
+### Steps (grouped history, derived, never stored)
+`groupHistory([6,6,6,4,4])` → `[{nodeId:6,count:3,startIdx:0},{nodeId:4,count:2,startIdx:3}]`.
+View-model step states: `done` / `current` (the NEXT UP step, may be partly allocated) / `upcoming`. `nodeTotalAfter` = points in that node once the step is done (a node can appear in several steps).
 
 ### Skill keys = treeIDs
-Maxroll's `skillTrees` keys are the game's `treeID` verbatim — no mapping table. e.g. `es6ai` = Erasing Strike, `v01cv` = Void Cleave, `fl44` = Flay, `fi9` = Fireball.
+Maxroll `skillTrees` keys are the game's `treeID` verbatim (`es6ai` = Erasing Strike, `fl44` = Flay). No mapping table.
 
 ### Mastery IDs are per-class relative (1–3)
-Maxroll `mastery` is 1–3 within the class, **not** a global id. Look up via `classes.json → masteriesByClass[classId][masteryId]` (Sentinel 2 = Void Knight).
+`classes.json → masteriesByClass[classId][masteryId]` (Sentinel 2 = Void Knight).
 
-### Phases (loadouts)
-A loadout has several phases (e.g. Leveling → Endgame), all the same class/mastery. On phase switch (F6/Shift+F6):
-- `applyCarryOver`: each target track starts at `min(fromProgress, commonPrefixLength(fromHistory, toHistory))`; trees not in the source phase start at 0.
-- `computeTransition`: lists points to unspec (progress beyond the shared prefix) and skills to remove from the bar. Shown as a panel for 3 s (15 s if unspec needed).
+### Phases
+A loadout has 1–5 phases, all with the same class and mastery. `gotoPhase`: `applyCarryOver` sets each target track to `min(fromProgress, commonPrefixLength(histories))`, and `computeTransition` lists points to unspec and skills to remove. That list is shown as a banner until the user dismisses it. Phase switches, loads and *Start from here* offer an Undo toast.
 
 ---
 
 ## Data Formats
 
-### Raw Maxroll paste (config window input)
-Maxroll/in-game export gives one JSON object per section; users paste them as separate lines. `mergeRawLines` merges them:
-```
-{"passives":{"history":[6,6,6,...],"position":113},"class":4,"mastery":2}
-{"skillTrees":{"htsk5":{"history":[9,10,1,...],"position":26}}}
-{"skillTrees":{"smbmb":{"history":[17,17,18,...],"position":22}}}
-```
-A single combined object is also accepted. See `config/maxroll-paste.example.txt`.
+### Raw Maxroll paste
+One JSON object per line (passives/class/mastery line + one line per skill); `mergeRawLines` merges them. A single combined object also works. See `config/maxroll-paste.example.txt`.
 
-### config/build.json — multi-phase LOADOUT (what is actually stored)
+### <userData>/build.json — multi-phase loadout
 ```json
-{
-  "name": "Void Knight Erasing Strike",
-  "classId": 3,
-  "masteryId": 2,
-  "currentPhase": 0,
-  "phases": [
-    { "name": "Leveling", "tracks": [
-      { "type": "passive", "label": "Sentinel — Void Knight Passives", "history": [0,0,1], "totalSteps": 3, "currentStep": 0 },
-      { "type": "skill", "skillKey": "v01cv", "label": "Void Cleave", "history": [2,2,4], "totalSteps": 3, "currentStep": 0 }
-    ]}
-  ]
-}
+{ "name": "Void Knight Erasing Strike", "classId": 3, "masteryId": 2, "currentPhase": 0,
+  "phases": [ { "name": "Leveling", "tracks": [
+    { "type": "passive", "label": "Sentinel — Void Knight Passives", "history": [0,0,1], "totalSteps": 3, "currentStep": 0 },
+    { "type": "skill", "skillKey": "v01cv", "label": "Void Cleave", "history": [2,2,4], "totalSteps": 3, "currentStep": 0 } ] } ] }
 ```
-The legacy single-phase shape (`{ name, classId, masteryId, tracks }`) is still accepted on load and wrapped by `normalizeBuild()`.
+Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`. `label` is baked at import time; the UI prefers live DB names (view-model titles).
+
+### <userData>/settings.json
+`{ window:{x,y,width,height,maximized}, display:{uiScale,alwaysOnTop}, hotkeys:{enabled,hotkeyMode,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey} }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
 
 ### db/data/skill_tree_reconciled.json + passives.json — flat node rows
 ```json
-{ "treeID": "fl44", "treeName": "Flay", "nodeID": 4,
-  "nodeName": "Scent of Death", "description": "Enemies hit by Flay are…",
-  "maxPoints": 4, "stats": [{"statName": "Kill Threshold", "value": "3%"}] }
+{ "treeID": "fl44", "treeName": "Flay", "nodeID": 14, "nodeName": "Go For The Throat",
+  "description": "Flay has additional critical strike chance…", "maxPoints": 3,
+  "stats": [{"statName": "Critical Strike Chance", "value": "+2%"}] }
 ```
-Both files have this row shape. `passives.json` holds only the 5 class passive trees
-(`ac-1, mg-1, kn-1, rg-1, pr-1`) with `treeName` = class name (e.g. `kn-1` → "Sentinel").
-The committed `skill_tree_reconciled.sample.json` is older and still contains passive rows
-(no `passives.json` needed for tests/fresh clones). Loaders put `passives.json` rows first,
-then index everything with `makeDb()` into:
+`passives.json` holds the 5 class passive trees (`ac-1 mg-1 kn-1 rg-1 pr-1`, `treeName` = class name). Loaders put passive rows first, then index with `makeDb()`:
 ```js
 { passives: trees, skills: trees /* same object */, classes, duplicates }
 trees = { [treeID]: { name, nodes: { [String(nodeID)]: { id, nodeName, description, maxPoints, stats } } } }
 ```
-Display name: `node.nodeName`. There is **no** internal `name` field any more.
+The committed `skill_tree_reconciled.sample.json` contains both passive rows and 12 skill trees, copied unchanged from the extractor output. It's the fallback for fresh clones/tests.
 
-### classes.json
-```json
-{
-  "classes": { "3": "Sentinel" },
-  "masteriesByClass": { "3": { "1": "Forge Guard", "2": "Void Knight", "3": "Paladin" } },
-  "passiveTreeByClass": { "1": "ac-1", "2": "mg-1", "3": "kn-1", "4": "rg-1", "5": "pr-1" }
-}
-```
+### classes.json (hand-maintained)
+`{ classes:{"3":"Sentinel"}, masteriesByClass:{"3":{"1":"Forge Guard","2":"Void Knight","3":"Paladin"}}, passiveTreeByClass:{"3":"kn-1"} }`
+
+### Icons — assets/icons/manifest.json
+`{ nodes: { "es6ai/12": "nodes/es6ai/12.png" }, trees: { "es6ai": "trees/es6ai.png" } }`, generated by `npm run icons`. The UI loads only files that are listed; anything missing or broken falls back to a glyph (initials, hue from a hash that skips the green band).
 
 ### Data pipeline — `python extractor/extract.py [--verbose]`
-Cleans `extractor/nodes_flat.json`: drops rows with no `treeID` and blank/`"Name"` placeholders
-without description, merges duplicate rows of the same node, derives `treeName` from the root
-node (nodeID 0, maxPoints 0; `TREE_NAME_OVERRIDES` for trees without one, class name for passives).
+Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `passives.json`. It drops orphan and placeholder rows, merges duplicates, and derives `treeName` from the root node (or from `TREE_NAME_OVERRIDES`).
 
-### Known data-quality issues (nodes_flat.json)
-- **~86 `(treeID, nodeID)` collisions**: two *different* nodes share an id — stale nodes from older tree versions exported next to live ones (e.g. `es6ai` 12 = "Rythm of the Void" *and* "Void Lens"; `fr11mv` has 23). `extract.py` keeps the first named row and lists them with `--verbose`, but **the winner may be the stale node**. Proper fix is upstream: the exporter should emit only nodes referenced by the live tree.
+### Known data-quality issues
+- **~86 `(treeID, nodeID)` collisions** in `nodes_flat.json`: stale nodes from older tree versions exported next to live ones (e.g. `es6ai` 12 = "Rythm of the Void" *and* "Void Lens"). `extract.py` keeps the first named row, **which may be the stale one**. The fix is upstream: export only nodes referenced by the live tree. Don't write tests that assert names of collided nodes.
 
 ---
 
 ## Electron Architecture
 
-### Windows
-| Window | Opened by | Preload | Notes |
-|---|---|---|---|
-| Overlay | startup | `preload.js` | transparent, frameless, `focusable:false`, click-through |
-| Config ("Load Loadout") | F5 | `config-preload.js` | multi-phase paste, templates |
-| Settings | F2 | `settings-preload.js` | display + hotkeys |
+- **One window**: normal frame, resizable (min 420×480), `sandbox`, `contextIsolation`, no `nodeIntegration`, no app menu, navigation and `window.open` blocked. Bounds, maximized state, zoom (UI scale) and always-on-top persist. Saved bounds are only reused if they're still on a connected display.
+- **Single instance**: a second launch focuses the existing window.
+- **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). Old `config/build.json`, the hotkeys from `config/settings.json`, and `config/saves/` are migrated once.
+- **Game data** is loaded once and cached in main; `app:init` refreshes it (so a window reload picks up re-extracted data).
 
-Overlay bounds come from `config/settings.json` (`window.x/y/width/height`); `null` x/y = bottom-right default. F3 toggles **position mode** (overlay becomes focusable/clickable, drag bar + resize grips, bounds saved on exit).
-
-### Hotkeys (defaults, all configurable)
-| Key | Action |
-|---|---|
-| F1 | toggle overlay |
-| 1–6 | advance track N (direct mode) |
-| Shift+1–6 | undo track N |
-| `` ` `` | arm 1–6 for 5 s of inactivity (latch mode only) |
-| F2 / F5 / F3 | settings / config / position mode |
-| F6 / Shift+F6 | next / previous phase |
-
-`hotkeyMode`: `'direct'` (default — 1–6 always captured system-wide, including chat) or `'latch'` (only the latch key is global; each advance/undo re-arms the 5 s timer). All registration goes through `safeRegister()`, so one invalid/taken key never blocks the others; failures are returned to the settings window.
-
-### IPC channels
-| Channel | Direction | Payload |
+### Hotkeys (`electron/hotkeys.js`)
+| Default | Action | While the app window is focused |
 |---|---|---|
-| `hotkey` | main → overlay | `{ action: 'toggle'\|'advance'\|'undo'\|'phase', trackIndex?, visible?, direction? }` |
-| `reload-build` | main → overlay | — (re-read build.json) |
-| `settings-changed` | main → overlay | full settings |
-| `advance-mode` | main → overlay | `{ active }` (latch indicator) |
-| `enter-/exit-position-mode` | main → overlay | — |
-| `save-build` | overlay → main | full loadout (after every change) |
-| `move-window` / `resize-window` / `end-position-mode` | overlay → main | position mode |
-| `get-settings` / `save-settings` | invoke | settings / `{ success, failedHotkeys? }` |
-| `load-loadout` / `load-build` | invoke (config) | `{ phases, loadoutName }` / `{ jsonString, buildName }` |
-| `save-/list-/load-/delete-template` | invoke (config) | templates in `config/saves/` |
+| `1`–`6` / `Shift`+`1`–`6` | allocate / undo (direct mode) | **released** (the app handles keys itself; typing works) |
+| `` ` `` | arm `1`–`6` for 5 s, re-armed by each use (latch mode) | **released** |
+| `F1` | show / hide window (`showInactive`, never steals focus) | active |
+| `F6` / `Shift`+`F6` | next / previous phase | active |
+
+`safeRegister()` never throws. Failures are returned to Settings and shown in the status bar. `pause(true)` releases everything while the Settings key recorder is listening.
+
+### IPC (`window.api` → main, all `invoke`)
+`init`, `saveBuild`, `previewPhase(json)`, `loadLoadout(phases, name)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`. Main → renderer: `hotkey` events via `onHotkey(cb)`.
+
+### In-app keyboard (renderer, ignored while typing or a dialog is open)
+`1`–`6` / `Shift`+`1`–`6`, `↑↓` focus tree, `←→` browse steps (pins inspector), `Enter`/`Space` allocate focused tree, `Backspace` undo, `Esc` unpin / dismiss banner, `PgUp`/`PgDn` phase, `Ctrl+O` load, `Ctrl+,` settings, `Ctrl+=/-/0` UI scale.
+
+### Responsive layout
+- ≥1180 px: lanes plus an inspector column.
+- <1180 px: the inspector becomes a drawer, opened by clicking a node.
+- Lane container <780 px: the path strip is hidden (identity + NEXT UP only), so all trees still fit.
+- <560 px: lanes stack into a single column.
 
 ---
 
@@ -210,38 +170,18 @@ Overlay bounds come from `config/settings.json` (`window.x/y/width/height`); `nu
 
 ```bash
 npm install
-npm run dev      # Electron with --dev
-npm test         # node --test tests/*.test.js
+npm start / npm run dev     # dev opens detached DevTools
+npm test                    # node --test tests/*.test.js
+npm run icons               # rebuild assets/icons/manifest.json
+python extractor/extract.py # regenerate db/data from extractor/nodes_flat.json
 ```
 
-- Tests run against the full data file if present, else the committed sample — assertions must hold for both (the sample is a verbatim subset).
-- To try the overlay without pasting a build: `cp config/build.example.json config/build.json`.
-- **contextIsolation must stay ON**, nodeIntegration OFF. Never expose `ipcRenderer` directly.
-- **Click-through is critical**: `setIgnoreMouseEvents(true, { forward: true })` after window creation and after leaving position mode.
-- **Unresolved tracks** (no tree in the loaded data) render as "no data" and cannot be advanced — so a real build whose skills aren't in the sample needs the full data file.
-- **db/data/*.json are generated** (except `classes.json`). Never hand-edit; regenerate the sample from the full file if the schema changes.
-- Renderer is vanilla JS, no bundler. Shared code reaches it via `<script src="../shared/tree-utils.js">` before `app.js`.
-
-### Regenerating the committed sample
-Keep it to the 5 passive trees + the skills used by tests/examples (`fl44 fi9 es6ai v01cv vr53sl an0my sr31hu htsk5 smbmb pun22 dqv5 srk21`), rows copied verbatim, one row per line.
-
----
-
-## Status
-
-| Area | Status |
-|---|---|
-| Parser (multi-line paste, multi-phase loadouts) | ✅ Done |
-| Data cleanup (`extract.py` on `nodes_flat.json`) | ✅ Works; data-quality issues above |
-| Overlay (tracks, dots, descriptions, phases, transition panel) | ✅ Done |
-| Electron shell (hotkeys, direct/latch, position mode, settings, config, templates) | ✅ Done |
-| Tests (db, parser, shared logic) | ✅ Green on sample and full data |
-
----
+- Tests run against the full data if present, otherwise the sample. Assertions must hold for both.
+- UI changes must be checked in the real app at several window sizes (e.g. 1920, 1440, 1100, 760, 460 px wide). Run it under `xvfb-run` with `LE_USER_DATA` pointing at a temp dir, and drive it via `webContents.executeJavaScript` / `sendInputEvent` + `capturePage`.
+- Regenerating the committed sample: all rows of `passives.json` + the skill trees `fl44 fi9 es6ai v01cv vr53sl an0my sr31hu htsk5 smbmb pun22 dqv5 srk21` from `skill_tree_reconciled.json`, copied unchanged, one row per line.
 
 ## Known Open Issues / Decisions
-1. **Duplicate nodes in data** — see above; fix in the upstream exporter.
-2. **Direct hotkey mode captures 1–6 globally** (breaks typing digits in game chat). Latch mode exists; consider making it the default.
-3. **Multi-monitor**: positioning uses `screen.getPrimaryDisplay()` only.
-4. **Fonts load from Google Fonts**; offline falls back to system fonts.
-5. **Sample data is pre-split**: `skill_tree_reconciled.sample.json` still carries passive rows with old tree names; regenerate it from the new outputs when convenient.
+1. **Duplicate nodes in data**: see above; needs an upstream exporter fix.
+2. **Direct hotkey mode is the default** and captures `1`–`6` system-wide while the game has focus (game chat digits). *Arm first* avoids that; consider making it the default.
+3. **No installer/packaging yet** (electron-builder etc.). Paths are already packaging-safe (userData for state, read-only app dir).
+4. **No real node icons yet**. The glyph placeholders are designed to be replaced via `assets/icons/`.
