@@ -2,576 +2,222 @@
 """
 extractor/extract.py
 ─────────────────────
-Produces db/data/skills.json and db/data/passives.json from two sources.
-Run reconcile_skill_trees.py afterward to produce the runtime file
-(db/data/skill_tree_reconciled.json) used by build-db.js and app.js.
+Cleans the flat node export (extractor/nodes_flat.json) into the two runtime
+files read by build-db.js / app.js / main.js:
 
-Sources:
+  db/data/skill_tree_reconciled.json  ← every skill tree (+ weaver tree)
+  db/data/passives.json               ← the 5 class passive trees
+                                         (ac-1, mg-1, kn-1, rg-1, pr-1)
 
-  Source 1 — "Global Tree Data.json" (project root)
-    → tree structure: treeID, node ids, maxPoints, requirements
-    → one file, extracted once
+Both outputs are flat arrays with the same row shape:
 
-  Source 2 — AssetStudio full MonoBehaviour export (C:\\Tools\\le_export\\)
-    → real display names (nodeName) and descriptions
-    → requires: SkillTree #*.json  +  SkillTreeNode #*.json files
+  {
+    "treeID":      "es6ai",            ← Maxroll skillKey / passive treeID
+    "treeName":    "Erasing Strike",
+    "nodeID":      12,
+    "nodeName":    "Champion of the Void",
+    "description": "...",
+    "maxPoints":   4,
+    "stats":       [{ "statName": "...", "value": "+8%" }]
+  }
 
-─── Why two sources? ────────────────────────────────────────────────────────
+─── Input ───────────────────────────────────────────────────────────────────
 
-  Global Tree Data contains internal names ("Void Cleave Crit Multi And Mana On
-  Crit") that are not player-facing. The individual SkillTreeNode MonoBehaviours
-  have the real names ("Champion of the Void") and descriptions shown in-game.
+  nodes_flat.json is a flat array of node rows already tagged with treeID:
+    { sourceType, nodeID, nodeName, description, maxPoints, treeID,
+      treeFile, treeRawFields, stats }
 
-  nodeId alone is NOT a unique key — every skill tree has a node with id=0, 12,
-  etc. The composite key (treeID, nodeId) is required.
+─── Cleanup rules ───────────────────────────────────────────────────────────
 
-─── Join chain ──────────────────────────────────────────────────────────────
-
-  SkillTreeNode files are grouped by tree.m_PathID (shared by all nodes in
-  the same skill tree). The root node (id=0) in each group has:
-    .nodeName = "Void Cleave"   ← matches Global Tree Data tree.name exactly
-  → treeID = "v01cv"
-  → (treeID="v01cv", nodeId=12) → nodeName + description
-
-  Parent SkillTree #*.json files are NOT used — AssetStudio does not export
-  them as standalone files (they live inside prefabs).
-
-  Passive trees have no root name match, but each of the 5 passive trees has
-  a distinct node count (103/107/109/110/111), so they match by group size.
+  1. Drop rows with no treeID (orphan nodes not attached to any tree).
+  2. Trim whitespace from names.
+  3. Drop placeholder nodes: nodeName "Name" or "" with no description.
+  4. Merge duplicates (same treeID, nodeID, nodeName) — keep the row with
+     the most stats/description. Stats with a null statName are dropped.
+  5. (treeID, nodeID) must be unique. On collision:
+       - nodeID 0 → keep the root node (maxPoints 0)
+       - otherwise keep the first named row and report the collision
+         (the export contains stale nodes from older tree versions)
+  6. treeName:
+       - passive trees → class name from db/data/classes.json
+       - TREE_NAME_OVERRIDES
+       - otherwise the root node's name (nodeID 0, maxPoints 0)
+       - fallback: the treeID itself
 
 ─── Usage ───────────────────────────────────────────────────────────────────
 
-  # Minimum (Global Tree Data only — no display names):
   python extractor/extract.py
-
-  # Full (Global Tree Data + display names from export):
-  python extractor/extract.py --nodes C:\\Tools\\le_export\\MonoBehaviour\\Node
-
-  # Then produce the runtime file:
-  python extractor/reconcile_skill_trees.py
-
-  # With validation:
-  python extractor/extract.py --nodes C:\\Tools\\le_export --validate config/my-build.json
-
-─── Output node shape ───────────────────────────────────────────────────────
-
-  {
-    "id":          12,
-    "nodeName":    "Champion of the Void",      ← real display name (from nodes export)
-    "name":        "Void Cleave Crit Multi...", ← internal name (from Global Tree Data)
-    "description": "Void Cleave critical...",   ← description (from nodes export)
-    "maxPoints":   4,
-    "requiredMastery":    0,
-    "masteryRequirement": 0,
-    "requirements": [...]
-  }
-
-  When --nodes is not provided, nodeName falls back to name, description = "".
+  python extractor/extract.py --input path/to/nodes_flat.json --verbose
 """
 
 import argparse
 import json
-import os
-import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 
-# ─── Defaults ─────────────────────────────────────────────────────────────────
-
-PROJECT_ROOT   = Path(__file__).parent.parent
-DEFAULT_INPUT  = PROJECT_ROOT / 'Global Tree Data.json'
-DEFAULT_OUTPUT = PROJECT_ROOT / 'db' / 'data'
-
-# ─── CLI ──────────────────────────────────────────────────────────────────────
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Build db/data/*.json from Global Tree Data + optional node exports'
-    )
-    parser.add_argument(
-        '--input', '-i',
-        default=str(DEFAULT_INPUT),
-        help='Path to "Global Tree Data.json" (default: project root)'
-    )
-    parser.add_argument(
-        '--nodes', '-n',
-        default=None,
-        help='Path to AssetStudio MonoBehaviour export folder (e.g. C:\\Tools\\le_export). '
-             'Enables real display names and descriptions. Optional.'
-    )
-    parser.add_argument(
-        '--output', '-o',
-        default=str(DEFAULT_OUTPUT),
-        help='Output folder for db/data/ files (default: db/data/)'
-    )
-    parser.add_argument(
-        '--validate', '-v',
-        default=None,
-        help='Path to raw Maxroll JSON build — verify all nodeIds resolve after extraction'
-    )
-    return parser.parse_args()
-
-# ─── Description lookup builder ───────────────────────────────────────────────
-
-def build_description_lookup(nodes_dir: str, skill_trees: list, passive_trees: list) -> dict:
-    """
-    Build a composite-key lookup from AssetStudio-exported SkillTreeNode files:
-
-        { (treeID, nodeId): { nodeName, description } }
-
-    ─── Why parent tree files are NOT used ─────────────────────────────────────
-    AssetStudio exports SkillTreeNode / PassiveTreeNode MonoBehaviours correctly
-    because their m_Name is empty → filename becomes "SkillTreeNode #<pathID>.json".
-    The parent SkillTree / PassiveTree MonoBehaviours are likely attached to
-    prefab GameObjects and are never exported as standalone files.
-    Attempting to join through parent files always yields 0 matches.
-
-    ─── Matching strategy ───────────────────────────────────────────────────────
-    Instead of needing parent files, we match using Global Tree Data directly:
-
-      1. Read ALL SkillTreeNode + PassiveTreeNode files.
-         Group them by tree.m_PathID (all nodes in the same tree share one value).
-
-      2. Skill trees: each group's root node (id=0) has nodeName == tree.name
-         in Global Tree Data. Build name→treeID index and match.
-
-      3. Passive trees: the 5 passive trees have DISTINCT node counts (103, 107,
-         109, 110, 111). Match each PassiveTreeNode group by group size.
-
-    Returns empty dict if nodes_dir is None or no files are found.
-    """
-    if not nodes_dir:
-        return {}
-
-    root = Path(nodes_dir)
-    if not root.exists():
-        print(f'[warn] --nodes path not found: {root}', file=sys.stderr)
-        return {}
-
-    descriptions = {}  # { (treeID, nodeId): { nodeName, description } }
-    PROGRESS_INTERVAL = 500
-
-    # ── Build lookup indexes from Global Tree Data ─────────────────────────────
-    def _norm(s: str) -> str:
-        """Normalize a name: lowercase, strip all non-alphanumeric.
-        Handles spacing/punctuation differences like "Ghost Flame" → "ghostflame".
-        """
-        return re.sub(r'[^a-z0-9]', '', s.lower())
-
-    # Skill trees: exact lowercase name → treeID, AND normalized name → treeID
-    skill_name_to_id: dict[str, str] = {}
-    skill_name_norm_to_id: dict[str, str] = {}
-    for t in skill_trees:
-        name = t.get('name', '').strip()
-        tid  = t.get('treeID', '')
-        if name and tid:
-            skill_name_to_id[name.lower()] = tid
-            skill_name_norm_to_id[_norm(name)] = tid
-
-    # Passive trees: node count → treeID (all 5 base-class trees have distinct counts)
-    passive_count_to_id = {
-        len(t.get('nodes', [])): t['treeID']
-        for t in passive_trees
-        if t.get('treeID')
-    }
-
-    # Node names that are Unity's default placeholder — skip silently
-    PLACEHOLDER_NAMES = {'name', ''}
-
-    # Mastery passive tree extensions are stored as SkillTreeNode MonoBehaviours
-    # but are NOT skill trees — they're per-mastery passive specializations
-    # (e.g. "Arcanist" 108 nodes, "Bone Aura" 110 nodes).
-    # All observed mastery extensions have 100+ nodes in the export.
-    # Skill trees max out at ~35 nodes in GDT, but the export includes extra
-    # lock/hidden nodes not in GDT, so real skill trees can appear with up to
-    # ~55–60 nodes in the export. Using 60 as the threshold is safe.
-    MAX_SKILL_TREE_NODES = 60
-
-    # Manual overrides: display names that differ from Global Tree Data internal names
-    # and can't be resolved by the algorithmic passes below.
-    # Add new entries here when a skill is renamed between game patches.
-    # Key = SkillTreeNode root nodeName (lowercase), Value = Global Tree Data tree.name (lowercase)
-    DISPLAY_NAME_OVERRIDES = {
-        'profane veil':         'profane form',         # display vs internal name mismatch
-        'summon storm crows':   'summon storm crow',    # plural vs singular
-        'summon skeletal mage': 'summon skeleton mage', # skeletal → skeleton rename
-    }
-
-    # ── Scan all node files ────────────────────────────────────────────────────
-    node_pattern  = re.compile(r'^SkillTreeNode\s+#\d+$',  re.IGNORECASE)
-    pnode_pattern = re.compile(r'^PassiveTreeNode\s+#\d+$', re.IGNORECASE)
-
-    node_files = []
-    print('  Scanning directory...', end='', flush=True)
-    for f in root.rglob('*.json'):
-        stem = f.stem
-        if node_pattern.match(stem) or pnode_pattern.match(stem):
-            node_files.append(f)
-    print(f'\r  Found {len(node_files):,} node files')
-
-    if not node_files:
-        print('[warn] No SkillTreeNode / PassiveTreeNode files found in export folder.')
-        print('       Make sure the full MonoBehaviour export (Step 3) is complete.')
-        return {}
-
-    # ── Step 1: Read all node files, group by tree.m_PathID ───────────────────
-    print(f'  Step 1/2: reading {len(node_files):,} node files...', flush=True)
-
-    # groups[pathID] = { 'is_passive': bool, 'nodes': [{id, nodeName, description}] }
-    groups = {}
-
-    for i, f in enumerate(node_files):
-        if i > 0 and i % PROGRESS_INTERVAL == 0:
-            pct = i * 100 // len(node_files)
-            print(f'\r  Step 1/2: {i:,}/{len(node_files):,} ({pct}%)  '
-                  f'— {len(groups):,} groups so far   ', end='', flush=True)
-
-        data = load_json(f)
-        if not data:
-            continue
-
-        tree_path_id = data.get('tree', {}).get('m_PathID')
-        node_id = data.get('id')
-        if tree_path_id is None or node_id is None:
-            continue
-
-        is_passive = bool(pnode_pattern.match(f.stem))
-
-        if tree_path_id not in groups:
-            groups[tree_path_id] = {'is_passive': is_passive, 'nodes': []}
-
-        groups[tree_path_id]['nodes'].append({
-            'id':          node_id,
-            'nodeName':    data.get('nodeName', '').strip(),
-            'description': data.get('description', '').strip(),
-        })
-
-    print(f'\r  Step 1/2: done — {len(groups):,} distinct trees found' + ' ' * 30)
-
-    # ── Step 2: Match each group to a treeID ──────────────────────────────────
-    print(f'  Step 2/2: matching {len(groups):,} groups to tree IDs...', flush=True)
-
-    matched_groups   = 0
-    skipped_mastery  = 0   # mastery passive extensions — not in Global Tree Data
-    skipped_null     = 0   # pathID=0 (Unity null reference)
-    skipped_placeholder = 0  # root nodeName is Unity default ("Name" / empty)
-    unmatched_groups = []  # genuine mismatches worth reporting
-
-    for path_id, group in groups.items():
-        nodes      = group['nodes']
-        is_passive = group['is_passive']
-
-        # ── Pre-flight skips ──────────────────────────────────────────────────
-        if path_id == 0:
-            skipped_null += 1
-            continue
-
-        root_node = next((n for n in nodes if n['id'] == 0), None)
-        root_name = root_node['nodeName'] if root_node else ''
-
-        if root_name.lower() in PLACEHOLDER_NAMES:
-            skipped_placeholder += 1
-            continue
-
-        # Any SkillTreeNode group larger than the max possible skill tree (35 nodes)
-        # is a mastery passive extension — not in Global Tree Data, skip quietly.
-        if not is_passive and len(nodes) > MAX_SKILL_TREE_NODES:
-            skipped_mastery += 1
-            continue
-
-        # ── Matching ─────────────────────────────────────────────────────────
-        tree_id = None
-
-        if not is_passive:
-            nl = root_name.lower()
-
-            # Pass 1: exact lowercase  ("fireball" → "fi9")
-            tree_id = skill_name_to_id.get(nl)
-
-            # Pass 2: normalized — strips spaces/punct ("Ghost Flame" → "ghostflame")
-            if not tree_id:
-                tree_id = skill_name_norm_to_id.get(_norm(root_name))
-
-            # Pass 3: manual overrides for display-name ≠ internal-name cases
-            if not tree_id:
-                alias = DISPLAY_NAME_OVERRIDES.get(nl)
-                if alias:
-                    tree_id = skill_name_to_id.get(alias) or skill_name_norm_to_id.get(_norm(alias))
-
-            # Pass 4: prefix transformations
-            #   - "Volatile Zombie" → "Summon Volatile Zombie"  (Summon stripped from display)
-            #   - "Summon Frenzy Totem" → already exact, but "Frenzy Totem" → add Summon
-            #   - "Inner Focus" → "Focus"  (descriptive prefix added to display name)
-            if not tree_id:
-                candidates = []
-                if nl.startswith('summon '):
-                    candidates.append(nl[7:])          # strip leading "Summon "
-                else:
-                    candidates.append('summon ' + nl)  # prepend "Summon "
-                if nl.startswith('inner '):
-                    candidates.append(nl[6:])          # strip leading "Inner "
-                for c in candidates:
-                    tree_id = skill_name_to_id.get(c) or skill_name_norm_to_id.get(_norm(c))
-                    if tree_id:
-                        break
-        else:
-            # Passive tree: match by node count (5 base-class trees, all distinct)
-            tree_id = passive_count_to_id.get(len(nodes))
-
-        if tree_id:
-            for n in nodes:
-                descriptions[(tree_id, n['id'])] = {
-                    'nodeName':    n['nodeName'],
-                    'description': n['description'],
-                }
-            matched_groups += 1
-        else:
-            unmatched_groups.append((path_id, len(nodes), is_passive, root_name))
-
-    skipped_total = skipped_null + skipped_placeholder + skipped_mastery
-    print(f'\r[descriptions] Matched {matched_groups}/{len(groups)} groups'
-          f' ({skipped_total} skipped: {skipped_mastery} mastery extensions,'
-          f' {skipped_placeholder} placeholders, {skipped_null} null refs)'
-          + ' ' * 20)
-
-    if unmatched_groups:
-        print(f'  [warn] {len(unmatched_groups)} group(s) could not be matched:')
-        for path_id, count, is_passive, root_name in unmatched_groups[:8]:
-            kind = 'passive' if is_passive else 'skill'
-            print(f'    pathID={path_id}, {count} nodes, type={kind}, '
-                  f'root nodeName={root_name!r}')
-
-    return descriptions
-
-
-def load_json(path: Path) -> dict | None:
-    try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (json.JSONDecodeError, UnicodeDecodeError, OSError):
-        return None
-
-# ─── Extraction ───────────────────────────────────────────────────────────────
-
-def build_node(node: dict, tree_id: str, descriptions: dict) -> dict:
-    """
-    Build a single output node dict, merging Global Tree Data fields
-    with display name + description from the SkillTreeNode lookup.
-
-    Field priority:
-      nodeName    → from SkillTreeNode (real display name)  fallback: internal name
-      description → from SkillTreeNode                      fallback: ""
-      name        → internal name from Global Tree Data (always kept for reference)
-    """
-    node_id = node['id']
-    internal_name = node.get('name', f'Node {node_id}')
-
-    desc_info = descriptions.get((tree_id, node_id), {})
-    node_name = desc_info.get('nodeName') or internal_name
-
-    return {
-        'id':                  node_id,
-        'nodeName':            node_name,
-        'name':                internal_name,      # internal name, kept for reference
-        'description':         desc_info.get('description', ''),
-        'maxPoints':           node.get('maxPoints', 1),
-        'requiredMastery':     node.get('requiredMastery', 0),
-        'masteryRequirement':  node.get('masteryRequirement', 0),
-        'requirements':        node.get('requirements', []),
-    }
-
-
-def extract_skills(skill_trees: list, descriptions: dict) -> dict:
-    """
-    Convert skillTrees[] → { [treeID]: { name, nodes: { [id]: node } } }
-    Augments each node with nodeName + description from the lookup.
-    """
-    skills = {}
-    for tree in skill_trees:
-        tree_id = tree.get('treeID', '').strip()
-        if not tree_id:
-            print(f'  [warn] Skipping skill tree with no treeID: {tree.get("name")}',
-                  file=sys.stderr)
-            continue
-
-        nodes = {
-            str(n['id']): build_node(n, tree_id, descriptions)
-            for n in tree.get('nodes', [])
-            if n.get('id') is not None
-        }
-
-        skills[tree_id] = {
-            'name':  tree.get('name', tree_id),
-            'nodes': nodes,
-        }
-
-    return skills
-
-
-def extract_passives(passive_trees: list, descriptions: dict) -> dict:
-    """
-    Convert passiveTrees[] → { [treeID]: { name, nodes: { [id]: node } } }
-    Augments each node with nodeName + description from the lookup.
-    """
-    passives = {}
-    for tree in passive_trees:
-        tree_id = tree.get('treeID', '').strip()
-        if not tree_id:
-            print(f'  [warn] Skipping passive tree with no treeID: {tree.get("name")}',
-                  file=sys.stderr)
-            continue
-
-        nodes = {
-            str(n['id']): build_node(n, tree_id, descriptions)
-            for n in tree.get('nodes', [])
-            if n.get('id') is not None
-        }
-
-        passives[tree_id] = {
-            'name':  tree.get('name', tree_id),
-            'nodes': nodes,
-        }
-
-    return passives
-
-# ─── Validation ───────────────────────────────────────────────────────────────
-
-PASSIVE_TREE_BY_CLASS = {
-    1: 'ac-1',
-    2: 'mg-1',
-    3: 'kn-1',
-    4: 'rg-1',
-    5: 'pr-1',
+ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_INPUT = ROOT / 'extractor' / 'nodes_flat.json'
+DATA_DIR = ROOT / 'db' / 'data'
+
+PASSIVE_TREE_IDS = ('ac-1', 'mg-1', 'kn-1', 'rg-1', 'pr-1')
+
+# Trees whose export has no usable root node (nodeID 0, maxPoints 0).
+TREE_NAME_OVERRIDES = {
+    'vo54': 'Volcanic Orb',
 }
 
-def validate_build(build_path: str, skills: dict, passives: dict):
-    print(f'\n[validate] Checking {build_path}')
-    try:
-        with open(build_path, 'r') as f:
-            build = json.load(f)
-    except Exception as e:
-        print(f'  [error] Could not load build file: {e}')
-        return
+PLACEHOLDER_NAMES = {'', 'Name'}
 
-    class_id = build.get('class')
-    passive_tree_id = PASSIVE_TREE_BY_CLASS.get(class_id)
-    passive_nodes = passives.get(passive_tree_id, {}).get('nodes', {}) if passive_tree_id else {}
+OUTPUT_FIELDS = ('treeID', 'treeName', 'nodeID', 'nodeName', 'description', 'maxPoints', 'stats')
 
-    passive_history = build.get('passives', {}).get('history', [])
-    missing_passives = [nid for nid in set(passive_history) if str(nid) not in passive_nodes]
-    if missing_passives:
-        print(f'  [warn] {len(missing_passives)} passive nodeIds missing in tree "{passive_tree_id}": {sorted(missing_passives)}')
-    else:
-        print(f'  [ok]   All {len(set(passive_history))} passive nodeIds resolved (tree: {passive_tree_id})')
 
-    all_ok = True
-    for skill_key, tree_data in build.get('skillTrees', {}).items():
-        skill = skills.get(skill_key)
-        if not skill:
-            print(f'  [warn] Skill key "{skill_key}" not found in skills.json')
-            all_ok = False
+def load_json(path):
+    with open(path, encoding='utf-8-sig') as f:
+        return json.load(f)
+
+
+def write_json(path, data):
+    with open(path, 'w', encoding='utf-8', newline='\n') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write('\n')
+
+
+def passive_tree_names():
+    """treeID → class name, from classes.json passiveTreeByClass."""
+    classes = load_json(DATA_DIR / 'classes.json')
+    return {
+        tree_id: classes['classes'][class_id]
+        for class_id, tree_id in classes['passiveTreeByClass'].items()
+    }
+
+
+def clean_rows(raw):
+    stats = defaultdict(int)
+    rows = []
+    for r in raw:
+        if not r.get('treeID'):
+            stats['no treeID'] += 1
             continue
-        history = tree_data.get('history', [])
-        missing = [nid for nid in set(history) if str(nid) not in skill['nodes']]
-        if missing:
-            print(f'  [warn] {skill_key} ("{skill["name"]}"): {len(missing)} missing nodeIds: {sorted(missing)}')
-            all_ok = False
-        else:
-            # Check how many nodes have real display names
-            with_names = sum(
-                1 for nid in set(history)
-                if skill['nodes'].get(str(nid), {}).get('nodeName') !=
-                   skill['nodes'].get(str(nid), {}).get('name')
-            )
-            print(f'  [ok]   {skill_key} → "{skill["name"]}" — all nodeIds resolved '
-                  f'({with_names}/{len(set(history))} with real display names)')
+        name = (r.get('nodeName') or '').strip()
+        desc = r.get('description') or ''
+        if name in PLACEHOLDER_NAMES and not desc.strip():
+            stats['placeholder'] += 1
+            continue
+        rows.append({
+            'treeID':      r['treeID'],
+            'nodeID':      r['nodeID'],
+            'nodeName':    name,
+            'description': desc,
+            'maxPoints':   r.get('maxPoints', 0),
+            'stats':       [st for st in (r.get('stats') or []) if st.get('statName')],
+        })
+    return rows, stats
 
-    if all_ok:
-        print('  All data resolved successfully.')
 
-# ─── Main ─────────────────────────────────────────────────────────────────────
+def resolve_collisions(rows, stats):
+    """Enforce one row per (treeID, nodeID). Returns (rows, unresolved collisions)."""
+    groups = defaultdict(list)
+    for r in rows:
+        key = (r['treeID'], r['nodeID'])
+        same = next((g for g in groups[key] if g['nodeName'] == r['nodeName']), None)
+        if same is None:
+            groups[key].append(r)
+            continue
+        # Same node exported twice — keep the richer row.
+        stats['duplicate'] += 1
+        if len(r['stats']) > len(same['stats']) or len(r['description']) > len(same['description']):
+            groups[key][groups[key].index(same)] = r
+
+    kept, collisions = [], []
+    for (tree_id, node_id), group in groups.items():
+        if len(group) == 1:
+            kept.append(group[0])
+            continue
+        if node_id == 0:
+            roots = [g for g in group if g['maxPoints'] == 0]
+            if roots:
+                kept.append(roots[0])
+                stats['collision (root kept)'] += len(group) - 1
+                continue
+        group.sort(key=lambda g: not g['nodeName'])  # prefer a named row
+        kept.append(group[0])
+        stats['collision (first kept)'] += len(group) - 1
+        collisions.append((tree_id, node_id, group))
+    return kept, collisions
+
+
+def tree_names(rows, passive_names):
+    names = {}
+    for r in rows:
+        if r['nodeID'] == 0 and r['maxPoints'] == 0 and r['nodeName']:
+            names[r['treeID']] = r['nodeName']
+    names.update(TREE_NAME_OVERRIDES)
+    names.update(passive_names)
+    return names
+
+
+def to_output(rows, names):
+    out = []
+    for r in rows:
+        row = dict(r, treeName=names.get(r['treeID'], r['treeID']))
+        out.append({k: row[k] for k in OUTPUT_FIELDS})
+    out.sort(key=lambda r: (r['treeName'].lower(), r['treeID'], r['nodeID']))
+    return out
+
 
 def main():
-    args = parse_args()
-    input_path = Path(args.input)
-    output_dir = Path(args.output)
+    ap = argparse.ArgumentParser(description='Clean nodes_flat.json into db/data runtime files.')
+    ap.add_argument('--input', type=Path, default=DEFAULT_INPUT)
+    ap.add_argument('--out-dir', type=Path, default=DATA_DIR)
+    ap.add_argument('--verbose', action='store_true', help='list every unresolved collision')
+    args = ap.parse_args()
 
-    if not input_path.exists():
-        print(f'[error] Global Tree Data file not found: {input_path}', file=sys.stderr)
-        print('  Make sure "Global Tree Data.json" is in the project root.', file=sys.stderr)
-        sys.exit(1)
+    raw = load_json(args.input)
+    rows, stats = clean_rows(raw)
+    rows, collisions = resolve_collisions(rows, stats)
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    passive_names = passive_tree_names()
+    missing = [t for t in PASSIVE_TREE_IDS if t not in passive_names]
+    if missing:
+        sys.exit(f'classes.json passiveTreeByClass is missing: {missing}')
 
-    # ── Load source data ──────────────────────────────────────────────────────
-    print(f'Reading: {input_path}')
-    with open(input_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
+    names = tree_names(rows, passive_names)
+    out = to_output(rows, names)
 
-    skill_trees_raw  = data.get('skillTrees', [])
-    passive_trees_raw = data.get('passiveTrees', [])
-    print(f'Found: {len(skill_trees_raw)} skill trees, {len(passive_trees_raw)} passive trees')
+    passives = [r for r in out if r['treeID'] in PASSIVE_TREE_IDS]
+    skills   = [r for r in out if r['treeID'] not in PASSIVE_TREE_IDS]
 
-    # ── Build description lookup (optional) ───────────────────────────────────
-    print()
-    if args.nodes:
-        print(f'Building description lookup from: {args.nodes}')
-        descriptions = build_description_lookup(args.nodes, skill_trees_raw, passive_trees_raw)
-        coverage = len(descriptions)
-        print(f'Description lookup: {coverage} (treeID, nodeId) entries')
-    else:
-        print('[info] No --nodes path provided. Display names will use internal names.')
-        print('       Re-run with --nodes C:\\Tools\\le_export to get real names + descriptions.')
-        descriptions = {}
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    write_json(args.out_dir / 'skill_tree_reconciled.json', skills)
+    write_json(args.out_dir / 'passives.json', passives)
 
-    # ── Extract ───────────────────────────────────────────────────────────────
-    print()
-    skills  = extract_skills(skill_trees_raw, descriptions)
-    passives = extract_passives(passive_trees_raw, descriptions)
+    # ─── Report ───────────────────────────────────────────────────────────────
+    print(f'Input rows: {len(raw)}')
+    for k, v in sorted(stats.items()):
+        print(f'  dropped {k}: {v}')
 
-    total_skill_nodes   = sum(len(t['nodes']) for t in skills.values())
-    total_passive_nodes = sum(len(t['nodes']) for t in passives.values())
-    print(f'Extracted: {len(skills)} skill trees ({total_skill_nodes} nodes), '
-          f'{len(passives)} passive trees ({total_passive_nodes} nodes)')
+    skill_trees = sorted({r['treeID'] for r in skills})
+    print(f'skill_tree_reconciled.json: {len(skills)} nodes, {len(skill_trees)} trees')
+    print(f'passives.json: {len(passives)} nodes')
+    for t in PASSIVE_TREE_IDS:
+        n = sum(1 for r in passives if r['treeID'] == t)
+        print(f'  {t} ({names[t]}): {n} nodes')
+        if not n:
+            print(f'  WARNING: no nodes for passive tree {t}')
 
-    # Coverage report when descriptions were loaded
-    if descriptions:
-        desc_count = sum(
-            1 for tree in skills.values()
-            for node in tree['nodes'].values()
-            if node.get('description')
-        )
-        desc_count += sum(
-            1 for tree in passives.values()
-            for node in tree['nodes'].values()
-            if node.get('description')
-        )
-        total_nodes = total_skill_nodes + total_passive_nodes
-        print(f'Description coverage: {desc_count}/{total_nodes} nodes '
-              f'({100*desc_count//total_nodes}%)')
+    unnamed = [t for t in skill_trees if names.get(t) is None]
+    if unnamed:
+        print(f'WARNING: {len(unnamed)} trees have no root name (add to TREE_NAME_OVERRIDES): {unnamed}')
 
-    # ── Write intermediate files: skills.json + passives.json ────────────────
-    # These are the intermediate outputs consumed by reconcile_skill_trees.py.
-    # The runtime file (skill_tree_reconciled.json) is produced by that script.
-    print()
-    skills_path = output_dir / 'skills.json'
-    with open(skills_path, 'w', encoding='utf-8') as f:
-        json.dump(skills, f, indent=2, ensure_ascii=False)
-    print(f'[write] {skills_path}  ({len(skills)} trees)')
+    if collisions:
+        print(f'WARNING: {len(collisions)} (treeID, nodeID) collisions resolved by keeping the first row'
+              + ('' if args.verbose else ' (use --verbose to list)'))
+        if args.verbose:
+            for tree_id, node_id, group in collisions:
+                alts = ', '.join(f'"{g["nodeName"]}" ({g["maxPoints"]}pt)' for g in group)
+                print(f'  {tree_id}:{node_id} -> {alts}')
 
-    passives_path = output_dir / 'passives.json'
-    with open(passives_path, 'w', encoding='utf-8') as f:
-        json.dump(passives, f, indent=2, ensure_ascii=False)
-    print(f'[write] {passives_path}  ({len(passives)} trees)')
-
-    print('\nRun: python extractor/reconcile_skill_trees.py'
-          '  → produces db/data/skill_tree_reconciled.json')
-
-    # ── Validate ──────────────────────────────────────────────────────────────
-    if args.validate:
-        validate_build(args.validate, skills, passives)
-
-    print('\nDone.')
 
 if __name__ == '__main__':
     main()

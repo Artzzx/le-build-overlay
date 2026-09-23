@@ -27,11 +27,13 @@ le-build-overlay/
 ├── db/
 │   ├── build-db.js           ← Load and query db/data/*.json files
 │   └── data/                 ← Game data extracted per-patch (see extractor/)
-│       ├── skill_tree_reconciled.json  ← flat node array, the ONLY file runtime reads
+│       ├── skill_tree_reconciled.json  ← flat node array, all skill trees (+ weaver)
+│       ├── passives.json               ← flat node array, 5 class passive trees
 │       ├── classes.json                ← classId/masteryId → names
 │       └── items.json                  ← (future) item/affix data
 ├── extractor/
-│   └── extract.py            ← Regenerate db/data/ from game assets (run after patches)
+│   ├── nodes_flat.json       ← INPUT: flat node export (regenerate per patch)
+│   └── extract.py            ← Cleanup: nodes_flat.json → db/data/ runtime files
 ├── config/
 │   └── build.json            ← User's active build (written by parser, read by overlay)
 └── scripts/
@@ -163,7 +165,10 @@ See README.md → Reconciliation for the active work to close that gap.
 
 ### passives.json (db/data/)
 
-Keyed by `treeID` (one per base class). Lookup requires classId → treeID first.
+Same flat row shape as `skill_tree_reconciled.json`
+(`treeID, treeName, nodeID, nodeName, description, maxPoints, stats`), containing only
+the 5 class passive trees. `treeName` is the class name. The runtime loaders merge both
+files into one map keyed by `treeID` (shape below). Lookup requires classId → treeID first.
 ```json
 {
   "kn-1": {
@@ -356,8 +361,10 @@ function resolveTrack(track, db) {
 | 3 | Local DB Build (build-db.js) | 🔲 TODO — depends on Phase 2 |
 | 4 | Overlay UI | 🔲 TODO |
 
-**Phase 2 is complete.** `extract.py` generates `db/data/skill_tree_reconciled.json` from the game export.
-Reconciliation work to improve name coverage (currently ~68%) is ongoing — see README.md.
+**Phase 2 is complete.** Input is `extractor/nodes_flat.json` (flat node rows tagged with `treeID`).
+`python extractor/extract.py` cleans it (drops orphan/placeholder rows, dedupes, derives `treeName`
+from the root node) and writes `db/data/skill_tree_reconciled.json` + `db/data/passives.json`.
+Run with `--verbose` to list `(treeID, nodeID)` collisions (stale nodes in the export).
 
 ---
 

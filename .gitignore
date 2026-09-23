@@ -8,6 +8,7 @@ config/saves/
 # Game data — full extraction output is regenerated per patch.
 # db/data/skill_tree_reconciled.sample.json IS committed (fallback + tests).
 db/data/skill_tree_reconciled.json
+db/data/passives.json
 Global Tree Data.json
 extractor/skillkey-map.json
 EXTRACTION_GUIDE.md

@@ -120,13 +120,14 @@ function activeTracks() {
 }
 
 async function loadDb() {
-  const [rawNodes, classes] = await Promise.all([
+  const [skillNodes, passiveNodes, classes] = await Promise.all([
     fetchJson('../db/data/skill_tree_reconciled.json', []),
+    fetchJson('../db/data/passives.json', []),
     fetchJson('../db/data/classes.json', { classes: {}, masteries: {} }),
   ]);
 
   const trees = {};
-  for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
+  for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of [...skillNodes, ...passiveNodes]) {
     if (!trees[treeID]) trees[treeID] = { name: treeName, nodes: {} };
     trees[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
   }

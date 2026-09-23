@@ -423,6 +423,20 @@ ipcMain.on('save-build', (event, buildJson) => {
   }
 });
 
+// Build { [treeID]: { name, nodes } } from the skill + passive node files.
+function loadTreeDb() {
+  const dataDir = path.join(__dirname, '..', 'db', 'data');
+  const trees = {};
+  for (const file of ['skill_tree_reconciled.json', 'passives.json']) {
+    const rawNodes = JSON.parse(fs.readFileSync(path.join(dataDir, file), 'utf-8'));
+    for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
+      if (!trees[treeID]) trees[treeID] = { name: treeName, nodes: {} };
+      trees[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
+    }
+  }
+  return trees;
+}
+
 ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
   // Config window renderer sends raw Maxroll JSON → parse → save → notify overlay
   try {
@@ -432,12 +446,7 @@ ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
     let skillsDb = {};
     let classesDb = { classes: {}, masteries: {} };
     try {
-      const reconPath = path.join(__dirname, '..', 'db', 'data', 'skill_tree_reconciled.json');
-      const rawNodes = JSON.parse(fs.readFileSync(reconPath, 'utf-8'));
-      for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
-        if (!skillsDb[treeID]) skillsDb[treeID] = { name: treeName, nodes: {} };
-        skillsDb[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
-      }
+      skillsDb = loadTreeDb();
     } catch { /* DB not yet extracted — skill names fall back to skillKey */ }
     try {
       const classesPath = path.join(__dirname, '..', 'db', 'data', 'classes.json');
@@ -473,12 +482,7 @@ ipcMain.handle('load-loadout', async (event, { phases, loadoutName }) => {
     let skillsDb = {};
     let classesDb = { classes: {}, masteriesByClass: {}, passiveTreeByClass: {} };
     try {
-      const reconPath = path.join(__dirname, '..', 'db', 'data', 'skill_tree_reconciled.json');
-      const rawNodes = JSON.parse(fs.readFileSync(reconPath, 'utf-8'));
-      for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
-        if (!skillsDb[treeID]) skillsDb[treeID] = { name: treeName, nodes: {} };
-        skillsDb[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
-      }
+      skillsDb = loadTreeDb();
     } catch { /* DB not yet extracted — skill names fall back to skillKey */ }
     try {
       const classesPath = path.join(__dirname, '..', 'db', 'data', 'classes.json');
