@@ -7,7 +7,7 @@
   },
   "display": {
     "fontSize": 13,
-    "opacity": 0.88,
+    "opacity": 1,
     "showDescription": false,
     "alwaysShowProgress": true
   },
@@ -17,6 +17,10 @@
     "undoModifier": "Shift",
     "settingsKey": "F2",
     "configKey": "F5",
-    "positionKey": "F3"
+    "positionKey": "F3",
+    "phaseNextKey": "F6",
+    "phasePrevKey": "Shift+F6",
+    "hotkeyMode": "direct",
+    "latchKey": "`"
   }
 }
