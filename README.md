@@ -50,17 +50,20 @@ Run tests with `npm test`.
 Game files ──AssetStudio──► MonoBehaviour export (*Tree.json + SkillTreeNode #*.json)
                                     │
                                     ▼
-                  extractor/reconcile_skill_trees.py
+                  extractor/nodes_flat.json  (flat node rows tagged with treeID)
                                     │
                                     ▼
-             db/data/skill_tree_reconciled.json   ← gitignored, ~2.5 MB
+                  extractor/extract.py  (cleanup)
+                                    │
+                                    ▼
+   db/data/skill_tree_reconciled.json + db/data/passives.json   ← gitignored
                                     │   (falls back to skill_tree_reconciled.sample.json)
                                     ▼
           db/build-db.js (main) + overlay/app.js (renderer)
                     both index it via shared/tree-utils.js
 ```
 
-**`skill_tree_reconciled.json`** is a flat array of every node across all skill and passive trees, each tagged with its `treeID`:
+**`skill_tree_reconciled.json`** (all skill trees) and **`passives.json`** (the 5 class passive trees) are flat arrays of nodes with the same row shape, each tagged with its `treeID`:
 
 ```json
 {
@@ -112,12 +115,13 @@ le-build-overlay/
 ├── db/
 │   ├── build-db.js           ← loads db/data/
 │   └── data/
-│       ├── skill_tree_reconciled.json         ← full data (gitignored, you generate it)
+│       ├── skill_tree_reconciled.json         ← full skill data (gitignored, you generate it)
+│       ├── passives.json                      ← class passive trees (gitignored, you generate it)
 │       ├── skill_tree_reconciled.sample.json  ← committed subset / fallback
 │       └── classes.json                       ← classId / masteryId → names, passive tree ids
 ├── extractor/
-│   ├── reconcile_skill_trees.py  ← generates skill_tree_reconciled.json
-│   └── extract.py                ← legacy (outputs not used by the app)
+│   ├── nodes_flat.json           ← input: flat node export
+│   └── extract.py                ← cleans nodes_flat.json → db/data/ files
 ├── config/
 │   ├── build.example.json        ← example 2-phase loadout
 │   └── maxroll-paste.example.txt ← example multi-line paste
@@ -158,7 +162,7 @@ Output: `C:\Tools\le_dump\DummyDll\` — only needed once per major engine updat
 
 ### Step 2 — Export "Global Tree Data" (optional)
 
-> Only used by the legacy `extract.py`. The app's data comes from Steps 3–4; skip this unless you're working on the extractor.
+> Not used by the current pipeline. Kept for reference / cross-checking node ids.
 
 This one file contains every skill and passive tree: node IDs, maxPoints, requirements.
 
@@ -195,19 +199,20 @@ Takes 10–15 minutes. You can skip this step to get a working overlay with inte
 
 ---
 
-### Step 4 — Run the reconciler
+### Step 4 — Clean the flat node export
 
-`reconcile_skill_trees.py` needs the MonoBehaviour folder containing both the `*Tree.json` tree definitions and the `SkillTreeNode #*.json` files (Step 3):
+Build `extractor/nodes_flat.json` from the Step 3 export — a flat array of node rows
+(`nodeID, nodeName, description, maxPoints, treeID, stats, …`). Then:
 
 ```bash
-python extractor/reconcile_skill_trees.py C:\Tools\le_export\MonoBehaviour db/data
+python extractor/extract.py            # add --verbose to list (treeID, nodeID) collisions
 ```
 
 Writes to `db/data/`:
-- `skill_tree_reconciled.json` — the file the app reads
-- `tree_summary.json`, `reconciliation_report.txt` — diagnostics (check the report for unmatched trees)
+- `skill_tree_reconciled.json` — every skill tree (+ weaver tree)
+- `passives.json` — the 5 class passive trees (`ac-1 mg-1 kn-1 rg-1 pr-1`)
 
-> `extractor/extract.py` (Global Tree Data → `skills.json`/`passives.json`) is legacy: nothing reads its output.
+Trees without a root node get their name from `TREE_NAME_OVERRIDES` in `extract.py`.
 
 ---
 
@@ -227,15 +232,10 @@ Writes to `db/data/`:
 That skill (or passive tree) isn't in the loaded data. You're probably running on the committed sample — generate the full `db/data/skill_tree_reconciled.json` (Steps 3–4).
 
 **A node shows the wrong name**
-Likely a duplicate `(treeID, nodeID)` in the reconciled data — the stale node won. Check `reconciliation_report.txt`; the fix belongs in `reconcile_skill_trees.py`.
+Likely a `(treeID, nodeID)` collision in `nodes_flat.json` — the stale node won. Run `python extractor/extract.py --verbose` to list them; the fix belongs in the exporter that produces `nodes_flat.json`.
 
-**Reconciler reports unmatched trees**
-A skill was renamed in a patch. Add an entry to `NAME_VARIANTS` in `reconcile_skill_trees.py`:
-```python
-NAME_VARIANTS = {
-    "SomeSkillTree.json": "root node display name (lowercase)",
-}
-```
+**A skill shows its treeID instead of a name**
+Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `extract.py`.
 
 **A hotkey doesn't work**
 Saving settings reports any key that couldn't be registered (invalid, or already taken by another app). Pick a different key.

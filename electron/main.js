@@ -444,33 +444,11 @@ ipcMain.on('save-build', (event, buildJson) => {
   }
 });
 
-// Build { [treeID]: { name, nodes } } from the skill + passive node files.
-function loadTreeDb() {
-  const dataDir = path.join(__dirname, '..', 'db', 'data');
-  const trees = {};
-  for (const file of ['skill_tree_reconciled.json', 'passives.json']) {
-    const rawNodes = JSON.parse(fs.readFileSync(path.join(dataDir, file), 'utf-8'));
-    for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of rawNodes) {
-      if (!trees[treeID]) trees[treeID] = { name: treeName, nodes: {} };
-      trees[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
-    }
-  }
-  return trees;
-}
-
 ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
   // Config window renderer sends raw Maxroll JSON → parse → save → notify overlay
   try {
     const { parseBuild, saveBuild } = require('../parser/maxroll');
 
-    // Load DB files for name resolution (graceful fallback if not yet extracted)
-    try {
-      skillsDb = loadTreeDb();
-    } catch { /* DB not yet extracted — skill names fall back to skillKey */ }
-    try {
-      const classesPath = path.join(__dirname, '..', 'db', 'data', 'classes.json');
-      classesDb = JSON.parse(fs.readFileSync(classesPath, 'utf-8'));
-    } catch { /* DB not yet extracted — class names fall back to IDs */ }
     const { skillsDb, classesDb } = loadDbForParser();
 
     const build = parseBuild(jsonString, skillsDb, classesDb, buildName || 'Imported Build');

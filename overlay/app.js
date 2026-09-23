@@ -108,19 +108,13 @@ function activeTracks() {
 }
 
 async function loadDb() {
-  const [skillNodes, passiveNodes, classes] = await Promise.all([
-    fetchJson('../db/data/skill_tree_reconciled.json', []),
-    fetchJson('../db/data/passives.json', []),
-    fetchJson('../db/data/classes.json', { classes: {}, masteries: {} }),
-  ]);
-
-  const trees = {};
-  for (const { treeID, treeName, nodeID, nodeName, description, maxPoints, stats } of [...skillNodes, ...passiveNodes]) {
-    if (!trees[treeID]) trees[treeID] = { name: treeName, nodes: {} };
-    trees[treeID].nodes[String(nodeID)] = { id: nodeID, nodeName, description, maxPoints, stats };
-  }
-
-  return { passives: trees, skills: trees, classes };
+  // Full extraction output if present, else the committed sample subset
+  let rawNodes = await fetchJson('../db/data/skill_tree_reconciled.json', null);
+  if (!rawNodes) rawNodes = await fetchJson('../db/data/skill_tree_reconciled.sample.json', []);
+  // passives.json first so its rows win over any passive rows in the sample fallback.
+  const passiveNodes = await fetchJson('../db/data/passives.json', []);
+  const classes = await fetchJson('../db/data/classes.json', undefined);
+  return makeDb([...passiveNodes, ...rawNodes], classes);
 }
 
 async function fetchJson(url, fallback) {
