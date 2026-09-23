@@ -12,3 +12,4 @@ Global Tree Data.json
 extractor/skillkey-map.json
 EXTRACTION_GUIDE.md
 __pycache__/
+config/saves
