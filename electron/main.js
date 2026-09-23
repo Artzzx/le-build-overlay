@@ -86,6 +86,7 @@ function saveSettings(updated) {
 /**
  * Apply current settings to the overlay window and re-register hotkeys.
  * Safe to call at any time (win may not exist yet).
+ * @returns {string[]} hotkeys that failed to register
  */
 function applySettings() {
   if (overlayWin && !overlayWin.isDestroyed()) {
@@ -104,7 +105,7 @@ function applySettings() {
   // Re-register hotkeys whenever settings change (exit latch mode first)
   if (advanceModeActive) exitAdvanceMode();
   globalShortcut.unregisterAll();
-  registerHotkeys();
+  return registerHotkeys();
 }
 
 // ─── Position mode ────────────────────────────────────────────────────────────
@@ -216,166 +217,186 @@ function createSettingsWindow() {
   settingsWin.on('closed', () => { settingsWin = null; });
 }
 
-// ─── Advance (latch) mode ─────────────────────────────────────────────────────
+// ─── Hotkey registration helpers ──────────────────────────────────────────────
+
+const LATCH_TIMEOUT_MS = 5000;
+
+// Accelerators that failed to register in the last registerHotkeys() pass
+// (invalid string, or already taken by another app). Surfaced to the settings window.
+let hotkeyFailures = [];
 
 /**
- * Arm the 1–6 hotkeys for one session of advancing.
- * Called when the latch key is pressed in 'latch' hotkeyMode.
- * The overlay will show a visual "READY" indicator via IPC.
+ * Register one global shortcut without letting a bad accelerator abort the
+ * rest of the registration pass. `register` throws on malformed strings and
+ * returns false when another application already owns the key.
+ */
+function safeRegister(accelerator, handler) {
+  if (!accelerator) return false;
+  let ok = false;
+  try {
+    ok = globalShortcut.register(accelerator, handler);
+  } catch (err) {
+    console.error(`[main] Invalid hotkey "${accelerator}": ${err.message}`);
+  }
+  if (!ok) {
+    console.warn(`[main] Could not register hotkey "${accelerator}"`);
+    hotkeyFailures.push(accelerator);
+  }
+  return ok;
+}
+
+function trackKeyPairs() {
+  const hk = settings.hotkeys;
+  const pairs = [];
+  for (let i = 1; i <= 6; i++) {
+    pairs.push({
+      trackIndex: i - 1,
+      advKey:  hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`,
+      undoKey: hk.undoModifier    ? `${hk.undoModifier}+${i}`    : `${i}`,
+    });
+  }
+  return pairs;
+}
+
+function sendTrackAction(action, trackIndex) {
+  if (!overlayWin || !overlayVisible || inPositionMode) return;
+  overlayWin.webContents.send('hotkey', { action, trackIndex });
+  // In latch mode, every use keeps advance mode armed for another timeout window
+  if (advanceModeActive) armAdvanceTimer();
+}
+
+/**
+ * Register the 1–6 advance/undo keys. When advance and undo resolve to the
+ * same accelerator (no modifiers), the key acts as advance only.
+ */
+function registerTrackKeys() {
+  for (const { trackIndex, advKey, undoKey } of trackKeyPairs()) {
+    if (advKey === undoKey) {
+      safeRegister(advKey, () => sendTrackAction('advance', trackIndex));
+    } else {
+      safeRegister(advKey,  () => sendTrackAction('advance', trackIndex));
+      safeRegister(undoKey, () => sendTrackAction('undo', trackIndex));
+    }
+  }
+}
+
+function unregisterTrackKeys() {
+  for (const { advKey, undoKey } of trackKeyPairs()) {
+    try { globalShortcut.unregister(advKey); } catch { /* invalid accelerator */ }
+    if (undoKey !== advKey) {
+      try { globalShortcut.unregister(undoKey); } catch { /* invalid accelerator */ }
+    }
+  }
+}
+
+// ─── Advance (latch) mode ─────────────────────────────────────────────────────
+
+function armAdvanceTimer() {
+  clearTimeout(advanceModeTimer);
+  advanceModeTimer = setTimeout(exitAdvanceMode, LATCH_TIMEOUT_MS);
+}
+
+/**
+ * Arm the 1–6 hotkeys (latch hotkeyMode only). They stay armed until the latch
+ * key is pressed again or LATCH_TIMEOUT_MS passes with no advance/undo.
  */
 function enterAdvanceMode() {
   if (advanceModeActive) return;
   advanceModeActive = true;
-
-  const hk = settings.hotkeys;
-  for (let i = 1; i <= 6; i++) {
-    const trackIndex = i - 1;
-    const advKey = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
-    const undoKey = hk.undoModifier   ? `${hk.undoModifier}+${i}`   : `${i}`;
-
-    if (advKey !== undoKey) {
-      globalShortcut.register(advKey, () => {
-        if (!overlayWin || !overlayVisible || inPositionMode) return;
-        overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
-      });
-    }
-    globalShortcut.register(undoKey, () => {
-      if (!overlayWin || !overlayVisible || inPositionMode) return;
-      if (advKey === undoKey) {
-        overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
-      } else {
-        overlayWin.webContents.send('hotkey', { action: 'undo', trackIndex });
-      }
-    });
-  }
-
+  registerTrackKeys();
   overlayWin?.webContents.send('advance-mode', { active: true });
-
-  // Auto-deactivate after 5 seconds of inactivity
-  clearTimeout(advanceModeTimer);
-  advanceModeTimer = setTimeout(exitAdvanceMode, 5000);
+  armAdvanceTimer();
 }
 
-/**
- * Disarm the 1–6 hotkeys and return to normal (non-intercepting) state.
- */
+/** Disarm the 1–6 hotkeys so normal typing is never intercepted. */
 function exitAdvanceMode() {
   if (!advanceModeActive) return;
   clearTimeout(advanceModeTimer);
   advanceModeTimer = null;
   advanceModeActive = false;
-
-  const hk = settings.hotkeys;
-  for (let i = 1; i <= 6; i++) {
-    const advKey = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
-    const undoKey = hk.undoModifier   ? `${hk.undoModifier}+${i}`   : `${i}`;
-    globalShortcut.unregister(advKey);
-    if (advKey !== undoKey) globalShortcut.unregister(undoKey);
-  }
-
+  unregisterTrackKeys();
   overlayWin?.webContents.send('advance-mode', { active: false });
 }
 
 // ─── Global hotkeys ──────────────────────────────────────────────────────────
 
+/**
+ * Register every global hotkey from settings. Returns the accelerators that
+ * failed so callers can report them; a failure never blocks the others.
+ */
 function registerHotkeys() {
   const hk = settings.hotkeys;
+  hotkeyFailures = [];
 
   // Toggle overlay visibility
-  globalShortcut.register(hk.toggle, () => {
+  safeRegister(hk.toggle, () => {
     if (!overlayWin) return;
     overlayVisible = !overlayVisible;
     if (overlayVisible) {
       overlayWin.show();
     } else {
+      if (advanceModeActive) exitAdvanceMode();
       overlayWin.hide();
     }
     overlayWin.webContents.send('hotkey', { action: 'toggle', visible: overlayVisible });
   });
 
   if (hk.hotkeyMode === 'latch') {
-    // ── Latch mode: 1–6 are NOT registered globally; only the latch key is. ──
-    // Pressing the latch key arms/disarms advance mode. While armed, 1–6 work
-    // (registerAdvanceModeKeys is called dynamically), so normal typing is
-    // never intercepted when the overlay is idle.
-    if (hk.latchKey) {
-      globalShortcut.register(hk.latchKey, () => {
-        if (!overlayWin || !overlayVisible || inPositionMode) return;
-        if (advanceModeActive) {
-          exitAdvanceMode();
-        } else {
-          enterAdvanceMode();
-        }
-      });
-    }
+    // Latch mode: only the latch key is global; it arms/disarms 1–6 on demand.
+    safeRegister(hk.latchKey, () => {
+      if (!overlayWin || !overlayVisible || inPositionMode) return;
+      if (advanceModeActive) exitAdvanceMode();
+      else enterAdvanceMode();
+    });
   } else {
-    // ── Direct mode (default): 1–6 always registered, fire immediately. ─────
-    for (let i = 1; i <= 6; i++) {
-      const trackIndex = i - 1; // 0-based internally
-      const advKey = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
-      const undoKey = hk.undoModifier   ? `${hk.undoModifier}+${i}`   : `${i}`;
-
-      // Skip registration if advance and undo keys conflict
-      if (advKey !== undoKey) {
-        globalShortcut.register(advKey, () => {
-          if (!overlayWin || !overlayVisible || inPositionMode) return;
-          overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
-        });
-      }
-
-      globalShortcut.register(undoKey, () => {
-        if (!overlayWin || !overlayVisible || inPositionMode) return;
-        // If advance and undo share the same key (no modifier), this acts as advance only
-        if (advKey === undoKey) {
-          overlayWin.webContents.send('hotkey', { action: 'advance', trackIndex });
-        } else {
-          overlayWin.webContents.send('hotkey', { action: 'undo', trackIndex });
-        }
-      });
-    }
+    // Direct mode (default): 1–6 always registered, fire immediately.
+    registerTrackKeys();
   }
 
   // Open settings window
-  globalShortcut.register(hk.settingsKey, () => {
-    if (settingsWin && !settingsWin.isDestroyed()) {
-      settingsWin.focus();
-    } else {
-      createSettingsWindow();
-    }
+  safeRegister(hk.settingsKey, () => {
+    if (settingsWin && !settingsWin.isDestroyed()) settingsWin.focus();
+    else createSettingsWindow();
   });
 
   // Open config window
-  globalShortcut.register(hk.configKey, () => {
-    if (configWin && !configWin.isDestroyed()) {
-      configWin.focus();
-    } else {
-      createConfigWindow();
-    }
+  safeRegister(hk.configKey, () => {
+    if (configWin && !configWin.isDestroyed()) configWin.focus();
+    else createConfigWindow();
   });
 
   // Toggle position mode (drag & resize overlay)
-  globalShortcut.register(hk.positionKey, () => {
+  safeRegister(hk.positionKey, () => {
     if (!overlayWin || !overlayVisible) return;
-    if (inPositionMode) {
-      exitPositionMode();
-    } else {
-      enterPositionMode();
-    }
+    if (inPositionMode) exitPositionMode();
+    else enterPositionMode();
   });
 
   // Phase switching — next / previous
-  if (hk.phaseNextKey) {
-    globalShortcut.register(hk.phaseNextKey, () => {
-      if (!overlayWin || !overlayVisible || inPositionMode) return;
-      overlayWin.webContents.send('hotkey', { action: 'phase', direction: +1 });
-    });
-  }
-  if (hk.phasePrevKey) {
-    globalShortcut.register(hk.phasePrevKey, () => {
-      if (!overlayWin || !overlayVisible || inPositionMode) return;
-      overlayWin.webContents.send('hotkey', { action: 'phase', direction: -1 });
-    });
-  }
+  safeRegister(hk.phaseNextKey, () => {
+    if (!overlayWin || !overlayVisible || inPositionMode) return;
+    overlayWin.webContents.send('hotkey', { action: 'phase', direction: +1 });
+  });
+  safeRegister(hk.phasePrevKey, () => {
+    if (!overlayWin || !overlayVisible || inPositionMode) return;
+    overlayWin.webContents.send('hotkey', { action: 'phase', direction: -1 });
+  });
+
+  return hotkeyFailures;
+}
+
+// ─── Game data ────────────────────────────────────────────────────────────────
+
+/**
+ * Load node + class data for name resolution while parsing a pasted build.
+ * Forces a reload so a freshly re-extracted data file is picked up without
+ * restarting. Falls back to the committed sample (or empty) — never throws.
+ */
+function loadDbForParser() {
+  const buildDb = require('../db/build-db');
+  buildDb.load(true);
+  const { skills, classes } = buildDb.all();
+  return { skillsDb: skills, classesDb: classes };
 }
 
 // ─── IPC handlers ────────────────────────────────────────────────────────────
@@ -385,8 +406,8 @@ ipcMain.handle('get-settings', () => settings);
 ipcMain.handle('save-settings', (event, updated) => {
   try {
     saveSettings(updated);
-    applySettings();
-    return { success: true };
+    const failedHotkeys = applySettings();
+    return { success: true, failedHotkeys };
   } catch (err) {
     console.error('[main] save-settings error:', err.message);
     return { success: false, error: err.message };
@@ -443,8 +464,6 @@ ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
     const { parseBuild, saveBuild } = require('../parser/maxroll');
 
     // Load DB files for name resolution (graceful fallback if not yet extracted)
-    let skillsDb = {};
-    let classesDb = { classes: {}, masteries: {} };
     try {
       skillsDb = loadTreeDb();
     } catch { /* DB not yet extracted — skill names fall back to skillKey */ }
@@ -452,6 +471,7 @@ ipcMain.handle('load-build', async (event, { jsonString, buildName }) => {
       const classesPath = path.join(__dirname, '..', 'db', 'data', 'classes.json');
       classesDb = JSON.parse(fs.readFileSync(classesPath, 'utf-8'));
     } catch { /* DB not yet extracted — class names fall back to IDs */ }
+    const { skillsDb, classesDb } = loadDbForParser();
 
     const build = parseBuild(jsonString, skillsDb, classesDb, buildName || 'Imported Build');
     saveBuild(build, BUILD_CONFIG_PATH);
@@ -479,15 +499,7 @@ ipcMain.handle('load-loadout', async (event, { phases, loadoutName }) => {
   try {
     const { parseLoadout, saveBuild } = require('../parser/maxroll');
 
-    let skillsDb = {};
-    let classesDb = { classes: {}, masteriesByClass: {}, passiveTreeByClass: {} };
-    try {
-      skillsDb = loadTreeDb();
-    } catch { /* DB not yet extracted — skill names fall back to skillKey */ }
-    try {
-      const classesPath = path.join(__dirname, '..', 'db', 'data', 'classes.json');
-      classesDb = JSON.parse(fs.readFileSync(classesPath, 'utf-8'));
-    } catch { /* DB not yet extracted */ }
+    const { skillsDb, classesDb } = loadDbForParser();
 
     const loadout = parseLoadout(phases, skillsDb, classesDb, loadoutName || 'Imported Loadout');
     saveBuild(loadout, BUILD_CONFIG_PATH);

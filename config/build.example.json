@@ -1,55 +1,29 @@
 {
-  "_comment": "This is an example build for development/testing. Copy to build.json to use.",
+  "_comment": "Example 2-phase loadout for development/testing. Copy to config/build.json to use. Skill keys and node ids are real treeIDs/nodeIDs present in db/data/skill_tree_reconciled.sample.json, but the allocation order is illustrative, not a real guide.",
   "name": "Void Knight Erasing Strike",
   "classId": 3,
   "masteryId": 2,
-  "tracks": [
+  "currentPhase": 0,
+  "phases": [
     {
-      "type": "passive",
-      "label": "Sentinel — Void Knight Passives",
-      "history": [1,1,1,1,1,6,6,6,6,6,4,4,4,4,4,2,2,2,10,10,10,3,3,3,3,8,8,8,8,8],
-      "totalSteps": 30,
-      "currentStep": 0
+      "name": "Leveling",
+      "tracks": [
+        { "type": "passive", "label": "Sentinel — Void Knight Passives", "history": [0,0,0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3], "totalSteps": 18, "currentStep": 0 },
+        { "type": "skill", "skillKey": "v01cv", "label": "Void Cleave", "history": [2,2,2,4,4,4,4,4,6,6], "totalSteps": 10, "currentStep": 0 },
+        { "type": "skill", "skillKey": "vr53sl", "label": "Volatile Reversal", "history": [2,2,2,2,3,4,4,4], "totalSteps": 8, "currentStep": 0 },
+        { "type": "skill", "skillKey": "sr31hu", "label": "Shield Rush", "history": [2,2,2,2,2,3,3], "totalSteps": 7, "currentStep": 0 }
+      ]
     },
     {
-      "type": "skill",
-      "skillKey": "fl44",
-      "label": "Erasing Strike",
-      "history": [4,4,14,11,12,12,7,7,7,3,3,3,3,9,9],
-      "totalSteps": 15,
-      "currentStep": 0
-    },
-    {
-      "type": "skill",
-      "skillKey": "fl22",
-      "label": "Void Cleave",
-      "history": [3,3,7,7,5,5,5,9,9,9,2,2,2,2],
-      "totalSteps": 14,
-      "currentStep": 0
-    },
-    {
-      "type": "skill",
-      "skillKey": "fl33",
-      "label": "Volatile Reversal",
-      "history": [1,1,6,6,6,4,4,4,8,8,8],
-      "totalSteps": 11,
-      "currentStep": 0
-    },
-    {
-      "type": "skill",
-      "skillKey": "fl55",
-      "label": "Anomaly",
-      "history": [2,2,5,5,5,7,7,7,7],
-      "totalSteps": 9,
-      "currentStep": 0
-    },
-    {
-      "type": "skill",
-      "skillKey": "fl11",
-      "label": "Shield Rush",
-      "history": [4,4,4,3,3,3,6,6,6,1,1],
-      "totalSteps": 11,
-      "currentStep": 0
+      "name": "Endgame",
+      "tracks": [
+        { "type": "passive", "label": "Sentinel — Void Knight Passives", "history": [0,0,0,0,0,1,1,1,1,1,4,4,4,4,4,4,4,4,4,4,5,5,5], "totalSteps": 23, "currentStep": 0 },
+        { "type": "skill", "skillKey": "es6ai", "label": "Erasing Strike", "history": [4,4,4,4,2,2,2,5,5,5,5,5,7,7], "totalSteps": 14, "currentStep": 0 },
+        { "type": "skill", "skillKey": "v01cv", "label": "Void Cleave", "history": [2,2,2,4,4,4,4,4,7,7,7,7], "totalSteps": 12, "currentStep": 0 },
+        { "type": "skill", "skillKey": "vr53sl", "label": "Volatile Reversal", "history": [2,2,2,2,3,4,4,4], "totalSteps": 8, "currentStep": 0 },
+        { "type": "skill", "skillKey": "an0my", "label": "Anomaly", "history": [1,1,1,1,1,2,2,2,2,2], "totalSteps": 10, "currentStep": 0 },
+        { "type": "skill", "skillKey": "sr31hu", "label": "Shield Rush", "history": [2,2,2,2,2,3,3,3,3], "totalSteps": 9, "currentStep": 0 }
+      ]
     }
   ]
 }

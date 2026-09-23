@@ -29,9 +29,17 @@
  *  by normalizeBuild() on load so all downstream code uses the loadout shape.
  *
  *  activeTracks() returns the tracks for the currently active phase.
+ *
+ *  Pure data logic (grouping, node lookup, stepping, phase carry-over) lives in
+ *  shared/tree-utils.js, loaded before this script as window.TreeUtils.
  */
 
 'use strict';
+
+const {
+  makeDb, groupHistory, findCurrentGroup, lookupNode, isTrackUnresolved: trackUnresolved,
+  normalizeBuild, stepTrack, computeTransition, applyCarryOver,
+} = window.TreeUtils;
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -89,26 +97,6 @@ async function loadBuild() {
   } catch {
     return null;
   }
-}
-
-/**
- * Ensure build.json is always in the multi-phase loadout format.
- * Old single-phase format ({ tracks }) is auto-wrapped so all code
- * downstream uses the same shape.
- */
-function normalizeBuild(raw) {
-  if (!raw) return null;
-  if (raw.phases) return raw;               // already loadout format
-  if (raw.tracks) {                          // old single-phase format
-    return {
-      name:         raw.name,
-      classId:      raw.classId,
-      masteryId:    raw.masteryId,
-      currentPhase: 0,
-      phases: [{ name: 'Main', tracks: raw.tracks }],
-    };
-  }
-  return null;
 }
 
 /**
@@ -293,57 +281,27 @@ function initPositionModeUI() {
 // ─── Hotkey handlers ──────────────────────────────────────────────────────────
 
 function handleAdvance(trackIndex) {
-  // Dismiss transition panel on any interaction
-  if (state.transition) { state.transition = null; clearTimeout(state._transitionTimer); }
-
-  const tracks = activeTracks();
-  const track  = tracks?.[trackIndex];
-  if (!track) return;
-  if (isTrackUnresolved(track)) return;
-  if (track.currentStep >= track.history.length) return;
-
-  const cp = state.build.currentPhase;
-  state.build = {
-    ...state.build,
-    phases: state.build.phases.map((phase, i) =>
-      i !== cp ? phase : {
-        ...phase,
-        tracks: phase.tracks.map((t, j) =>
-          j === trackIndex ? { ...t, currentStep: t.currentStep + 1 } : t
-        ),
-      }
-    ),
-  };
-
-  state.expandedTrack = trackIndex;
-  render();
-  flashTrack(trackIndex);
-  persistBuild();
+  handleStep(trackIndex, +1);
 }
 
 function handleUndo(trackIndex) {
+  handleStep(trackIndex, -1);
+}
+
+function handleStep(trackIndex, delta) {
+  // Dismiss transition panel on any interaction
   if (state.transition) { state.transition = null; clearTimeout(state._transitionTimer); }
 
-  const tracks = activeTracks();
-  const track  = tracks?.[trackIndex];
-  if (!track || track.currentStep <= 0) return;
-  if (isTrackUnresolved(track)) return;
+  const track = activeTracks()?.[trackIndex];
+  if (!track || isTrackUnresolved(track)) return;
 
-  const cp = state.build.currentPhase;
-  state.build = {
-    ...state.build,
-    phases: state.build.phases.map((phase, i) =>
-      i !== cp ? phase : {
-        ...phase,
-        tracks: phase.tracks.map((t, j) =>
-          j === trackIndex ? { ...t, currentStep: t.currentStep - 1 } : t
-        ),
-      }
-    ),
-  };
+  const updated = stepTrack(state.build, trackIndex, delta);
+  if (updated === state.build) return;   // already at 0 / complete
+  state.build = updated;
 
   state.expandedTrack = trackIndex;
   render();
+  if (delta > 0) flashTrack(trackIndex);
   persistBuild();
 }
 
@@ -363,7 +321,7 @@ function switchPhase(direction) {
   const from = state.build.currentPhase;
   const to   = ((from + direction) % total + total) % total;
 
-  const transition = computeTransition(from, to);
+  const transition = computeTransition(state.build.phases, from, to);
   const newPhases  = applyCarryOver(state.build.phases, from, to);
 
   state.build = { ...state.build, currentPhase: to, phases: newPhases };
@@ -380,80 +338,6 @@ function switchPhase(direction) {
     state.transition = null;
     render();
   }, delay);
-}
-
-/**
- * Compute what the user needs to do when switching from → to phase.
- * Returns { fromName, toName, unspecNeeded: [{label, amount, isRemove}] }
- */
-function computeTransition(fromIdx, toIdx) {
-  const fromTracks = state.build.phases[fromIdx].tracks;
-  const toTracks   = state.build.phases[toIdx].tracks;
-  const unspecNeeded = [];
-
-  // Skills shared between phases: check if common prefix covers all progress
-  toTracks.forEach(toT => {
-    const fromT = fromTracks.find(t =>
-      toT.type === 'passive' ? t.type === 'passive' : t.skillKey === toT.skillKey
-    );
-    if (!fromT || fromT.currentStep === 0) return;
-
-    const common = commonPrefixLength(fromT.history, toT.history);
-    if (fromT.currentStep > common) {
-      unspecNeeded.push({
-        label:    toT.label,
-        amount:   fromT.currentStep - common,
-        isRemove: false,
-      });
-    }
-  });
-
-  // Skills in old phase NOT in new phase — user must remove from skill bar
-  fromTracks.forEach(fromT => {
-    if (fromT.type === 'passive' || fromT.currentStep === 0) return;
-    const inTo = toTracks.find(t => t.skillKey === fromT.skillKey);
-    if (!inTo) {
-      unspecNeeded.push({ label: fromT.label, amount: fromT.currentStep, isRemove: true });
-    }
-  });
-
-  return {
-    fromName: state.build.phases[fromIdx].name,
-    toName:   state.build.phases[toIdx].name,
-    unspecNeeded,
-  };
-}
-
-/**
- * Returns the number of leading elements that are identical in arrays a and b.
- */
-function commonPrefixLength(a, b) {
-  let i = 0;
-  const len = Math.min(a.length, b.length);
-  while (i < len && a[i] === b[i]) i++;
-  return i;
-}
-
-/**
- * Apply carry-over: set the to-phase's currentStep for each track to
- * min(fromStep, commonPrefixLength). Skills not in the from phase start at 0.
- */
-function applyCarryOver(phases, fromIdx, toIdx) {
-  const fromTracks = phases[fromIdx].tracks;
-  return phases.map((phase, i) => {
-    if (i !== toIdx) return phase;
-    return {
-      ...phase,
-      tracks: phase.tracks.map(toT => {
-        const fromT = fromTracks.find(t =>
-          toT.type === 'passive' ? t.type === 'passive' : t.skillKey === toT.skillKey
-        );
-        if (!fromT) return { ...toT, currentStep: 0 };
-        const common = commonPrefixLength(fromT.history, toT.history);
-        return { ...toT, currentStep: Math.min(fromT.currentStep, common) };
-      }),
-    };
-  });
 }
 
 // ─── Persistence ──────────────────────────────────────────────────────────────
@@ -609,12 +493,10 @@ function renderTrack(track, index) {
   const isCompleted = track.currentStep >= track.history.length;
   const isExpanded  = index === state.expandedTrack && !isCompleted;
 
-  const currentGroup = groups.find(
-    g => track.currentStep >= g.startIdx && track.currentStep < g.startIdx + g.count
-  ) ?? null;
+  const currentGroup = findCurrentGroup(groups, track.currentStep);
 
   const pointsInNode = currentGroup ? track.currentStep - currentGroup.startIdx : 0;
-  const node         = currentGroup ? resolveNode(currentGroup.nodeId, track) : null;
+  const node         = currentGroup ? lookupNode(state.db, state.build.classId, track, currentGroup.nodeId) : null;
 
   // Wrapper
   const div = document.createElement('div');
@@ -736,38 +618,7 @@ function resolvePassiveLabel(classId, masteryId) {
 // ─── Track resolution check ───────────────────────────────────────────────────
 
 function isTrackUnresolved(track) {
-  if (!state.db) return false;
-  if (track.type === 'skill') {
-    return !state.db.skills?.[track.skillKey];
-  }
-  const classId = String(state.build?.classId ?? 0);
-  const treeId  = state.db.classes?.passiveTreeByClass?.[classId];
-  return !treeId || !state.db.passives?.[treeId];
-}
-
-// ─── Utility (mirrored from build-schema.js — no require() in renderer) ──────
-
-function groupHistory(history) {
-  const groups = [];
-  let i = 0;
-  while (i < history.length) {
-    const nodeId = history[i];
-    let count = 0;
-    while (i < history.length && history[i] === nodeId) { count++; i++; }
-    groups.push({ nodeId, count, startIdx: i - count });
-  }
-  return groups;
-}
-
-function resolveNode(nodeId, track) {
-  if (!state.db) return null;
-  const key = String(nodeId);
-  if (track.type === 'passive') {
-    const classId = String(state.build?.classId ?? 0);
-    const treeId  = state.db.classes?.passiveTreeByClass?.[classId];
-    return treeId ? (state.db.passives?.[treeId]?.nodes?.[key] ?? null) : null;
-  }
-  return state.db.skills?.[track.skillKey]?.nodes?.[key] ?? null;
+  return trackUnresolved(state.db, state.build?.classId, track);
 }
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
