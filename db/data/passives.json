@@ -15,7 +15,8 @@
         "statName": "Minion Armor",
         "value": "+20"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -33,7 +34,8 @@
         "statName": "Necrotic Resistance",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -51,7 +53,8 @@
         "statName": "Increased Minion Damage",
         "value": "6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -73,7 +76,8 @@
         "statName": "Ward Gained On Nearby Death",
         "value": "13"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -82,7 +86,8 @@
     "nodeName": "Stolen Vitality",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -104,7 +109,8 @@
         "statName": "More Revenant Damage Per Minion Skill Level",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -113,7 +119,8 @@
     "nodeName": "Blood Pact",
     "description": "You deal increased damage, but you lose a percentage of your current health each second if you have killed an enemy recently (last 4 seconds).",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -135,7 +142,8 @@
         "statName": "Poison Resistance",
         "value": "+4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -144,7 +152,8 @@
     "nodeName": "Putrid Demise",
     "description": "You have a chance to poison on hit, and additional poison resistance.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -166,7 +175,8 @@
         "statName": "Minion Health Consumed On Potion Use",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -188,7 +198,8 @@
         "statName": "Increased Minion Cast Speed",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -206,7 +217,8 @@
         "statName": "Maximum Number Of Skeletons",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -220,7 +232,8 @@
         "statName": "Ward Per Second Per Minion",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -229,7 +242,8 @@
     "nodeName": "Cursed Blood",
     "description": "You and your minions deal increased physical and necrotic damage.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -247,7 +261,8 @@
         "statName": "Ward Granted On Minion Death",
         "value": "7"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -265,7 +280,8 @@
         "statName": "Increased Minion Health",
         "value": "15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -274,7 +290,8 @@
     "nodeName": "Wisp Weaver",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -288,7 +305,8 @@
         "statName": "Minion Critical Strike Chance",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -318,7 +336,8 @@
         "statName": "Shared Reduced Bonus Damage Taken From Crits",
         "value": "30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -340,7 +359,8 @@
         "statName": "Minion Added Melee Physical -> Minion Added Throwing Physical",
         "value": "100%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -349,7 +369,8 @@
     "nodeName": "Blood Armor",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -358,7 +379,8 @@
     "nodeName": "Scornful Blood",
     "description": "Instead of healing you, your leech drains the health of an enemy within 6 meters every 0.25 seconds.",
     "maxPoints": 1,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -367,7 +389,8 @@
     "nodeName": "Tyrant",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -389,7 +412,8 @@
         "statName": "Minion All Resistances",
         "value": "+6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -419,7 +443,8 @@
         "statName": "Minion Penetration Per 5% Overcapped Resistance",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -437,7 +462,8 @@
         "statName": "Minion Poison Resistance",
         "value": "+7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -459,7 +485,8 @@
         "statName": "Increased Minion Cold Damage",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -485,7 +512,8 @@
         "statName": "Minion More Damage Over Time Per Vitality",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -503,7 +531,8 @@
         "statName": "Effect Tripled At Low Life",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -512,7 +541,8 @@
     "nodeName": "Survival of the Cruel",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -530,7 +560,8 @@
         "statName": "Dexterity",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -548,7 +579,8 @@
         "statName": "Shared Frostbite Chance",
         "value": "+7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -557,7 +589,8 @@
     "nodeName": "Deadened Nerves",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -579,7 +612,8 @@
         "statName": "Skeletal Vanguard Bleed Chance",
         "value": "+100%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -601,7 +635,8 @@
         "statName": "Increased Dodge Rating per Vitality",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -615,7 +650,8 @@
         "statName": "Ward Gained per 1% Uncapped Poison Resistance",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -637,7 +673,8 @@
         "statName": "Necrotic Resistance",
         "value": "+2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -659,7 +696,8 @@
         "statName": "Elemental Penetration",
         "value": "+8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -681,7 +719,8 @@
         "statName": "Increased Health Regen per Vitality",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -699,7 +738,8 @@
         "statName": "Ward Retention",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -717,7 +757,8 @@
         "statName": "Shared Melee Necrotic Damage",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -739,7 +780,8 @@
         "statName": "Damage Taken While Dual Wielding",
         "value": "+8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -757,7 +799,8 @@
         "statName": "Damage Over Time Taken Bypasses Ward",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -779,7 +822,8 @@
         "statName": "Ward Per Second With A Catalyst",
         "value": "+15"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -801,7 +845,8 @@
         "statName": "Damage Over Time Taken As Poison",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -819,7 +864,8 @@
         "statName": "Spell Damage Without Shield",
         "value": "+13"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -841,7 +887,8 @@
         "statName": "Missing Health Gained As Ward Per Second",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -863,7 +910,8 @@
         "statName": "Ward Gained On Dodge",
         "value": "4"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -885,7 +933,8 @@
         "statName": "Mana Gain ",
         "value": "13"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -915,7 +964,8 @@
         "statName": "Applies to Minions",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -937,7 +987,8 @@
         "statName": "More Damage over Time to Cursed",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -946,7 +997,8 @@
     "nodeName": "Harrowing Armor",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -955,7 +1007,8 @@
     "nodeName": "Dark Rituals",
     "description": "Your minions have increased attack and cast speed. This bonus also applies to you if you have used a minion skill in the last 10 seconds.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -973,7 +1026,8 @@
         "statName": "Current Health Drain",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -991,7 +1045,8 @@
         "statName": "Current Health Drained Per Second",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1013,7 +1068,8 @@
         "statName": "Increased Mana Regen -> Increased Armor",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1043,7 +1099,8 @@
         "statName": "Increased Minion Health Per Vitality",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1061,7 +1118,8 @@
         "statName": "Increased Minion Health",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1083,7 +1141,8 @@
         "statName": "Maximum Number Of Skeletons",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1101,7 +1160,8 @@
         "statName": "Shared Increased Cast Speed",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1119,7 +1179,8 @@
         "statName": "Shared Critical Strike Damage Leeched As Health",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1137,7 +1198,8 @@
         "statName": "Armor Per Minion",
         "value": "+5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1159,7 +1221,8 @@
         "statName": "Maximum Skeletal Mages",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1177,7 +1240,8 @@
         "statName": "Increased Cold Damage",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1186,7 +1250,8 @@
     "nodeName": "Three Plagues",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1195,7 +1260,8 @@
     "nodeName": "Deathbringer",
     "description": "",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1213,7 +1279,8 @@
         "statName": "Delayed Hit Damage From Bosses And Rares",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1235,7 +1302,8 @@
         "statName": "More Damage Over Time Per 7% Current Health Drain",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1261,7 +1329,8 @@
         "statName": "Damage Leeched as Health on Hit",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1279,7 +1348,8 @@
         "statName": "Increased Poison Duration",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1297,7 +1367,8 @@
         "statName": "Critical Multiplier Granted As Ward On Crit",
         "value": "25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1315,7 +1386,8 @@
         "statName": "Minion Health Restored On Minion Death",
         "value": "20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1337,7 +1409,8 @@
         "statName": "Melee Physical Damage For Skeletal Vanguards",
         "value": "+10"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1346,7 +1419,8 @@
     "nodeName": "Moonlight Pyre",
     "description": "Your minions deal additional fire and necrotic damage with spells and attacks, and have additional chance to inflict ignite and damned on hit.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1368,7 +1442,8 @@
         "statName": "Minion Haste And Frenzy Duration (Seconds)",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1394,7 +1469,8 @@
         "statName": "Leech Ends at 66% Health",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1412,7 +1488,8 @@
         "statName": "Increased Area for Curses",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1426,7 +1503,8 @@
         "statName": "Minion Armor Per Level",
         "value": "4"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1448,7 +1526,8 @@
         "statName": "Increased Minion Necrotic Damage",
         "value": "12%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1466,7 +1545,8 @@
         "statName": "Minion Poison Chance",
         "value": "+7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1484,7 +1564,8 @@
         "statName": "Shared Increased Bleed Duration",
         "value": "8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1493,7 +1574,8 @@
     "nodeName": "Cauldron of Blood",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1511,7 +1593,8 @@
         "statName": "Less Damage Taken Per Curse On Target",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1529,7 +1612,8 @@
         "statName": "Poison Overload Duration",
         "value": "12s"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1538,7 +1622,8 @@
     "nodeName": "Ward of Malevolence",
     "description": "You gain additional ward decay threshold and you gain ward on kill. \n\nYou also gain ward per 3 points of Intelligence while channeling a skill.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1560,7 +1645,8 @@
         "statName": "Rip Blood Casts Each Second With Bleed Overload",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1578,7 +1664,8 @@
         "statName": "Ward Decay Threshold Per 2% Necro Res",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1596,7 +1683,8 @@
         "statName": "More Damage to Damned while Channeling",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1614,7 +1702,8 @@
         "statName": "Health Leech against Cursed",
         "value": "+0.25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1640,7 +1729,8 @@
         "statName": "Number of Poison Spreads within 15m",
         "value": "2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1666,7 +1756,8 @@
         "statName": "Chills Attackers when you are Hit",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1684,7 +1775,8 @@
         "statName": "Less Damage Taken from Withered",
         "value": "8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1693,7 +1785,8 @@
     "nodeName": "Infernal Lash",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1715,7 +1808,8 @@
         "statName": "Chain Duration (seconds)",
         "value": "2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1733,7 +1827,8 @@
         "statName": "Vitality",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1742,7 +1837,8 @@
     "nodeName": "Encroaching Darkness",
     "description": "When you directly cast a {Curse} skill you also afflict a number of enemies around the target location with {Anguish}.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1751,7 +1847,8 @@
     "nodeName": "The Ashen One",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1760,7 +1857,8 @@
     "nodeName": "Chaotic Strikes",
     "description": "Your hits have a chance to deal double damage.\n\nAdditionally your hits have a chance to deal double damage per {Curse} on the target.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1778,7 +1876,8 @@
         "statName": "Flame Whip on Hit or Kill against Ignited",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1800,7 +1899,8 @@
         "statName": "Chance to Chain Damned enemies each second",
         "value": "30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1818,7 +1918,8 @@
         "statName": "Hitting Boss or Rare triggers Anguish",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1840,7 +1941,8 @@
         "statName": "Increased Haste Effect",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1858,7 +1960,8 @@
         "statName": "More Damage Over Time per Overload",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1876,7 +1979,8 @@
         "statName": "Critical Multiplier with Chaotic Strikes",
         "value": "+30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1902,7 +2006,8 @@
         "statName": "Ward Gain per Cleansed Curse on You",
         "value": "100"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1928,7 +2033,8 @@
         "statName": "Number of Witchfire Spreads within 10m",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1954,7 +2060,8 @@
         "statName": "Damn Yourself when Hit",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1972,7 +2079,8 @@
         "statName": "Mana Per Intelligence",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -1986,7 +2094,8 @@
         "statName": "Increased Damage Per 1% Leech",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "ac-1",
@@ -2012,7 +2121,8 @@
         "statName": "Always Count As At Low Life",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2034,7 +2144,8 @@
         "statName": "Lightning Resistance",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2052,7 +2163,8 @@
         "statName": "Mana",
         "value": "+3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2061,7 +2173,8 @@
     "nodeName": "Elementalist",
     "description": "Increases your elemental damage",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2070,7 +2183,8 @@
     "nodeName": "Reactive Ward",
     "description": "When you drop below 70% health you gain a burst of ward based on your maximum health. This effect has a 12 second cooldown.",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2088,7 +2202,8 @@
         "statName": "Next Spell Slow Chance",
         "value": "20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2114,7 +2229,8 @@
         "statName": "Increased Cooldown Recovery Speed for Snap Freeze",
         "value": "9%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2132,7 +2248,8 @@
         "statName": "More Lightning Blast Crit Chance",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2150,7 +2267,8 @@
         "statName": "Fire Hit Damage vs Ignited",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2164,7 +2282,8 @@
         "statName": "Ward Retention",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2182,7 +2301,8 @@
         "statName": "Critical Multiplier",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2200,7 +2320,8 @@
         "statName": "Cast Speed",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2222,7 +2343,8 @@
         "statName": "Movespeed at Max Stacks",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2244,7 +2366,8 @@
         "statName": "Ward Per Second Per 10 Max Mana",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2253,7 +2376,8 @@
     "nodeName": "Arcane Momentum",
     "description": "When you cast a spell you gain a stack of {Arcane Momentum} for 2 seconds and refreshing the duration of all existing stacks.\n\nEach stacks of Arcane Momentum increases your cast speed.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2275,7 +2399,8 @@
         "statName": "Increased Mana Regen per 100 Max Mana",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2289,7 +2414,8 @@
         "statName": "Ward Gained per 30 Current Mana",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2307,7 +2433,8 @@
         "statName": "Cold Skill Frostbite Chance",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2325,7 +2452,8 @@
         "statName": "Shock Chance With Lightning Skills",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2334,7 +2462,8 @@
     "nodeName": "Pyromancer",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2352,7 +2481,8 @@
         "statName": "Increased Spell Critical Strike Chance per Intelligence",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2374,7 +2504,8 @@
         "statName": "Nearby Enemies Frozen",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2383,7 +2514,8 @@
     "nodeName": "Crackling Precision",
     "description": "You have an increased chance to critically strike with spells. This effect is doubled for lightning skills.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2405,7 +2537,8 @@
         "statName": "More Fire Damage Over Time",
         "value": "15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2414,7 +2547,8 @@
     "nodeName": "Rune of Winter",
     "description": "Increases your chance to freeze and converts lightning blast and volcanic orb to cold spells, changing their base damage type to cold and giving them a chance to freeze.\n\nLightning Blast gains a base freeze rate of 46.\n\nVolcanic Orb's core gains a base freeze rate of 40 and its shrapnel gains a freeze rate of 32.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2440,7 +2574,8 @@
         "statName": "Ignite Duration",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2454,7 +2589,8 @@
         "statName": "Spell Critical Multiplier",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2472,7 +2608,8 @@
         "statName": "Damage Dealt to Mana Before Health",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2494,7 +2631,8 @@
         "statName": "Ward Granted On Lightning Hit",
         "value": "15"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2512,7 +2650,8 @@
         "statName": "Spark Charge Chance With Static Orb",
         "value": "+100%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2538,7 +2677,8 @@
         "statName": "Values Tripled With 1000 Maximum Mana",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2556,7 +2696,8 @@
         "statName": "Elemental Damage",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2578,7 +2719,8 @@
         "statName": "Ward Decay Threshold Per 10 Max Health",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2587,7 +2729,8 @@
     "nodeName": "Elemental Affinity",
     "description": "",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2609,7 +2752,8 @@
         "statName": "Shock Chance For Lightning Melee Attacks",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2627,7 +2771,8 @@
         "statName": "Spell Damage",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2649,7 +2794,8 @@
         "statName": "Damage Against Chilled Or Frozen",
         "value": "+6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2679,7 +2825,8 @@
         "statName": "Arcane Shield Ward Per Second",
         "value": "4"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2688,7 +2835,8 @@
     "nodeName": "Flame Walker",
     "description": "While moving or using a melee attack, you have a chance each second to cast {Fire Aura}. \n\nThis chance is doubled if you have less than 3 stacks of {Fire Aura}.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2706,7 +2854,8 @@
         "statName": "Mana Consumption",
         "value": "80%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2724,7 +2873,8 @@
         "statName": "Melee Fire Damage",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2746,7 +2896,8 @@
         "statName": "Mana Gain",
         "value": "+3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2755,7 +2906,8 @@
     "nodeName": "Incinerating Aura",
     "description": "Your {Fire Auras} from all sources deal damage in a larger area.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2773,7 +2925,8 @@
         "statName": "Arcane Shielding Stacks Gained From Surge or Enchant Weapon",
         "value": "4"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2795,7 +2948,8 @@
         "statName": "Static Charges Granted from Gaining Fire Aura",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2821,7 +2975,8 @@
         "statName": "Cooldown for Ward Gain (seconds)",
         "value": "7"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2843,7 +2998,8 @@
         "statName": "Ward Retention From Increased Armor",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2852,7 +3008,8 @@
     "nodeName": "Burning Hands",
     "description": "You have additional fire resistance and you have a chance to cast {Fire Aura} when you use a melee attack and hit at least one enemy, up to a limited number of times per second.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2874,7 +3031,8 @@
         "statName": "Increased Dodge Rating",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2883,7 +3041,8 @@
     "nodeName": "Mental Fortitude",
     "description": "You have additional intelligence and endurance.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2897,7 +3056,8 @@
         "statName": "Max Blade Weaving Stacks",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2915,7 +3075,8 @@
         "statName": "Crit Chance Per 15 Intelligence",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2937,7 +3098,8 @@
         "statName": "No Mana Regen Duration After Direct Cast (seconds)",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2955,7 +3117,8 @@
         "statName": "More Spell Damage",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2964,7 +3127,8 @@
     "nodeName": "Sphere of Protection",
     "description": "You have additional health and you take less damage (multiplicative with other modifiers) from ignited, shocked or chilled enemies.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2973,7 +3137,8 @@
     "nodeName": "Unsealed Mana",
     "description": "",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -2995,7 +3160,8 @@
         "statName": "Doubled Effects with 50 Intelligence",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3009,7 +3175,8 @@
         "statName": "Nearby Enemies Chilled",
         "value": "2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3035,7 +3202,8 @@
         "statName": "Ignite Chance with Fire Skills",
         "value": "+7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3057,7 +3225,8 @@
         "statName": "Effects doubled after expensive skill",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3075,7 +3244,8 @@
         "statName": "Lightning Damage Leech",
         "value": "+0.3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3093,7 +3263,8 @@
         "statName": "Cold Damage Leech",
         "value": "+0.3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3111,7 +3282,8 @@
         "statName": "Fire Damage Leech",
         "value": "+0.3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3125,7 +3297,8 @@
         "statName": "Chance To Cast Spark Nova",
         "value": "8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3139,7 +3312,8 @@
         "statName": "Increased Cooldown Recovery Speed",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3157,7 +3331,8 @@
         "statName": "Chill Chance",
         "value": "+7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3179,7 +3354,8 @@
         "statName": "Increased Stun Chance With Elemental Spells",
         "value": "8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3197,7 +3373,8 @@
         "statName": "Mana Spent Gained As Ward",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3206,7 +3383,8 @@
     "nodeName": "Arcane Insight",
     "description": "You have additional Intelligence and you gain additional ward decay threshold scaling with your Intelligence.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3232,7 +3410,8 @@
         "statName": "Fire Aura Freeze Rate Per Second",
         "value": "48"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3250,7 +3429,8 @@
         "statName": "Increased Critical Chance Per Dexterity",
         "value": "8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3268,7 +3448,8 @@
         "statName": "Spark Charge Chance with Lightning Melee Attacks",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3286,7 +3467,8 @@
         "statName": "Fire Penetration with Ignite",
         "value": "+4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3304,7 +3486,8 @@
         "statName": "Mana Gained Per Fire Aura Consumed",
         "value": "3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3313,7 +3496,8 @@
     "nodeName": "Illusory Combatant",
     "description": "You have additional dexterity and intelligence.",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3331,7 +3515,8 @@
         "statName": "Mana Regen",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3349,7 +3534,8 @@
         "statName": "Ward Gained",
         "value": "3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3367,7 +3553,8 @@
         "statName": "Ward Gain Cooldown Duration",
         "value": "-2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3385,7 +3572,8 @@
         "statName": "Parry Chance",
         "value": "+2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3407,7 +3595,8 @@
         "statName": "Increased Cast Speed with Snap Freeze",
         "value": "15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3429,7 +3618,8 @@
         "statName": "Increased Cooldown Recovery Speed for Surge",
         "value": "30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3451,7 +3641,8 @@
         "statName": "Damage Taken While Dual Wielding",
         "value": "+8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3460,7 +3651,8 @@
     "nodeName": "Arcane Focus",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3482,7 +3674,8 @@
         "statName": "Crit Chance bonus Doubled for 30+ Mana Cost",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3504,7 +3697,8 @@
         "statName": "Chill Chance with Cold Skills",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3522,7 +3716,8 @@
         "statName": "Bonus Damage from Crits with a Catalyst",
         "value": "-6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3540,7 +3735,8 @@
         "statName": "Bonuses from Never Late apply to Traversal Skills",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3562,7 +3758,8 @@
         "statName": "Additional Ward per Second with 60 Intelligence",
         "value": "+24"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3584,7 +3781,8 @@
         "statName": "Cast Speed with a Staff",
         "value": "+4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3602,7 +3800,8 @@
         "statName": "Doubled effect with Rah Rune or Frost Wall",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3620,7 +3819,8 @@
         "statName": "Doubled Effect with Heo Rune or Glyph of Dominion",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3638,7 +3838,8 @@
         "statName": "Brand of Deception",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3660,7 +3861,8 @@
         "statName": "Max More Crit Multi",
         "value": "20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3669,7 +3871,8 @@
     "nodeName": "Ancient Inscriptions",
     "description": "",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3687,7 +3890,8 @@
         "statName": "Armor gained as Ward",
         "value": "20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3705,7 +3909,8 @@
         "statName": "Brand of Deception Damage per 1% Shock Chance",
         "value": "+6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3727,7 +3932,8 @@
         "statName": "Endurance Threshold per Ignite with Runeword: Avalanche",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3749,7 +3955,8 @@
         "statName": "Ward Gain vs Branded Bosses (1 second cooldown)",
         "value": "100"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3767,7 +3974,8 @@
         "statName": "Party Members gain Runeword Buffs",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3789,7 +3997,8 @@
         "statName": "Damage vs Low Health with Runeword: Cataclysm",
         "value": "+15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3811,7 +4020,8 @@
         "statName": "Buff Duration",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3829,7 +4039,8 @@
         "statName": "Ward Per Rune On Area Skill Use And Hit",
         "value": "2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3847,7 +4058,8 @@
         "statName": "Armor Shred -> Frostbite chance",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3865,7 +4077,8 @@
         "statName": "Doubled effect with Gon Rune or Runebolt",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3887,7 +4100,8 @@
         "statName": "Mana Gained as Endurance Threshold",
         "value": "30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3909,7 +4123,8 @@
         "statName": "Armor per Shock with Runeword: Inferno",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3931,7 +4146,8 @@
         "statName": "Health Regen also Applies to Ward",
         "value": "15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3940,7 +4156,8 @@
     "nodeName": "Runeword: Hurricane",
     "description": "When you directly use a Lightning Skill you have a chance to gain {Runeword: Hurricane}, a buff that grants additional Spell Lightning Damage and Freeze Rate Multiplier.\n\nThis buff lasts 6 seconds and does not stack.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "mg-1",
@@ -3949,7 +4166,8 @@
     "nodeName": "Burden of Knowledge",
     "description": "You have additional spell damage, but your spells take longer to cast.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -3967,7 +4185,8 @@
         "statName": "Increased Health Regeneration",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -3989,7 +4208,8 @@
         "statName": "Cold Resistance",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4007,7 +4227,8 @@
         "statName": "Increased Minion Health",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4016,7 +4237,8 @@
     "nodeName": "Hunter's Restoration",
     "description": "You have increased health and every 3 seconds your next hit restores your health.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4034,7 +4256,8 @@
         "statName": "Percent Of Potion Healing Received By Minions",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4043,7 +4266,8 @@
     "nodeName": "Survival of the Pack",
     "description": "",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4052,7 +4276,8 @@
     "nodeName": "Wisdom of the Wild",
     "description": "",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4078,7 +4303,8 @@
         "statName": "Doubled while you have a minion",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4096,7 +4322,8 @@
         "statName": "Increased Minion Damage Granted",
         "value": "11%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4118,7 +4345,8 @@
         "statName": "Companion Revival Speed",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4144,7 +4372,8 @@
         "statName": "Damage Taken While Dual Wielding",
         "value": "+8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4162,7 +4391,8 @@
         "statName": "Damage Taken From Nearby Enemies",
         "value": "-2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4180,7 +4410,8 @@
         "statName": "Increased Minion Damage",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4202,7 +4433,8 @@
         "statName": "Limited To One Companion",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4220,7 +4452,8 @@
         "statName": "Aspect Of The Shark Granted On Melee Attack",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4242,7 +4475,8 @@
         "statName": "Increased Minion Health Leech",
         "value": "20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4264,7 +4498,8 @@
         "statName": "Increased Companion Revive Range",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4282,7 +4517,8 @@
         "statName": "Physical Penetration with Bleed",
         "value": "+15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4291,7 +4527,8 @@
     "nodeName": "Boar Heart",
     "description": "You are granted {Aspect of the Boar} for a duration when you use a traversal skill or Evade, a buff that grants 30% increased bleed duration and reduces damage taken by 15%. This effect has a 2 second cooldown. You also have additional endurance.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4309,7 +4546,8 @@
         "statName": "Haste Chance On Hit",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4318,7 +4556,8 @@
     "nodeName": "Cry of the Lynx",
     "description": "You and your companions have an increased chance to critically strike. \n\nWhen you use a companion ability, you and your companions are granted {Aspect of the Lynx} for a duration, a buff that grants +5% critical strike chance and 100% increased stun chance.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4348,7 +4587,8 @@
         "statName": "Companion Damage Immunity Duration After Revive (seconds)",
         "value": "4"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4370,7 +4610,8 @@
         "statName": "Poison Resistance",
         "value": "+8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4392,7 +4633,8 @@
         "statName": "Heal Amount On Companion Ability Use",
         "value": "20"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4406,7 +4648,8 @@
         "statName": "Aspect Of The Shark Armour Shred Chance",
         "value": "+20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4424,7 +4667,8 @@
         "statName": "Poison Penetration with Aspects of the Viper",
         "value": "+4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4446,7 +4690,8 @@
         "statName": "Your Endurance And Endurance Threshold Apply to Companions",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4472,7 +4717,8 @@
         "statName": "Aspect Of The Lynx Health Leech on Crit",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4494,7 +4740,8 @@
         "statName": "Minion Physical Resistance",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4512,7 +4759,8 @@
         "statName": "Less Aspect Of The Shark Effect",
         "value": "-60%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4534,7 +4782,8 @@
         "statName": "Max Companions at 100+ Combined Strength and Dexterity",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4556,7 +4805,8 @@
         "statName": "Limited To One Companion",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4574,7 +4824,8 @@
         "statName": "Damage Redirected to Highest Health Minion",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4600,7 +4851,8 @@
         "statName": "Level of Minion Skills",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4614,7 +4866,8 @@
         "statName": "Increased Totem Damage",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4636,7 +4889,8 @@
         "statName": "Increased Cooldown Recovery Speed for Crowstorm",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4654,7 +4908,8 @@
         "statName": "Haste Chance",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4672,7 +4927,8 @@
         "statName": "Increased Cast Speed With Active Totem",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4681,7 +4937,8 @@
     "nodeName": "Rhythm of Thunder",
     "description": "Your melee attacks deal additional lightning damage. Every 2 seconds, this effect is tripled for your next melee attack.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4690,7 +4947,8 @@
     "nodeName": "Silent Protector",
     "description": "You and your totems have additional armor while you have an active totem and you have increased mana regen while you have an active totem.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4708,7 +4966,8 @@
         "statName": "Penetration",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4717,7 +4976,8 @@
     "nodeName": "Wind Bringer",
     "description": "You and your minions have increased cold damage, increased physical damage and additional dodge rating.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4735,7 +4995,8 @@
         "statName": "Shared Lightning Resistance",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4757,7 +5018,8 @@
         "statName": "Shared Cold Resistance",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4771,7 +5033,8 @@
         "statName": "Shared Spell Damage",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4789,7 +5052,8 @@
         "statName": "Increased Minion Lightning Damage",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4798,7 +5062,8 @@
     "nodeName": "Protective Circle",
     "description": "You have additional physical and elemental resistance for each active totem.\n\nAdditionally, your totems have resistances against all damage types.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4824,7 +5089,8 @@
         "statName": "Endurance Threshold Per Maelstrom",
         "value": "+20"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4842,7 +5108,8 @@
         "statName": "Increased Mana Regen Per 1 Attunement",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4860,7 +5127,8 @@
         "statName": "Melee Cold Penetration Per 3 Strength",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4886,7 +5154,8 @@
         "statName": "Totem Frenzy Duration (seconds)",
         "value": "3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4900,7 +5169,8 @@
         "statName": "More Spell Damage With Active Totem",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4914,7 +5184,8 @@
         "statName": "Maximum Companions",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4936,7 +5207,8 @@
         "statName": "Shared Critical Multiplier per 2 Dexterity",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4958,7 +5230,8 @@
         "statName": "Aspect Of The Boar Chance On Melee Hit",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4967,7 +5240,8 @@
     "nodeName": "The Circle Of Life",
     "description": "You gain health and have a chance to be granted {Aspect Of The Shark} for 3 seconds whenever you kill an enemy or hit a boss or rare enemy.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4976,7 +5250,8 @@
     "nodeName": "Viper Fangs",
     "description": "You and your companions have increased melee attack speed.\n\nWhen you hit an enemy, you have a chance for you and your companions to be granted {Aspect of the Viper} for 3 seconds, a buff that grants 100% chance to poison on hit and 20% more damage over time (multiplicative with other modifiers).",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -4998,7 +5273,8 @@
         "statName": "Companions Gain Shark Or Boar Aspects When You Do",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5020,7 +5296,8 @@
         "statName": "Chance To Cast Storm Bolt When Hit",
         "value": "25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5046,7 +5323,8 @@
         "statName": "Mana Gained On Gathering Storm Hit",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5068,7 +5346,8 @@
         "statName": "Stun Avoidance Per Attunement",
         "value": "+5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5086,7 +5365,8 @@
         "statName": "Shared Spell Lightning Penetration Per 5 Attunement",
         "value": "+2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5112,7 +5392,8 @@
         "statName": "Minion Frostbite Chance",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5126,7 +5407,8 @@
         "statName": "Increased Elemental Melee Damage",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5140,7 +5422,8 @@
         "statName": "More Melee Damage With Active Totem",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5162,7 +5445,8 @@
         "statName": "Companion Spell Damage per 3 Strength",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5184,7 +5468,8 @@
         "statName": "Attack Speed",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5193,7 +5478,8 @@
     "nodeName": "Lagon's Answer",
     "description": "You have increased spell damage.\nYour direct spell casts have a chance to cast {Storm Bolt}.\nWhile channeling, you have a chance to cast {Storm Bolt} every second.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5215,7 +5501,8 @@
         "statName": "Chance for Indirect Storm Bolt Casts to Doublecast",
         "value": "20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5237,7 +5524,8 @@
         "statName": "Mana Or Rage Cost As Health On Spell Cast",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5246,7 +5534,8 @@
     "nodeName": "Blossoming Garden",
     "description": "Increases healing effectiveness for you and your minions.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5255,7 +5544,8 @@
     "nodeName": "Claws of the Forest",
     "description": "",
     "maxPoints": 7,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5273,7 +5563,8 @@
         "statName": "Less Damage Over Time Taken In Human Form",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5291,7 +5582,8 @@
         "statName": "Spell Poison Chance",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5313,7 +5605,8 @@
         "statName": "Damage Reflect",
         "value": "+12"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5322,7 +5615,8 @@
     "nodeName": "Natural Duality",
     "description": "You are limitted to one companion, but that companion has more health (multiplicative with other modifiers). If you control a companion you deal increased damage and have additional armour.",
     "maxPoints": 1,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5348,7 +5642,8 @@
         "statName": "Spriggan Form Movement Speed",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5370,7 +5665,8 @@
         "statName": "Chance To Summon Healing Totem When Hit",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5379,7 +5675,8 @@
     "nodeName": "Focused Wrath",
     "description": "You deal increased damage while transformed and your rage decays slower.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5397,7 +5694,8 @@
         "statName": "Health Leech On Crit",
         "value": "+4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5431,7 +5729,8 @@
         "statName": "Minion Frostbite Chance",
         "value": "+40%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5440,7 +5739,8 @@
     "nodeName": "Woodland Beings",
     "description": "",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5458,7 +5758,8 @@
         "statName": "Shapeshifter Applies To Minions On Transform",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5476,7 +5777,8 @@
         "statName": "Totems Are Immune To Poison Damage",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5498,7 +5800,8 @@
         "statName": "Health Regen",
         "value": "+10"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5516,7 +5819,8 @@
         "statName": "Crit Avoidance Per 5 Attunement",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5538,7 +5842,8 @@
         "statName": "Minion Armor (doubled for Locusts)",
         "value": "+300"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5568,7 +5873,8 @@
         "statName": "Locusts Armor Shred Chance",
         "value": "+25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5586,7 +5892,8 @@
         "statName": "Companion Spell Damage",
         "value": "+4"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5604,7 +5911,8 @@
         "statName": "Critical Multiplier With Buff",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5613,7 +5921,8 @@
     "nodeName": "Primal Shifter",
     "description": "You gain the {Shapeshifter} buff for a limited duration when you transform, granting you increased armor and damage.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5639,7 +5948,8 @@
         "statName": "Lose All Stacks After 10 Seconds Of Inactivity",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5661,7 +5971,8 @@
         "statName": "All Attributes",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5687,7 +5998,8 @@
         "statName": "Increased Minion Healing",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5705,7 +6017,8 @@
         "statName": "Rage Gain On Crit",
         "value": "+3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5727,7 +6040,8 @@
         "statName": "Chance To Summon A Vine On Kill",
         "value": "36%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5745,7 +6059,8 @@
         "statName": "Minion Melee Physical Damage",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5767,7 +6082,8 @@
         "statName": "Increased Health Regen per 1% Uncapped Endurance",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5785,7 +6101,8 @@
         "statName": "Increased Mana Regen",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5803,7 +6120,8 @@
         "statName": "Maximum Health Gained As Endurance Threshold",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5825,7 +6143,8 @@
         "statName": "Minion Increased Lightning Damage",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5851,7 +6170,8 @@
         "statName": "Totem Stun Immunity",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5877,7 +6197,8 @@
         "statName": "Increased Health Regen Per Strength",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5895,7 +6216,8 @@
         "statName": "Increased Aspect Of The Shark Duration",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5909,7 +6231,8 @@
         "statName": "No Rage Decay Out Of Combat",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5931,7 +6254,8 @@
         "statName": "Increased Melee Damage Per Strength In Bear Or Swarmblade",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5957,7 +6281,8 @@
         "statName": "Increased Crows Attack, Cast And Move Speed",
         "value": "16%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5975,7 +6300,8 @@
         "statName": "Less Damage Taken on Low Health",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -5997,7 +6323,8 @@
         "statName": "Tripled while using an Axe",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -6019,7 +6346,8 @@
         "statName": "Melee Lightning Damage with a Staff",
         "value": "+3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "pr-1",
@@ -6037,7 +6365,8 @@
         "statName": "Elemental Penetration While Transformed",
         "value": "+7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6055,7 +6384,8 @@
         "statName": "Health",
         "value": "+5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6064,7 +6394,8 @@
     "nodeName": "Guile",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6073,7 +6404,8 @@
     "nodeName": "Flow",
     "description": "You have increased dodge rating, and you gain health when hitting an enemy.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6091,7 +6423,8 @@
         "statName": "Health Gained",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6113,7 +6446,8 @@
         "statName": "Frailty Chance",
         "value": "+25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6122,7 +6456,8 @@
     "nodeName": "Swift Assassin",
     "description": "Your melee, throwing, and bow attacks have increased attack speed and deal additional physical damage.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6131,7 +6466,8 @@
     "nodeName": "Evasion",
     "description": "You take less damage while moving (multiplicative with other modifiers) and have increased dodge rating.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6149,7 +6485,8 @@
         "statName": "Increased Damage per 1% Increased Movement Speed",
         "value": "0.2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6167,7 +6504,8 @@
         "statName": "Glancing Blow Chance",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6193,7 +6531,8 @@
         "statName": "Damage Taken While Dual Wielding",
         "value": "+8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6211,7 +6550,8 @@
         "statName": "Increased Dodge Rating while Dual Wielding",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6225,7 +6565,8 @@
         "statName": "Damage Buff",
         "value": "20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6243,7 +6584,8 @@
         "statName": "Poison Chance with a Bow",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6261,7 +6603,8 @@
         "statName": "Mana Gain",
         "value": "2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6283,7 +6626,8 @@
         "statName": "Increased Critical Strike Chance with a Bow",
         "value": "12%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6297,7 +6641,8 @@
         "statName": "Bleed Stacks on Third Attack",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6315,7 +6660,8 @@
         "statName": "Mana Consumed",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6333,7 +6679,8 @@
         "statName": "Health Gain on Glancing Blow",
         "value": "4"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6355,7 +6702,8 @@
         "statName": "Added Bow Critical Strike Chance",
         "value": "+2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6377,7 +6725,8 @@
         "statName": "Haste After Evade",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6386,7 +6735,8 @@
     "nodeName": "Concentration",
     "description": "By default you have {Concentration} which grants you more damage (multiplicative with other modifiers). If you are hit by an enemy within 4m you lose concentration for 4 seconds. Subsequent hits do not reset the cooldown.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6412,7 +6762,8 @@
         "statName": "Armor Shred Effect",
         "value": "+50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6438,7 +6789,8 @@
         "statName": "Maximum Elemental Arrows",
         "value": "3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6452,7 +6804,8 @@
         "statName": "Critical Vulnerability Chance",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6470,7 +6823,8 @@
         "statName": "Damage Over Time while wielding a Bow",
         "value": "+7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6479,7 +6833,8 @@
     "nodeName": "Storm Fletcher",
     "description": "If you have a bow equipped you deal increased elemental damage and gain {Elemental Arrows} more frequently.",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6497,7 +6852,8 @@
         "statName": "Concentration cooldown",
         "value": "-8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6515,7 +6871,8 @@
         "statName": "Ward Gain Per Elemental Arrow",
         "value": "15"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6533,7 +6890,8 @@
         "statName": "Bow Critical Strike Multiplier",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6555,7 +6913,8 @@
         "statName": "Less Hit Damage Taken With Concentration",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6573,7 +6932,8 @@
         "statName": "Shock and Ignite chance when consuming 3 Arrows",
         "value": "200%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6582,7 +6942,8 @@
     "nodeName": "Arrow Storm",
     "description": "When you use a bow attack you gain {Arrow Storm} which increases your bow attack speed for 3 seconds. You can only gain Arrow Storm once every 10 seconds.",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6600,7 +6961,8 @@
         "statName": "Bow Damage Leeched as Health",
         "value": "0.5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6622,7 +6984,8 @@
         "statName": "Only Elemental Bow Attacks Consume Elemental Arrows",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6636,7 +6999,8 @@
         "statName": "Silver Shroud Stacks Gained",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6654,7 +7018,8 @@
         "statName": "Increased damage taken from nearby enemies",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6676,7 +7041,8 @@
         "statName": "Poison Duration",
         "value": "+20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6698,7 +7064,8 @@
         "statName": "Increased Bow Damage per Stack",
         "value": "25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6720,7 +7087,8 @@
         "statName": "Bow Mana Cost -> More Damage",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6729,7 +7097,8 @@
     "nodeName": "Barrage of Pain",
     "description": "Adds {Barrage of Pain} to your Marksman Passive, Bow Mastery. You gain a stack and refresh all existing stacks of Bow Mastery by using a bow attack and hitting at least one enemy.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6743,7 +7112,8 @@
         "statName": "Rain of Arrows Chance",
         "value": "25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6761,7 +7131,8 @@
         "statName": "Bow Attack Mana Cost",
         "value": "+15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6779,7 +7150,8 @@
         "statName": "Armour Shred Chance per stack of Sharpshooter",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6805,7 +7177,8 @@
         "statName": "Heartseeker Recurve Chance",
         "value": "+20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6823,7 +7196,8 @@
         "statName": "Health on Crit per Stack",
         "value": "3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6841,7 +7215,8 @@
         "statName": "Falcon And Ballista Crit Chance",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6863,7 +7238,8 @@
         "statName": "Throwing Attack Damage",
         "value": "6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6885,7 +7261,8 @@
         "statName": "Physical Resistance",
         "value": "+15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6907,7 +7284,8 @@
         "statName": "Poison Chance Per Equipped Dagger",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6933,7 +7311,8 @@
         "statName": "Shadow Daggers Damage to Rares and Bosses",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6951,7 +7330,8 @@
         "statName": "Increased Shadow Damage",
         "value": "15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -6977,7 +7357,8 @@
         "statName": "Throwing Attack Speed Buff",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7003,7 +7384,8 @@
         "statName": "Crimson Shroud Chance",
         "value": "30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7021,7 +7403,8 @@
         "statName": "Crit Avoidance",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7043,7 +7426,8 @@
         "statName": "Unique Skills Required to Consume Flow",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7065,7 +7449,8 @@
         "statName": "Dusk Shroud Chance",
         "value": "6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7083,7 +7468,8 @@
         "statName": "Increased Critical Chance",
         "value": "8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7101,7 +7487,8 @@
         "statName": "Endurance",
         "value": "+2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7119,7 +7506,8 @@
         "statName": "You Cannot Dodge",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7141,7 +7529,8 @@
         "statName": "Increased Throwing Attack Speed while Dual Wielding",
         "value": "12%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7159,7 +7548,8 @@
         "statName": "Damage Leeched as Health from Damage Over Time",
         "value": "0.5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7177,7 +7567,8 @@
         "statName": "Increased Damage, tripled while at full health",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7215,7 +7606,8 @@
         "statName": "Critical Multiplier with a Mace and Dagger",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7241,7 +7633,8 @@
         "statName": "More Poison Damage per 10 Bleeds on Enemy, up to 20%",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7250,7 +7643,8 @@
     "nodeName": "Perfection",
     "description": "When you use a melee attack and hit at least one enemy you gain a stack of Perfection. When you receive a hit you lose all stacks. Each stack of perfection increases your damage.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7259,7 +7653,8 @@
     "nodeName": "Critical Eye",
     "description": "You have increased critical strike chance and you have a chance to inflict {Critical Vulnerability} on hit.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7281,7 +7676,8 @@
         "statName": "Silver Shroud Stacks when Damaged to Below 70%",
         "value": "3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7307,7 +7703,8 @@
         "statName": "Additional Perfection Stack per Melee Attack at Full Health",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7325,7 +7722,8 @@
         "statName": "Crit Multi While At Low Health",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7347,7 +7745,8 @@
         "statName": "Throwing Attack Mana Cost",
         "value": "-1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7369,7 +7768,8 @@
         "statName": "Less Damage Over Time",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7391,7 +7791,8 @@
         "statName": "Maximum Shadows",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7417,7 +7818,8 @@
         "statName": "Increased Movement Speed with 100 Dexterity",
         "value": "6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7439,7 +7841,8 @@
         "statName": "Physical Res Shred Chance",
         "value": "+50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7461,7 +7864,8 @@
         "statName": "Falcon Increased Melee Attack Speed",
         "value": "+2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7479,7 +7883,8 @@
         "statName": "Dodge Rating",
         "value": "+5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7493,7 +7898,8 @@
         "statName": "Crimson Shroud Chance",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7511,7 +7917,8 @@
         "statName": "Falcon Throwing Damage Per 4 Dex",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7529,7 +7936,8 @@
         "statName": "Maximum Health Gained As Endurance Threshold",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7555,7 +7963,8 @@
         "statName": "Melee Damage Per 10 Dex With Spear",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7564,7 +7973,8 @@
     "nodeName": "Peltast",
     "description": "",
     "maxPoints": 7,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7586,7 +7996,8 @@
         "statName": "Falcon Melee Damage Buff",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7608,7 +8019,8 @@
         "statName": "Mana Gain On Dodge",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7630,7 +8042,8 @@
         "statName": "Bow Damage For Ballista",
         "value": "+3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7652,7 +8065,8 @@
         "statName": "Block Effectiveness Per Dex",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7678,7 +8092,8 @@
         "statName": "Increased Puncture Range With Spear",
         "value": "60%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7696,7 +8111,8 @@
         "statName": "Added Throwing Damage Conversion To Falcon",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7718,7 +8134,8 @@
         "statName": "Mana Gain On Decoy Detonation",
         "value": "4"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7727,7 +8144,8 @@
     "nodeName": "Evasion Tactics",
     "description": "",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7749,7 +8167,8 @@
         "statName": "Silver Shroud on ability use",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7771,7 +8190,8 @@
         "statName": "Health Gain on Falcon Hit Per 3 Dex",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7797,7 +8217,8 @@
         "statName": "Block Chance -> Glancing Blow Chance",
         "value": "100%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7815,7 +8236,8 @@
         "statName": "Increased Cooldown",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7824,7 +8246,8 @@
     "nodeName": "Final Souvenir",
     "description": "You have additional dodge rating and you now have a chance to drop {Caltrops} around you when you dodge and there is an enemy within 4 meters of you.\n\nThis effect has a 2 second cooldown.",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7842,7 +8265,8 @@
         "statName": "Bleed And Poison Chance -> Falcon",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7868,7 +8292,8 @@
         "statName": "Minion Critical Multiplier",
         "value": "+6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7886,7 +8311,8 @@
         "statName": "Frailty Stacks From Caltrops",
         "value": "3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7904,7 +8330,8 @@
         "statName": "Increased Armor On Falcon Hit",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7926,7 +8353,8 @@
         "statName": "Potion Slots",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7944,7 +8372,8 @@
         "statName": "Double Glancing Blow Chance If Not Hit",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7970,7 +8399,8 @@
         "statName": "Double Effects With Recent Falcon Hit",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -7992,7 +8422,8 @@
         "statName": "Minion Critical Multiplier per 3% Crit Avoidance",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "rg-1",
@@ -8014,7 +8445,8 @@
         "statName": "More Damage Per Slow",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8036,7 +8468,8 @@
         "statName": "Void Resistance",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8045,7 +8478,8 @@
     "nodeName": "Stalwart",
     "description": "You have a higher chance to block hits and take less damage from hits that you block.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8054,7 +8488,8 @@
     "nodeName": "Armour Clad",
     "description": "Adds armour and reduces the damage you take from nearby enemies (multiplicative with other modifiers)",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8068,7 +8503,8 @@
         "statName": "Health Gained On Block",
         "value": "10"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8090,7 +8526,8 @@
         "statName": "Increased Stun Immunity Duration",
         "value": "100%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8099,7 +8536,8 @@
     "nodeName": "Overwhelm",
     "description": "Adds physical damage to your melee attacks and increases their chance to stun.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8121,7 +8559,8 @@
         "statName": "Damage Taken While Dual Wielding",
         "value": "+8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8135,7 +8574,8 @@
         "statName": "Chance To Cast Axe Throw On Hit",
         "value": "8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8153,7 +8593,8 @@
         "statName": "Health",
         "value": "+6"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8162,7 +8603,8 @@
     "nodeName": "Devouring Blade",
     "description": "",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8188,7 +8630,8 @@
         "statName": "Void And Physical Damage Taken",
         "value": "-5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8210,7 +8653,8 @@
         "statName": "Increased Leech Rate",
         "value": "20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8232,7 +8676,8 @@
         "statName": "Area With Melee Area Skills",
         "value": "+25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8250,7 +8695,8 @@
         "statName": "Reduced Bonus Damage Taken From Crits",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8264,7 +8710,8 @@
         "statName": "Melee Void Damage",
         "value": "+3"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8282,7 +8729,8 @@
         "statName": "Chance To Absorb Health On Kill",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8308,7 +8756,8 @@
         "statName": "Smite Void Spell Damage per Vitality",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8326,7 +8775,8 @@
         "statName": "Melee Kill Threshold",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8348,7 +8798,8 @@
         "statName": "Echo Chance For Abyssal Echoes",
         "value": "+15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8366,7 +8817,8 @@
         "statName": "Increased Leech Rate",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8388,7 +8840,8 @@
         "statName": "Health Per Vitality",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8410,7 +8863,8 @@
         "statName": "Mana Gain When Skill Echoes",
         "value": "14"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8428,7 +8882,8 @@
         "statName": "Max Health -> Endurance Threshold With Buff",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8437,7 +8892,8 @@
     "nodeName": "Essence of the End",
     "description": "You have a chance to gain a {Void Essence} on kill.\n\nVoid Essences last 8 seconds and grant 3% more void damage and 3% more melee damage (both multiplicative with other modifiers), and 15% reduced duration of stuns on you.\n\nYou can have a maximum of 3 Void Essences at once, and you cannot gain more than 1 every 4 seconds.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8463,7 +8919,8 @@
         "statName": "Chill Effect On You",
         "value": "-50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8472,7 +8929,8 @@
     "nodeName": "Steel Aegis",
     "description": "You have a higher chance to block hits and take less damage from hits that you block.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8490,7 +8948,8 @@
         "statName": "Physical Resistance",
         "value": "+4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8508,7 +8967,8 @@
         "statName": "Max Stacks",
         "value": "10"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8517,7 +8977,8 @@
     "nodeName": "Peltast",
     "description": "",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8526,7 +8987,8 @@
     "nodeName": "Might",
     "description": "",
     "maxPoints": 6,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8552,7 +9014,8 @@
         "statName": "Minion Stun Immunity",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8574,7 +9037,8 @@
         "statName": "Increased Health Regen",
         "value": "8%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8596,7 +9060,8 @@
         "statName": "Damage Reflected Per 1% Armor Mitigation",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8622,7 +9087,8 @@
         "statName": "Increased Minion Armor",
         "value": "40%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8640,7 +9106,8 @@
         "statName": "Increased Mana Regen",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8666,7 +9133,8 @@
         "statName": "Doubled for you with a 2h weapon",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8675,7 +9143,8 @@
     "nodeName": "Infinite Bulwark",
     "description": "You and your minions have increased armor and chance to find potions if you have used a potion recently (last 4 seconds).",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8697,7 +9166,8 @@
         "statName": "Minion Increased Attack Speed On 20 Mana Cost Skill",
         "value": "30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8719,7 +9189,8 @@
         "statName": "Time Rot Chance On Skill Echo",
         "value": "+50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8728,7 +9199,8 @@
     "nodeName": "Flawless Defender",
     "description": "While you are using a shield you have additional armor.",
     "maxPoints": 4,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8750,7 +9222,8 @@
         "statName": "Dodge Rating -> Armor",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8759,7 +9232,8 @@
     "nodeName": "Duelist",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8773,7 +9247,8 @@
         "statName": "Increased Throwing Attack Critical Strike Chance",
         "value": "15%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8795,7 +9270,8 @@
         "statName": "Physical Penetration Per 5 Strength",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8813,7 +9289,8 @@
         "statName": "Throwing Crit Chance Per 5 Dexterity",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8839,7 +9316,8 @@
         "statName": "Maximum Less Fire Damage Taken From Overcapped Fire Res",
         "value": "40%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8861,7 +9339,8 @@
         "statName": "Block Chance",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8879,7 +9358,8 @@
         "statName": "Increased Health Regen",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8888,7 +9368,8 @@
     "nodeName": "Counter Attack",
     "description": "When you are hit you have a chance to counter attack enemies with {Retribution,} a melee physical attack that deals damage to nearby enemies. This effect has a 0.2 second cooldown.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8906,7 +9387,8 @@
         "statName": "Increased Spell Void Damage",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8928,7 +9410,8 @@
         "statName": "Fire Shred Stacks",
         "value": "1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8937,7 +9420,8 @@
     "nodeName": "Fresh from the Forge",
     "description": "You have additional melee and throwing physical and fire damage.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8951,7 +9435,8 @@
         "statName": "Consume 3 Void Essences To Refund Mana",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8969,7 +9454,8 @@
         "statName": "Retribution Critical Strike Chance",
         "value": "+25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -8987,7 +9473,8 @@
         "statName": "Critical Multiplier Per Point Spent In Void Knight",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9009,7 +9496,8 @@
         "statName": "Time Rot Duration",
         "value": "+25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9023,7 +9511,8 @@
         "statName": "Void Damage",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9045,7 +9534,8 @@
         "statName": "Devouring Orb Creates Void Rift On Cast",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9054,7 +9544,8 @@
     "nodeName": "Rot Grip",
     "description": "Your hits have a chance to inflict enemies with {Time Rot}.\n\nAdditionally, {Time Rot} deals more damage per 1% global chance to slow with void skills, more damage per 1% global {Time Rot} chance with void skills and more damage per 1% increased melee attack, throwing or cast speed, whichever is lowest, (all multiplicative with each other and with all other modifiers).",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9076,7 +9567,8 @@
         "statName": "Damage Taken From Time Rotting Enemies",
         "value": "-5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9098,7 +9590,8 @@
         "statName": "More Armor",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9107,7 +9600,8 @@
     "nodeName": "Woe",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9125,7 +9619,8 @@
         "statName": "Void Damage Taken",
         "value": "-4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9155,7 +9650,8 @@
         "statName": "Critical Strike Chance With Spear",
         "value": "+5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9181,7 +9677,8 @@
         "statName": "Damage Over Time Mitigation From Armor Per 2 Attunement",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9203,7 +9700,8 @@
         "statName": "Doubled if you have used a potion recently",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9233,7 +9731,8 @@
         "statName": "Reduced Bonus Damage Taken From Crits With Shield",
         "value": "3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9255,7 +9754,8 @@
         "statName": "Health",
         "value": "12"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9277,7 +9777,8 @@
         "statName": "Increased Mana Regen Per 1% Block Chance Above 50%",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9299,7 +9800,8 @@
         "statName": "Endurance Threshold Per 2% Uncapped Elemental Resistance",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9308,7 +9810,8 @@
     "nodeName": "Honor",
     "description": "You are less likely to be stunned, you have a higher chance to block hits and you take less damage from hits that you block.",
     "maxPoints": 5,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9326,7 +9829,8 @@
         "statName": "Fire Res Shred Chance Per 2 Strength",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9344,7 +9848,8 @@
         "statName": "Additional Divine Bolts",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9366,7 +9871,8 @@
         "statName": "Throwing Armor Shred Chance",
         "value": "+20%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9388,7 +9894,8 @@
         "statName": "Holy Symbol Ward Per Second",
         "value": "5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9422,7 +9929,8 @@
         "statName": "Lightning Penetration",
         "value": "+2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9436,7 +9944,8 @@
         "statName": "Holy Symbol Heals Nearby Allies",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9445,7 +9954,8 @@
     "nodeName": "Time Legion",
     "description": "You have increased melee and throwing attack speed.\n\nYour melee attacks, throwing attacks, and void spells have a higher chance to be echoed 1 second later. ",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9463,7 +9973,8 @@
         "statName": "Additional Divine Bolts",
         "value": "+1"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9489,7 +10000,8 @@
         "statName": "Bleed Duration Per 20 Endurance Threshold",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9511,7 +10023,8 @@
         "statName": "More Damage To Electrified",
         "value": "5%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9537,7 +10050,8 @@
         "statName": "Health Regen",
         "value": "+7"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9546,7 +10060,8 @@
     "nodeName": "Phoenix Strike",
     "description": "Your hits have a chance to ignite.",
     "maxPoints": 10,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9568,7 +10083,8 @@
         "statName": "Critical Chance",
         "value": "+3%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9590,7 +10106,8 @@
         "statName": "Increased Damage Over Time Granted",
         "value": "7%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9608,7 +10125,8 @@
         "statName": "Fire Penetration Per 100% Increased Healing Effectiveness",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9634,7 +10152,8 @@
         "statName": "Less Dodge Chance",
         "value": "30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9643,7 +10162,8 @@
     "nodeName": "Sanctuary Guardian",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9669,7 +10189,8 @@
         "statName": "Endurance Threshold Per 2 Attunement",
         "value": "+7"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9687,7 +10208,8 @@
         "statName": "More Ignite Damage",
         "value": "50%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9717,7 +10239,8 @@
         "statName": "Increased Mana Regen From Holy Aura",
         "value": "25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9743,7 +10266,8 @@
         "statName": "Electrify Duration",
         "value": "+25%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9765,7 +10289,8 @@
         "statName": "Health Regen From Symbols Of Hope",
         "value": "+5"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9783,7 +10308,8 @@
         "statName": "Divine Essence Chance Per Second On High Health",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9801,7 +10327,8 @@
         "statName": "Doubled With 10 Mana Cost Spells",
         "value": ""
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9827,7 +10354,8 @@
         "statName": "Increased Mana",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9853,7 +10381,8 @@
         "statName": "Maximum Forged Weapons",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9879,7 +10408,8 @@
         "statName": "Increased Mana Cost",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9888,7 +10418,8 @@
     "nodeName": "Faith Armour",
     "description": "",
     "maxPoints": 8,
-    "stats": []
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9906,7 +10437,8 @@
         "statName": "Health Gain",
         "value": "2%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9924,7 +10456,8 @@
         "statName": "Sceptre Increased Damage",
         "value": "12%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9942,7 +10475,8 @@
         "statName": "Axe Attack And Cast Speed",
         "value": "+6%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9960,7 +10494,8 @@
         "statName": "Physical Throwing Attack Damage with a Shield",
         "value": "+2"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -9978,7 +10513,8 @@
         "statName": "Critical Multiplier Per 2 Strength With 2h",
         "value": "+1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -10000,7 +10536,8 @@
         "statName": "Increased Area Per Stalwart Stack Consumed",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -10018,7 +10555,8 @@
         "statName": "Reduced Bonus Damage Taken From Crits",
         "value": "30%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -10040,7 +10578,8 @@
         "statName": "More Damage With Buff",
         "value": "10%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -10066,7 +10605,8 @@
         "statName": "More Lightning Damage Over Time Per 2% Crit Multi",
         "value": "1%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -10080,7 +10620,8 @@
         "statName": "Increased Holy Aura And Symbols Of Hope Effect",
         "value": "4%"
       }
-    ]
+    ],
+    "icon": null
   },
   {
     "treeID": "kn-1",
@@ -10106,6 +10647,7 @@
         "statName": "Haste instead grants Added Block Chance",
         "value": "+10%"
       }
-    ]
+    ],
+    "icon": null
   }
 ]
