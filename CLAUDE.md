@@ -35,6 +35,8 @@ le-build-overlay/
 │   ├── js/inspector.js           ← node details + route list
 │   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): choose screen (Maxroll link | export codes | templates) → horizontal workspace
 │   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, mini opacity, sound, lane keys, hotkeys (key recorder, conflict check)
+│   ├── js/help-dialog.js         ← shortcut sheet (?), built from the current key settings
+│   ├── js/toast.js               ← createToaster(): dedupe identical messages, max 3, action toasts evicted last
 │   ├── js/icons.js               ← node/tree artwork from db/data/icons, glyph fallback, UI svg icons
 │   ├── js/keys.js                ← KeyboardEvent → Electron accelerator, keyRecorder()
 │   ├── js/dom.js                 ← h(), mount(), svg(), richText()
@@ -167,7 +169,7 @@ Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normal
 { passives: trees, skills: trees /* same object */, classes, duplicates }
 trees = { [treeID]: { name, icon, nodes: { [String(nodeID)]: { id, nodeName, description, maxPoints, stats, icon } } } }
 ```
-Both files are committed (regenerate + commit after each patch). There is no fallback: if either is missing, `build-db.missingFiles()` reports it and the status bar shows **Game data missing**.
+Both files are committed (regenerate + commit after each patch). They're written as **one compact row per line**, which is 23 % smaller than indented JSON, and git diffs still show exactly which nodes changed. There is no fallback: if either is missing, `build-db.missingFiles()` reports it and the status bar shows **Game data missing**.
 
 ### classes.json (hand-maintained)
 `{ classes:{"2":"Sentinel"}, masteriesByClass:{"2":{"1":"Void Knight","2":"Forge Guard","3":"Paladin"}}, passiveTreeByClass:{"2":"kn-1"}, unverifiedMasteries:["2:1",…] }`
@@ -208,7 +210,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - **Mini mode** (`window:setMode`) is the same window: bounds are saved into the outgoing mode's slot and the incoming slot is restored (first use goes to the top-right of the display). It has min 260×180, is always on top, and uses `setOpacity(display.opacity)`, which does nothing on Linux. The frame stays native, because Electron can't switch frames at runtime.
 - **Single instance**: a second launch focuses the existing window.
 - **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). Old `config/build.json`, the hotkeys from `config/settings.json`, and `config/saves/` are migrated once.
-- **Game data** is loaded once and cached in main; `app:init` refreshes it (so a window reload picks up re-extracted data).
+- **Game data** is loaded once and cached in main. `app:init` re-checks `build-db.dataStamp()` (the size and mtime of each file) and re-reads only if a file changed. A window reload picks up re-extracted data without re-parsing ~2 MB on every load.
 
 ### Hotkeys (`electron/hotkeys.js`)
 | Default | Action | While the app window is focused |

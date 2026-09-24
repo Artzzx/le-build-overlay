@@ -150,5 +150,5 @@
     return visible[n - 1]?.index ?? null;
   }
 
-  return { API_BASE, parseMaxrollLink, normalizeName, matchSkillTree, decodePlanner, visibleVariantIndex };
+  return { API_BASE, parseMaxrollLink, matchSkillTree, decodePlanner, visibleVariantIndex };
 }));

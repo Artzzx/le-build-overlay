@@ -39,7 +39,7 @@ const { app, BrowserWindow, globalShortcut, ipcMain, screen, Menu, shell, net, c
 const path = require('path');
 const fs = require('fs');
 
-const { createStore, DEFAULT_SETTINGS, COMPACT_MIN } = require('./store');
+const { createStore, DEFAULT_SETTINGS, FULL_MIN, COMPACT_MIN } = require('./store');
 const { createHotkeys } = require('./hotkeys');
 const { createMaxrollClient, hiddenWindowLoader } = require('./maxroll');
 const MaxrollImport = require('../shared/maxroll-import');
@@ -64,17 +64,21 @@ let settings = null;
 // ─── Game data ────────────────────────────────────────────────────────────────
 
 let gameData = null;
+let gameDataStamp = null;
 
 /**
  * Game data is read-only while the app runs: load once, reuse for every
- * preview/load. `fresh` re-reads from disk (window (re)load), so re-running
- * the extractor only needs a reload, not a restart.
+ * preview/load. `fresh` (window (re)load) re-checks the files and re-reads
+ * them only if they changed on disk — re-running the extractor still just
+ * needs a reload, without re-parsing ~2 MB on every window load.
  */
 function loadGameData({ fresh = false } = {}) {
-  if (!gameData || fresh) {
-    const buildDb = require('../db/build-db');
+  const buildDb = require('../db/build-db');
+  const stamp = gameData && !fresh ? gameDataStamp : buildDb.dataStamp();
+  if (!gameData || stamp !== gameDataStamp) {
     buildDb.load(true);
     gameData = { db: buildDb.all(), missing: buildDb.missingFiles() };
+    gameDataStamp = stamp;
   }
   return gameData;
 }
@@ -109,8 +113,8 @@ function boundsFor(mode) {
 function applyWindowMode() {
   if (!win || win.isDestroyed()) return;
   const compact = isCompact();
-  if (compact) win.setMinimumSize(COMPACT_MIN.width, COMPACT_MIN.height);
-  else win.setMinimumSize(420, 480);
+  const min = compact ? COMPACT_MIN : FULL_MIN;
+  win.setMinimumSize(min.width, min.height);
   // Mini mode is always on top ('screen-saver' also floats over macOS fullscreen spaces).
   if (compact) win.setAlwaysOnTop(true, 'screen-saver');
   else win.setAlwaysOnTop(settings.display.alwaysOnTop);
@@ -159,8 +163,8 @@ function createWindow() {
   const compact = isCompact();
   win = new BrowserWindow({
     ...boundsFor(settings.display.mode),
-    minWidth: compact ? COMPACT_MIN.width : 420,
-    minHeight: compact ? COMPACT_MIN.height : 480,
+    minWidth: (compact ? COMPACT_MIN : FULL_MIN).width,
+    minHeight: (compact ? COMPACT_MIN : FULL_MIN).height,
     show: false,
     title: 'LE Build Planner',
     backgroundColor: '#0b0d12',

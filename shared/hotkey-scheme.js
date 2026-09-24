@@ -99,7 +99,7 @@
   }
 
   return {
-    LANE_COUNT, LANE_KEYSETS, LANE_KEYSET_LABELS,
+    LANE_COUNT, LANE_KEYSET_LABELS,
     laneKey, trackAccelerators, laneKeyLabel, prettyAccelerator, normalize, hotkeyConflicts, laneFromCode,
   };
 }));

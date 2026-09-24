@@ -59,5 +59,3 @@ export function playCue(name, volume = 0.6) {
     osc.stop(at + dur + 0.02);
   }
 }
-
-export const CUE_NAMES = Object.keys(CUES);

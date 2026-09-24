@@ -53,7 +53,8 @@ const UI_SCALE_MAX = 1.6;
 const MODIFIERS = ['', 'Alt', 'Ctrl', 'Shift'];
 const LANE_KEYS = ['fkeys', 'digits', 'numpad'];
 const OPACITY_MIN = 0.35;
-const COMPACT_MIN = { width: 260, height: 180 };
+const FULL_MIN = { width: 420, height: 480 };    // smallest full window
+const COMPACT_MIN = { width: 260, height: 180 }; // smallest mini window
 
 const num = (v, fallback) => (Number.isFinite(v) ? v : fallback);
 const str = (v, fallback) => (typeof v === 'string' ? v : fallback);
@@ -73,8 +74,8 @@ function mergeSettings(raw) {
     window: {
       x: Number.isFinite(w.x) ? w.x : null,
       y: Number.isFinite(w.y) ? w.y : null,
-      width: Math.max(420, num(w.width, d.window.width)),
-      height: Math.max(480, num(w.height, d.window.height)),
+      width: Math.max(FULL_MIN.width, num(w.width, d.window.width)),
+      height: Math.max(FULL_MIN.height, num(w.height, d.window.height)),
       maximized: w.maximized === true,
     },
     compactWindow: {
@@ -242,4 +243,4 @@ function createStore({ dir, legacyDir = null, log = console }) {
   };
 }
 
-module.exports = { createStore, mergeSettings, DEFAULT_SETTINGS, UI_SCALE_MIN, UI_SCALE_MAX, OPACITY_MIN, COMPACT_MIN };
+module.exports = { createStore, mergeSettings, DEFAULT_SETTINGS, FULL_MIN, COMPACT_MIN };

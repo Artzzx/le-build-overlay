@@ -4,10 +4,10 @@
 
 import { h, mount } from './dom.js';
 import { ui } from './icons.js';
-import { keyRecorder, prettyAccelerator } from './keys.js';
+import { keyRecorder } from './keys.js';
 import { playCue } from './feedback.js';
 
-const { hotkeyConflicts, laneKeyLabel, LANE_KEYSET_LABELS } = window.HotkeyScheme;
+const { hotkeyConflicts, laneKeyLabel, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
 
 const MODIFIERS = [['', 'None'], ['Alt', 'Alt'], ['Ctrl', 'Ctrl'], ['Shift', 'Shift']];
 

@@ -123,4 +123,4 @@ function hiddenWindowLoader(BrowserWindow) {
   });
 }
 
-module.exports = { createMaxrollClient, hiddenWindowLoader, MaxrollError, USER_AGENT };
+module.exports = { createMaxrollClient, hiddenWindowLoader };

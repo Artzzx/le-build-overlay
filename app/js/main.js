@@ -24,8 +24,11 @@ import { playCue } from './feedback.js';
 import { renderInspector } from './inspector.js';
 import { openLoadout } from './loadout-dialog.js';
 import { openSettings } from './settings-dialog.js';
+import { openHelp } from './help-dialog.js';
+import { createToaster } from './toast.js';
 
 const { laneKeyLabel, laneKey, laneFromCode, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
+let toast = () => {}; // set in boot() once the container exists
 
 const { normalizeBuild, stepTrack, setTrackProgress, computeTransition, applyCarryOver } = window.TreeUtils;
 const { buildView, stepStartProgress } = window.ViewModel;
@@ -62,6 +65,7 @@ async function boot() {
   for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help']) {
     els[id] = $(id);
   }
+  toast = createToaster(els.toasts);
 
   const res = await api.init();
   if (!res.ok) {
@@ -79,7 +83,13 @@ async function boot() {
 
   api.onHotkey(onGlobalHotkey);
   document.addEventListener('keydown', onKeyDown);
-  window.addEventListener('resize', () => requestAnimationFrame(() => revealAll(false)));
+  // One reveal per frame while resizing, not one per resize event.
+  let revealQueued = false;
+  window.addEventListener('resize', () => {
+    if (revealQueued) return;
+    revealQueued = true;
+    requestAnimationFrame(() => { revealQueued = false; revealAll(false); });
+  });
 
   renderAll();
   requestAnimationFrame(() => revealAll(false));
@@ -555,6 +565,11 @@ function renderAll() {
   renderStatusbar();
 }
 
+/** The global phase key when set (and hotkeys are on), else the in-app key. */
+function phaseKeyLabel(acc, inApp) {
+  return state.settings.hotkeys.enabled && acc ? prettyAccelerator(acc) : inApp;
+}
+
 function renderTopbar() {
   const v = state.view;
   const actions = h('div.top-actions',
@@ -584,7 +599,7 @@ function renderTopbar() {
   const pct = Math.round(v.pct * 100);
   const phaseSwitcher = v.phases.length > 1
     ? h('nav.phase-switch', { 'aria-label': 'Phases' },
-      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': 'Previous phase', title: `Previous phase (${prettyAccelerator(state.settings.hotkeys.phasePrevKey) || 'PgUp'})`, onclick: () => gotoPhase(v.currentPhase - 1) }, ui('chevronLeft', { size: 16 })),
+      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': 'Previous phase', title: `Previous phase (${phaseKeyLabel(state.settings.hotkeys.phasePrevKey, 'PgUp')})`, onclick: () => gotoPhase(v.currentPhase - 1) }, ui('chevronLeft', { size: 16 })),
       h('div.segmented', { role: 'tablist' },
         v.phases.map(p => h('button.seg', {
           type: 'button', role: 'tab', 'aria-selected': String(p.index === v.currentPhase),
@@ -592,7 +607,7 @@ function renderTopbar() {
           class: p.index === v.currentPhase ? 'is-active' : '',
           onclick: () => gotoPhase(p.index),
         }, p.name))),
-      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': 'Next phase', title: `Next phase (${prettyAccelerator(state.settings.hotkeys.phaseNextKey) || 'PgDn'})`, onclick: () => gotoPhase(v.currentPhase + 1) }, ui('chevronRight', { size: 16 })))
+      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': 'Next phase', title: `Next phase (${phaseKeyLabel(state.settings.hotkeys.phaseNextKey, 'PgDn')})`, onclick: () => gotoPhase(v.currentPhase + 1) }, ui('chevronRight', { size: 16 })))
     : null;
 
   mount(els.topbar,
@@ -816,57 +831,8 @@ function lastActionChip() {
   );
 }
 
-// ─── Shortcut sheet ───────────────────────────────────────────────────────────
-
 function showHelp() {
-  const dialog = els['dlg-help'];
-  if (dialog.open) return;
-  const hk = state.settings.hotkeys;
-  const k = (acc) => acc.split('+').map((p, i) => [i ? h('span.plus', '+') : null, keycap(prettyAccelerator(p), 'key-sm')]);
-  const row = (keys, label) => h('div.help-row', h('span.help-keys', keys), h('span.help-label', label));
-  const lanes = (kind) => [k(laneKeyLabel(hk, 0, kind).replace(/ /g, '')), h('span.dash', '–'), k(prettyAccelerator(laneKey(hk, 5)).replace(/ /g, ''))];
-
-  const inGame = hk.enabled
-    ? [
-      hk.hotkeyMode === 'latch' ? row(k(hk.latchKey), 'Arm the lane keys for 5 s') : null,
-      row(lanes('adv'), 'Allocate the next point in lane 1–6'),
-      row(lanes('undo'), 'Undo the last point in that lane'),
-      hk.phaseNextKey ? row(k(hk.phaseNextKey), 'Next phase') : null,
-      hk.phasePrevKey ? row(k(hk.phasePrevKey), 'Previous phase') : null,
-      hk.toggle ? row(k(hk.toggle), 'Show / hide this window') : null,
-    ]
-    : [h('p.help-off', 'Global hotkeys are off — turn them on in Settings to allocate without leaving the game.')];
-
-  const inApp = [
-    row([keycap('1', 'key-sm'), h('span.dash', '–'), keycap('6', 'key-sm'), hk.laneKeys !== 'digits' ? [h('span.help-or', 'or'), keycap(LANE_KEYSET_LABELS[hk.laneKeys], 'key-sm')] : null], 'Allocate (Shift = undo)'),
-    row(k('Ctrl+1'), 'Fill: every remaining point of the step (Ctrl+1–6)'),
-    row(k('Ctrl+Z'), 'Undo the last change, in any tree'),
-    row([keycap('↑', 'key-sm'), keycap('↓', 'key-sm')], 'Focus a tree'),
-    row([keycap('←', 'key-sm'), keycap('→', 'key-sm')], 'Browse its steps'),
-    row([keycap('Enter', 'key-sm')], 'Allocate in the focused tree'),
-    row(k('PageDown'), 'Next phase (PageUp: previous)'),
-    row(k('Ctrl+M'), 'Mini mode ↔ full window'),
-    row(k('Ctrl+O'), 'Load build'),
-    row(k('Ctrl+,'), 'Settings'),
-    row([keycap('Ctrl', 'key-sm'), h('span.plus', '+'), keycap('+', 'key-sm'), keycap('−', 'key-sm')], 'Interface size'),
-  ];
-
-  mount(dialog,
-    h('div.dialog-card.dialog-help',
-      h('header.dialog-head',
-        h('h2', 'Shortcuts'),
-        h('button.btn-icon', { type: 'button', 'aria-label': 'Close', onclick: () => dialog.close() }, ui('x', { size: 18 }))),
-      h('div.dialog-body',
-        h('section.dialog-section', h('h3', 'While playing'), inGame),
-        h('section.dialog-section', h('h3', 'In this window'), inApp)),
-      h('footer.dialog-foot',
-        h('div.dialog-status'),
-        h('div.dialog-foot-actions',
-          h('button.btn.btn-secondary', { type: 'button', onclick: () => { dialog.close(); showSettings(); } }, ui('gear', { size: 15 }), 'Change keys'),
-          h('button.btn.btn-primary', { type: 'button', onclick: () => dialog.close() }, 'Got it'))),
-    ),
-  );
-  dialog.showModal();
+  openHelp({ dialog: els['dlg-help'], hotkeys: state.settings.hotkeys, onOpenSettings: showSettings });
 }
 
 function emptyState() {
@@ -876,45 +842,14 @@ function emptyState() {
       h('h1', 'Load your build'),
       h('p.empty-lead', 'See every tree at a glance — what to allocate now, what comes next — and tick points off as you level.'),
       h('ol.empty-steps',
-        h('li', h('b', 'Copy'), ' the export codes from your Maxroll planner (or the in-game export).'),
-        h('li', h('b', 'Paste'), ' them into ', h('i', 'Load build'), '. Add phases for leveling and endgame.'),
+        h('li', h('b', 'Copy'), ' your Maxroll planner link (or its export codes, or the in-game export).'),
+        h('li', h('b', 'Paste'), ' it into ', h('i', 'Load build'), ' — each planner variant becomes a phase.'),
         h('li', h('b', 'Allocate'), ' in game, then press the lane’s key (', h('b', state.settings?.hotkeys.enabled ? LANE_KEYSET_LABELS[state.settings.hotkeys.laneKeys] : '1–6'), ') — even while the game has focus.')),
       h('div.empty-actions',
         h('button.btn.btn-primary.btn-lg', { type: 'button', onclick: showLoadout }, ui('upload', { size: 18 }), 'Load build', h('kbd.key.key-sm.key-on-primary', 'Ctrl O')),
         h('button.btn.btn-ghost.btn-lg', { type: 'button', onclick: loadExample }, 'Try the example build')),
     ),
   );
-}
-
-// ─── Toasts ───────────────────────────────────────────────────────────────────
-
-function toast(message, { kind = 'info', action = null, duration = action ? 6000 : 3200 } = {}) {
-  // The same message again (e.g. a lane key hammered on a finished tree) refreshes
-  // the existing toast instead of stacking copies that push useful ones out.
-  const same = [...els.toasts.children].find(t => t.dataset.msg === message && !t.classList.contains('is-leaving'));
-  if (same && !action) {
-    same.restartTimer(duration);
-    return;
-  }
-  const el = h(`div.toast.toast-${kind}`, { role: 'status', dataset: { msg: message } },
-    h('span.toast-msg', message),
-    action ? h('button.toast-action', { type: 'button', onclick: () => { action.run(); remove(); } }, action.label) : null,
-    h('button.toast-x', { type: 'button', 'aria-label': 'Dismiss', onclick: () => remove() }, ui('x', { size: 14 })),
-  );
-  function remove() {
-    el.classList.add('is-leaving');
-    setTimeout(() => el.remove(), 180);
-  }
-  let timer = null;
-  el.restartTimer = (ms) => { clearTimeout(timer); timer = setTimeout(remove, ms); };
-  if (action) el.classList.add('has-action');
-  // Keep at most 3 toasts; evict plain ones first so an offer like "Go to Endgame"
-  // survives a burst of key presses.
-  while (els.toasts.children.length >= 3) {
-    (els.toasts.querySelector('.toast:not(.has-action)') ?? els.toasts.firstElementChild).remove();
-  }
-  els.toasts.append(el);
-  el.restartTimer(duration);
 }
 
 boot();
