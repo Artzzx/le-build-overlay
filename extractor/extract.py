@@ -25,7 +25,8 @@ Both outputs are flat arrays with the same row shape:
 ─── Icons ───────────────────────────────────────────────────────────────────
 
   Icon files live in db/data/icons/ (any layout, .png/.webp/.jpg). Each input
-  row's `icon` value is resolved against those files, case-insensitively:
+  row's `iconFile` (or `icon`) value is resolved against those files,
+  case-insensitively:
     1. as a relative path          "es6ai/12.png" (any extension: finds es6ai/12.webp)
     2. by its longest path tail    "C:\\export\\icons\\es6ai\\12.png" → "es6ai/12.png"
     3. by file name                "Sprite_VoidLens.png"
@@ -38,7 +39,7 @@ Both outputs are flat arrays with the same row shape:
 
   nodes_flat.json is a flat array of node rows already tagged with treeID:
     { sourceType, nodeID, nodeName, description, maxPoints, treeID,
-      treeFile, treeRawFields, stats, icon? }
+      treeFile, treeRawFields, stats, iconFile? }     (`icon` also accepted)
 
 ─── Cleanup rules ───────────────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ Both outputs are flat arrays with the same row shape:
 
 import argparse
 import json
+import re
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -86,6 +88,7 @@ PLACEHOLDER_NAMES = {'', 'Name'}
 OUTPUT_FIELDS = ('treeID', 'treeName', 'nodeID', 'nodeName', 'description', 'maxPoints', 'stats', 'icon')
 
 DEFAULT_ICONS_DIR = DATA_DIR / 'icons'
+ICON_INPUT_FIELDS = ('iconFile', 'icon')  # input field names holding a node's icon, first non-empty wins
 ICON_EXTENSIONS = ('.webp', '.png', '.jpg', '.jpeg')  # earlier wins when a stem has several
 
 
@@ -109,6 +112,14 @@ def passive_tree_names():
     }
 
 
+def raw_icon(r):
+    for field in ICON_INPUT_FIELDS:
+        value = r.get(field)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
 def clean_rows(raw):
     stats = defaultdict(int)
     rows = []
@@ -128,7 +139,7 @@ def clean_rows(raw):
             'description': desc,
             'maxPoints':   r.get('maxPoints', 0),
             'stats':       [st for st in (r.get('stats') or []) if st.get('statName')],
-            'icon':        (r.get('icon') or '').strip() or None,  # raw value; resolved later
+            'icon':        raw_icon(r),  # raw value; resolved later
         })
     return rows, stats
 
@@ -315,6 +326,9 @@ def main():
     rows, collisions = resolve_collisions(rows, stats)
     icon_index = IconIndex(args.icons_dir)
     icon_report = resolve_icons(rows, icon_index)
+    # Icon-looking input fields we don't read — the usual cause of "0 icons".
+    unread_icon_fields = sorted({k for r in raw for k in r
+                                 if re.search(r'icon|sprite', k, re.I) and k not in ICON_INPUT_FIELDS})
 
     passive_names = passive_tree_names()
     missing = [t for t in PASSIVE_TREE_IDS if t not in passive_names]
@@ -378,6 +392,9 @@ def main():
             if args.verbose:
                 for f in icon_report['unused files']:
                     print(f'    {f}')
+    if unread_icon_fields:
+        print(f'WARNING: input has icon-like fields that are not read: {unread_icon_fields} '
+              f'(read: {list(ICON_INPUT_FIELDS)}) — add them to ICON_INPUT_FIELDS in extract.py')
     unresolved = icon_report['unresolved']
     if unresolved:
         print(f'WARNING: {len(unresolved)} icon values match no file in {args.icons_dir}'

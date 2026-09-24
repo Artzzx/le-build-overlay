@@ -132,10 +132,13 @@ pip install -r extractor/requirements.txt   # once (Pillow)
 python extractor/convert_icons.py           # PNG/JPG → WebP, originals deleted (--keep-originals, --dry-run)
 ```
 
-WebP at quality 85 is about 6× smaller (e.g. 31 KB → 5 KB per icon, about 140 MB → 24 MB for a full set) with no visible difference in the app. Git keeps every committed version, so convert before the first commit and after every re-export. The script is idempotent (already-converted files are skipped) and keeps transparency. Each node row in the export carries an `icon` value, and `extract.py` resolves it to a file in that folder:
+WebP at quality 85 is about 6× smaller (31 KB → 5 KB per icon; the current set is 1,027 shared icons, 6.5 MB) with no visible difference in the app. Git keeps every committed version, so convert before committing and after every re-export. The script is idempotent (already-converted files are skipped) and keeps transparency.
 
-| `icon` value in `nodes_flat.json` | resolves to |
+Each node row in the export carries an `iconFile` value (e.g. `"265676.png"`; `icon` is accepted too), and `extract.py` resolves it to a file in that folder. Several nodes can share one icon:
+
+| `iconFile` value in `nodes_flat.json` | resolves to |
 |---|---|
+| `265676.png` (file name, any extension) | `265676.webp` |
 | `es6ai/12.png` (relative path, any extension) | `es6ai/12.webp` |
 | `C:\Export\Icons\es6ai\12.png` (absolute path) | the longest matching tail, `es6ai/12.webp` |
 | `VoidLens.png` or `VoidLens` (file name / stem) | the single file with that name |
@@ -252,7 +255,7 @@ That skill (or passive tree) isn't in `db/data/`. It may be new in a game patch 
 Likely a `(treeID, nodeID)` collision in `nodes_flat.json` — the stale node won. Run `python extractor/extract.py --verbose` to list them; the fix belongs in the exporter that produces `nodes_flat.json`.
 
 **A node shows a letter glyph instead of its icon**
-It has no `icon` value, or the value matches no file in `db/data/icons/`. `python extractor/extract.py --verbose` lists both cases.
+It has no `iconFile` value, or the value matches no file in `db/data/icons/`. `python extractor/extract.py --verbose` lists both cases. If the report says **0 icons** across the board, look for a `WARNING: input has icon-like fields that are not read`: your export uses a different field name, so add it to `ICON_INPUT_FIELDS` in `extract.py`.
 
 **A skill shows its treeID instead of a name**
 Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `extract.py`.

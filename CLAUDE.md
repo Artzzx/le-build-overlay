@@ -113,7 +113,7 @@ Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normal
 ```json
 { "treeID": "fl44", "treeName": "Flay", "nodeID": 14, "nodeName": "Go For The Throat",
   "description": "Flay has additional critical strike chance…", "maxPoints": 3,
-  "stats": [{"statName": "Critical Strike Chance", "value": "+2%"}], "icon": "fl44/14.png" }
+  "stats": [{"statName": "Critical Strike Chance", "value": "+2%"}], "icon": "265676.webp" }
 ```
 `icon` is a path relative to `db/data/icons/` (checked to exist by the extractor) or `null`.
 `passives.json` holds the 5 class passive trees (`ac-1 mg-1 kn-1 rg-1 pr-1`, `treeName` = class name). Loaders put passive rows first, then index with `makeDb()`:
@@ -143,7 +143,7 @@ Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together. `extra
 ### `extract.py`
 Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `passives.json`. It drops orphan and placeholder rows, merges duplicates (keeping an icon from either copy), and derives `treeName` from the root node (or from `TREE_NAME_OVERRIDES`).
 
-- **Icons**: each input row's `icon` value is resolved against the images in `db/data/icons/` (`--icons-dir` to override), case-insensitively. It tries, in order: the relative path, the longest tail of an absolute/Windows path (both extension-agnostic, so `es6ai/12.png` finds `es6ai/12.webp` after conversion), the file name, then the file name without extension. Rows without a value fall back to `<treeID>/<nodeID>.<ext>`. A bare name that exists in several folders is ambiguous and is never guessed. Unresolved values become `null` and are reported (`--verbose` lists them); `--strict` makes them fail the run.
+- **Icons**: each input row's `iconFile` value (`ICON_INPUT_FIELDS = ('iconFile', 'icon')`, first non-empty wins; e.g. `"265676.png"`, icons are shared between nodes) is resolved against the images in `db/data/icons/` (`--icons-dir` to override), case-insensitively. It tries, in order: the relative path, the longest tail of an absolute/Windows path (both extension-agnostic, so `es6ai/12.png` finds `es6ai/12.webp` after conversion), the file name, then the file name without extension. Rows without a value fall back to `<treeID>/<nodeID>.<ext>`. A bare name that exists in several folders is ambiguous and is never guessed. Unresolved values become `null` and are reported (`--verbose` lists them); `--strict` makes them fail the run. Input fields that look icon-related (`/icon|sprite/i`) but aren't in `ICON_INPUT_FIELDS` trigger a warning, since that's the usual cause of "0 icons".
 - **Output contract**: `validate_output()` checks the exact field set, types, unique `(treeID, nodeID)`, all 5 passive trees present, no passive rows in the skill file, and that icon files exist. On any violation it writes **nothing** and exits 1. `tests/data-contract.test.js` checks the same things from the app's side.
 
 ### Known data-quality issues
@@ -199,4 +199,4 @@ python extractor/convert_icons.py && python extractor/extract.py   # regenerate 
 1. **Duplicate nodes in data**: see above; needs an upstream exporter fix.
 2. **Direct hotkey mode is the default** and captures `1`–`6` system-wide while the game has focus (game chat digits). *Arm first* avoids that; consider making it the default.
 3. **No installer/packaging yet** (electron-builder etc.). Paths are already packaging-safe (userData for state, read-only app dir).
-4. **Icon files not committed yet**: run `convert_icons.py` first, then commit `db/data/icons/`.
+4. **Committed `nodes_flat.json` predates `iconFile`**: the 1,027 icons are committed, but the committed export doesn't have `iconFile` yet, so the committed outputs have `icon: null`. Commit the new `nodes_flat.json` together with the regenerated `db/data/*.json`.
