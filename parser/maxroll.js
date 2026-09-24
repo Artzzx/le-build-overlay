@@ -220,6 +220,8 @@ function parseBuild(rawInput, skillsDb, classesDb, buildName = 'Imported Build')
 function resolveClassName(classId, masteryId, classesDb) {
   if (!classesDb) return `Class ${classId}`;
   const className = classesDb.classes?.[classId] ?? `Class ${classId}`;
+  // Mastery 0 = no mastery chosen yet (leveling as the plain class).
+  if (!masteryId) return className;
   // Maxroll uses per-class relative mastery IDs (1–3), not global sequential IDs.
   // masteriesByClass[classId][masteryId] is the correct lookup.
   const masteryName =
@@ -276,43 +278,44 @@ function saveBuild(build, filePath) {
  * Parse an array of phase inputs (each with a name + raw Maxroll JSON) into a
  * multi-phase loadout object suitable for saving to config/build.json.
  *
- * All phases must belong to the same class and mastery — throws otherwise.
+ * All phases must be the same class — throws otherwise. The mastery may differ
+ * per phase (e.g. leveling at mastery 0, the plain class, then Bladedancer):
+ * each phase keeps its own masteryId; loadout.masteryId is the highest one.
  *
  * @param {Array<{ name: string, json: string }>} phaseInputs
  * @param {object} skillsDb  - Indexed tree map (treeID → { name, nodes })
  * @param {object} classesDb - Contents of db/data/classes.json
  * @param {string} [loadoutName] - Human-readable loadout name
  * @returns {object} Validated loadout ({ name, classId, masteryId, currentPhase, phases })
- * @throws {Error} If any phase is invalid or classes/masteries don't match
+ * @throws {Error} If any phase is invalid or the classes don't match
  */
 function parseLoadout(phaseInputs, skillsDb, classesDb, loadoutName = 'Imported Loadout') {
   if (!Array.isArray(phaseInputs) || phaseInputs.length === 0) {
     throw new Error('phaseInputs must be a non-empty array of { name, json } objects');
   }
 
-  let baseClassId   = null;
-  let baseMasteryId = null;
+  let baseClassId = null;
+  const className = (id) => classesDb?.classes?.[id] ?? `class ${id}`;
 
   const phases = phaseInputs.map(({ name: phaseName, json }, idx) => {
     const build = parseBuild(json, skillsDb, classesDb, phaseName || `Phase ${idx + 1}`);
 
     if (baseClassId === null) {
-      baseClassId   = build.classId;
-      baseMasteryId = build.masteryId;
-    } else if (build.classId !== baseClassId || build.masteryId !== baseMasteryId) {
+      baseClassId = build.classId;
+    } else if (build.classId !== baseClassId) {
       throw new Error(
-        `Phase ${idx + 1} uses a different class/mastery than Phase 1. ` +
-        `All phases in a loadout must use the same class and mastery.`
+        `Phase ${idx + 1} is a ${className(build.classId)}, phase 1 is a ${className(baseClassId)} — ` +
+        `every phase must be the same class.`
       );
     }
 
-    return { name: phaseName || `Phase ${idx + 1}`, tracks: build.tracks };
+    return { name: phaseName || `Phase ${idx + 1}`, masteryId: build.masteryId, tracks: build.tracks };
   });
 
   const loadout = {
     name: loadoutName,
     classId:   baseClassId,
-    masteryId: baseMasteryId,
+    masteryId: Math.max(0, ...phases.map(p => p.masteryId)),
     currentPhase: 0,
     phases,
   };

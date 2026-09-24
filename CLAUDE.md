@@ -94,11 +94,14 @@ View-model step states: `done` / `current` (the NEXT UP step, may be partly allo
 ### Skill keys = treeIDs
 Maxroll `skillTrees` keys are the game's `treeID` verbatim (`es6ai` = Erasing Strike, `fl44` = Flay). No mapping table.
 
-### Mastery IDs are per-class relative (1–3)
-`classes.json → masteriesByClass[classId][masteryId]` (Sentinel 2 = Void Knight).
+### Mastery IDs are per-class relative (1–3); 0 = no mastery yet
+- Lookup: `classes.json → masteriesByClass[classId][masteryId]`.
+- Confirmed from real exports: Rogue 1 = Bladedancer, 2 = Marksman, 3 = Falconer; Sentinel 2 = Void Knight.
+- `unverifiedMasteries` lists the classes (Acolyte, Mage, Primalist) never checked against an export.
+- Mastery `0` is the plain class, used while leveling before the mastery quest. Labels are just the class name ("Rogue").
 
 ### Phases
-A loadout has 1–5 phases, all with the same class and mastery. `gotoPhase`: `applyCarryOver` sets each target track to `min(fromProgress, commonPrefixLength(histories))`, and `computeTransition` lists points to unspec and skills to remove. That list is shown as a banner until the user dismisses it. Phase switches, loads and *Start from here* offer an Undo toast.
+A loadout has 1–5 phases, all with the same **class**. Each phase has its own `masteryId` (e.g. Leveling = 0, Endgame = Bladedancer), and `loadout.masteryId` = the highest one. The view uses the active phase's mastery, and `computeTransition` returns `masteryChange`, which the banner shows as "Choose the Bladedancer mastery". `gotoPhase`: `applyCarryOver` sets each target track to `min(fromProgress, commonPrefixLength(histories))`, and `computeTransition` lists points to unspec and skills to remove. That list is shown as a banner until the user dismisses it. Phase switches, loads and *Start from here* offer an Undo toast.
 
 ---
 
@@ -110,11 +113,11 @@ One JSON object per line (passives/class/mastery line + one line per skill); `me
 ### <userData>/build.json — multi-phase loadout
 ```json
 { "name": "Void Knight Erasing Strike", "classId": 3, "masteryId": 2, "currentPhase": 0,
-  "phases": [ { "name": "Leveling", "tracks": [
+  "phases": [ { "name": "Leveling", "masteryId": 2, "tracks": [
     { "type": "passive", "label": "Sentinel — Void Knight Passives", "history": [0,0,1], "totalSteps": 3, "currentStep": 0 },
     { "type": "skill", "skillKey": "v01cv", "label": "Void Cleave", "history": [2,2,4], "totalSteps": 3, "currentStep": 0 } ] } ] }
 ```
-Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`. `label` is baked at import time; the UI prefers live DB names (view-model titles).
+Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`, which also backfills a missing `phase.masteryId` from `loadout.masteryId`. `label` is baked at import time; the UI prefers live DB names (view-model titles).
 
 ### <userData>/settings.json
 `{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey} }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
@@ -157,7 +160,11 @@ Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together. `extra
 Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `passives.json`. It drops orphan and placeholder rows, merges duplicates (keeping an icon from either copy), and derives `treeName` from the root node (or from `TREE_NAME_OVERRIDES`).
 
 - **Icons**: each input row's `iconFile` value (`ICON_INPUT_FIELDS = ('iconFile', 'icon')`, first non-empty wins; e.g. `"265676.png"`, icons are shared between nodes) is resolved against the images in `db/data/icons/` (`--icons-dir` to override), case-insensitively. It tries, in order: the relative path, the longest tail of an absolute/Windows path (both extension-agnostic, so `es6ai/12.png` finds `es6ai/12.webp` after conversion), the file name, then the file name without extension. Rows without a value fall back to `<treeID>/<nodeID>.<ext>`. A bare name that exists in several folders is ambiguous and is never guessed. Unresolved values become `null` and are reported (`--verbose` lists them); `--strict` makes them fail the run. Input fields that look icon-related (`/icon|sprite/i`) but aren't in `ICON_INPUT_FIELDS` trigger a warning, since that's the usual cause of "0 icons".
-- **Output contract**: `validate_output()` checks the exact field set, types, unique `(treeID, nodeID)`, all 5 passive trees present, no passive rows in the skill file, and that icon files exist. On any violation it writes **nothing** and exits 1. `tests/data-contract.test.js` checks the same things from the app's side.
+- **Copied root rows**: the export sometimes gives a tree another tree's root row. For example, `bl5st` Bladestorm and `sh4re` Shadow Rend both carry Flay's root, with Flay's name *and* icon.
+  - `suspect_roots()` flags a root when another tree with the same root name mentions that name more in its descriptions ('shared'), or when the tree's own nodes never mention it ('unmentioned'; `Summon X` counts as mentioned when X is).
+  - A 'shared' root, or any root named in `TREE_NAME_OVERRIDES`, is replaced by `fix_roots()`. The name comes from the override, else from `infer_tree_name()` over the node descriptions, else the treeID. The root's icon becomes null.
+  - An 'unmentioned' root is only reported, because the inference is a guess (Falconry's nodes say "Falcon").
+- **Output contract**: `validate_output()` checks the exact field set, types, unique `(treeID, nodeID)`, unique skill tree names, all 5 passive trees present, no passive rows in the skill file, and that icon files exist. On any violation it writes **nothing** and exits 1. `tests/data-contract.test.js` checks the same things from the app's side.
 
 ### Known data-quality issues
 - **~86 `(treeID, nodeID)` collisions** in `nodes_flat.json`: stale nodes from older tree versions exported next to live ones (e.g. `es6ai` 12 = "Rythm of the Void" *and* "Void Lens"). `extract.py` keeps the first named row, **which may be the stale one**. The fix is upstream: export only nodes referenced by the live tree. Don't write tests that assert names of collided nodes.

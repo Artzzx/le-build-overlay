@@ -450,8 +450,16 @@ describe('parseLoadout', () => {
         SAMPLE_SKILLS_DB,
         SAMPLE_CLASSES_DB
       ),
-      /class\/mastery/
+      /same class/
     );
+  });
+
+  test('phases may change mastery (mastery 0 = plain class while leveling)', () => {
+    const leveling = JSON.stringify({ ...SAMPLE_MAXROLL, mastery: 0 });
+    const loadout = parseLoadout([{ name: 'Leveling', json: leveling }, { name: 'Endgame', json: PHASE2_JSON }], SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
+    assert.deepEqual(loadout.phases.map(p => p.masteryId), [0, 2]);
+    assert.equal(loadout.masteryId, 2, 'loadout.masteryId = highest phase mastery');
+    assert.match(loadout.phases[0].tracks[0].label, /^Sentinel Passives$/);
   });
 
   test('throws when phaseInputs is empty', () => {

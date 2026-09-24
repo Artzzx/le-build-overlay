@@ -70,8 +70,9 @@ export function openLoadout({ dialog, api, hasProgress, onLoaded }) {
       if (!p.json.trim()) out.push(`${label}: paste export codes`);
       else if (p.error) out.push(`${label}: ${p.error}`);
     });
-    const classes = new Set(phases.map(p => p.preview?.classLabel).filter(Boolean));
-    if (classes.size > 1) out.push('All phases must be the same class and mastery');
+    // Same class in every phase; the mastery may change (e.g. plain Rogue while leveling, then Bladedancer).
+    const classes = new Set(phases.map(p => p.preview?.className).filter(Boolean));
+    if (classes.size > 1) out.push(`All phases must be the same class (found ${[...classes].join(' and ')})`);
     return out;
   }
 

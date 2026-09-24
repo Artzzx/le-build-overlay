@@ -41,7 +41,8 @@
  * startIdx <= currentStep < startIdx + count.
  *
  * A multi-phase LOADOUT (what config/build.json actually stores) wraps this:
- *   { name, classId, masteryId, currentPhase, phases: [{ name, tracks }] }
+ *   { name, classId, masteryId, currentPhase, phases: [{ name, masteryId?, tracks }] }
+ *   phase.masteryId (optional, 0 = plain class) overrides loadout.masteryId for that phase.
  */
 
 'use strict';
@@ -183,8 +184,12 @@ function validateLoadout(loadout) {
     if (typeof phase.name !== 'string') {
       throw new Error(`phases[${i}].name must be a string`);
     }
+    // Optional per-phase mastery (0 = plain class); falls back to loadout.masteryId.
+    if (phase.masteryId !== undefined && typeof phase.masteryId !== 'number') {
+      throw new Error(`phases[${i}].masteryId must be a number when present`);
+    }
     // Validate tracks by delegating to validateBuild logic (reuse track validation)
-    const fakeBuild = { name: phase.name, classId: loadout.classId, masteryId: loadout.masteryId, tracks: phase.tracks };
+    const fakeBuild = { name: phase.name, classId: loadout.classId, masteryId: phase.masteryId ?? loadout.masteryId, tracks: phase.tracks };
     validateBuild(fakeBuild);
   });
 

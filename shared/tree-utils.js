@@ -125,14 +125,18 @@
   /** Wrap legacy single-phase builds ({ tracks }) into the loadout shape ({ phases }). */
   function normalizeBuild(raw) {
     if (!raw) return null;
-    if (raw.phases) return raw;
+    if (raw.phases) {
+      // Each phase carries its own mastery (0 = plain class); older files only had loadout.masteryId.
+      if (raw.phases.every(p => typeof p.masteryId === 'number')) return raw;
+      return { ...raw, phases: raw.phases.map(p => (typeof p.masteryId === 'number' ? p : { ...p, masteryId: raw.masteryId ?? 0 })) };
+    }
     if (raw.tracks) {
       return {
         name:         raw.name,
         classId:      raw.classId,
         masteryId:    raw.masteryId,
         currentPhase: 0,
-        phases: [{ name: 'Main', tracks: raw.tracks }],
+        phases: [{ name: 'Main', masteryId: raw.masteryId ?? 0, tracks: raw.tracks }],
       };
     }
     return null;
@@ -181,7 +185,7 @@
 
   /**
    * What the player must do when switching fromIdx → toIdx.
-   * @returns {{ fromName, toName, unspecNeeded: {label, type, skillKey, amount, isRemove}[] }}
+   * @returns {{ fromName, toName, unspecNeeded: {label, type, skillKey, amount, isRemove}[], masteryChange: {from, to}|null }}
    */
   function computeTransition(phases, fromIdx, toIdx) {
     const fromTracks = phases[fromIdx].tracks;
@@ -206,7 +210,12 @@
       }
     });
 
-    return { fromName: phases[fromIdx].name, toName: phases[toIdx].name, unspecNeeded };
+    // Mastery change between phases (e.g. 0 → Bladedancer once the mastery quest is done).
+    const fromM = phases[fromIdx].masteryId;
+    const toM = phases[toIdx].masteryId;
+    const masteryChange = typeof fromM === 'number' && typeof toM === 'number' && fromM !== toM ? { from: fromM, to: toM } : null;
+
+    return { fromName: phases[fromIdx].name, toName: phases[toIdx].name, unspecNeeded, masteryChange };
   }
 
   /** Target phase's currentStep = min(from progress, common prefix); new trees start at 0. */

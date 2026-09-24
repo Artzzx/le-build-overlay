@@ -295,7 +295,7 @@ function gotoPhase(to) {
   // Carry-over rewrites the target phase's progress: its old undo entries no longer apply.
   state.undoStack = state.undoStack.filter(u => u.phase !== to);
   commit({ ...b, currentPhase: to, phases: applyCarryOver(b.phases, from, to) });
-  if (transition.unspecNeeded.length) {
+  if (transition.unspecNeeded.length || transition.masteryChange) {
     state.transition = transition;
     renderBanner();
   } else {
@@ -586,6 +586,7 @@ function renderTopbar() {
       h('div.segmented', { role: 'tablist' },
         v.phases.map(p => h('button.seg', {
           type: 'button', role: 'tab', 'aria-selected': String(p.index === v.currentPhase),
+          title: p.masteryName ?? state.db.classes.classes?.[state.build.classId] ?? '',
           class: p.index === v.currentPhase ? 'is-active' : '',
           onclick: () => gotoPhase(p.index),
         }, p.name))),
@@ -632,16 +633,23 @@ function renderBanner() {
   const t = state.transition;
   if (!t) { els.banner.hidden = true; mount(els.banner); return; }
   els.banner.hidden = false;
+  const mc = t.masteryChange;
+  const mName = (id) => window.ViewModel.masteryName(state.db, state.build.classId, id);
+  const masteryLine = !mc ? null
+    : !mc.from ? h('li', 'Choose the ', h('b', mName(mc.to) ?? `mastery ${mc.to}`), ' mastery')
+      : h('li', 'Mastery: ', h('b', mName(mc.from) ?? `mastery ${mc.from}`), ' → ', h('b', mName(mc.to) ?? (mc.to ? `mastery ${mc.to}` : 'none')));
   mount(els.banner,
     h('div.banner.banner-warn', { role: 'alert' },
       ui('alert', { size: 20 }),
       h('div.banner-body',
-        h('div.banner-title', `Before continuing in ${t.toName}, respec in game:`),
-        h('ul.banner-list', t.unspecNeeded.map((u) => {
-          const pts = `${u.amount} point${u.amount > 1 ? 's' : ''}`;
-          return h('li', h('b', transitionLabel(u)),
-            u.isRemove ? ` — remove from your skill bar (${pts} allocated)` : ` — unspec ${pts}`);
-        }))),
+        h('div.banner-title', t.unspecNeeded.length ? `Before continuing in ${t.toName}, respec in game:` : `Before continuing in ${t.toName}:`),
+        h('ul.banner-list',
+          masteryLine,
+          t.unspecNeeded.map((u) => {
+            const pts = `${u.amount} point${u.amount > 1 ? 's' : ''}`;
+            return h('li', h('b', transitionLabel(u)),
+              u.isRemove ? ` — remove from your skill bar (${pts} allocated)` : ` — unspec ${pts}`);
+          }))),
       h('button.btn.btn-secondary.btn-sm', { type: 'button', onclick: () => dismissTransition() }, 'Done'),
     ),
   );

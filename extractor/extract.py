@@ -57,6 +57,11 @@ Both outputs are flat arrays with the same row shape:
        - TREE_NAME_OVERRIDES
        - otherwise the root node's name (nodeID 0, maxPoints 0)
        - fallback: the treeID itself
+     The export sometimes copies one tree's root row into another tree
+     (bl5st Bladestorm and sh4re Shadow Rend both carry Flay's root). A root
+     whose name another tree mentions more is replaced: name from
+     TREE_NAME_OVERRIDES or the tree's own descriptions, icon dropped.
+     Every skill tree name must be unique (output contract).
 
 ─── Usage ───────────────────────────────────────────────────────────────────
 
@@ -69,7 +74,7 @@ import argparse
 import json
 import re
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -78,10 +83,27 @@ DATA_DIR = ROOT / 'db' / 'data'
 
 PASSIVE_TREE_IDS = ('ac-1', 'mg-1', 'kn-1', 'rg-1', 'pr-1')
 
-# Trees whose export has no usable root node (nodeID 0, maxPoints 0).
+# Trees whose export has no usable root node (nodeID 0, maxPoints 0), or whose
+# root is a copy of another tree's root (see suspect_roots). Verified against
+# the trees' own node descriptions.
 TREE_NAME_OVERRIDES = {
     'vo54': 'Volcanic Orb',
+    'bl5st': 'Bladestorm',        # root exported as "Flay"
+    'sh4re': 'Shadow Rend',       # root exported as "Flay"
+    'ex4tp': 'Explosive Trap',    # root exported as "Net"
+    'frc87w': 'Frost Claw',       # root exported as "Runic Invocation"
+    'ch0fs': 'Chthonic Fissure',  # root exported as "Profane Form"
 }
+
+# Words that start a description phrase but never a skill name.
+GENERIC_LEADS = {
+    'a', 'additionally', 'after', 'all', 'also', 'an', 'and', 'any', 'as', 'at', 'by', 'casting', 'directly',
+    'during', 'each', 'enemies', 'every', 'for', 'from', 'if', 'in', 'instead', 'it', 'its', 'on', 'once',
+    'picking', 'place', 'the', 'their', 'these', 'this', 'those', 'to', 'up', 'upon', 'using', 'when',
+    'whenever', 'while', 'with', 'you', 'your',
+}
+INFER_MIN_COUNT = 5        # an inferred name must be mentioned at least this often …
+INFER_MIN_COVERAGE = 0.3   # … in at least this share of the tree's described nodes
 
 PLACEHOLDER_NAMES = {'', 'Name'}
 
@@ -179,14 +201,115 @@ def resolve_collisions(rows, stats):
     return kept, collisions
 
 
-def tree_names(rows, passive_names):
-    names = {}
+def _mentions(name, texts):
+    """How many texts mention `name` (case-insensitive; plural / possessive allowed)."""
+    stem = re.escape(name.lower().rstrip('s'))
+    pat = re.compile(rf"\b{stem}(?:s|'s|s'|es)?\b")
+    return sum(1 for t in texts if pat.search(t.lower()))
+
+
+def infer_tree_name(tree_rows):
+    """The skill a tree's node descriptions talk about ("Bladestorm deals …"), or None."""
+    texts = [re.sub(r'\{[^}]*\}', ' ', r['description']) for r in tree_rows if r['description']]
+    if not texts:
+        return None
+    phrase = re.compile(r"\b[A-Z][\w’'-]*(?: (?:of |the )?[A-Z][\w’'-]*){0,3}")
+    counts = Counter()
+    for t in texts:
+        for m in phrase.finditer(t):
+            words = re.sub(r"(?:'s|’s|s'|’)$", '', m.group(0)).split(' ')
+            while words and words[0].lower() in GENERIC_LEADS:  # "Your Golem" → "Golem"
+                words = words[1:]
+            if words:
+                counts[' '.join(words)] += 1
+    for k in list(counts):  # fold plurals into the singular ("Bladestorms" → "Bladestorm")
+        if k.endswith('s') and k[:-1] in counts:
+            counts[k[:-1]] += counts.pop(k)
+    for name, n in counts.most_common(5):
+        if n >= INFER_MIN_COUNT and _mentions(name, texts) >= INFER_MIN_COVERAGE * len(texts):
+            return name
+    return None
+
+
+def suspect_roots(rows):
+    """
+    Skill trees whose root node (nodeID 0, maxPoints 0) looks copied from another
+    tree — the export sometimes gives several trees the same root row (e.g. bl5st
+    "Bladestorm" and sh4re "Shadow Rend" both exported with Flay's root). A copied
+    root carries the wrong name AND the wrong icon.
+
+    A root is suspect when its name is never mentioned by its own tree's nodes
+    (Summon X counts as mentioned when X is), or when another tree has the same
+    root name and mentions it more (that tree owns the name).
+    Returns { treeID: (root name, 'shared' | 'unmentioned') }.
+    """
+    by_tree = defaultdict(list)
     for r in rows:
+        by_tree[r['treeID']].append(r)
+    roots = {t: next((r['nodeName'] for r in rs if r['nodeID'] == 0 and r['maxPoints'] == 0 and r['nodeName']), None)
+             for t, rs in by_tree.items() if t not in PASSIVE_TREE_IDS}
+    texts = {t: [r['description'] for r in by_tree[t] if r['description']] for t in roots}
+
+    def mentioned(t, name):
+        n = _mentions(name, texts[t])
+        if not n and name.startswith('Summon '):
+            n = _mentions(name.split(' ')[-1], texts[t])
+        return n
+
+    sharing = defaultdict(list)
+    for t, name in roots.items():
+        if name:
+            sharing[name].append(t)
+    suspects = {}
+    for name, trees in sharing.items():
+        score = {t: mentioned(t, name) for t in trees}
+        best = max(score.values())
+        for t in trees:
+            if len(trees) > 1 and score[t] < best:
+                suspects[t] = (name, 'shared')       # another tree owns this root name
+            elif score[t] == 0:
+                suspects[t] = (name, 'unmentioned')  # its own nodes never name it
+    return suspects
+
+
+def tree_names(rows, passive_names, suspects=None):
+    """
+    treeID → display name, plus { treeID: (root name, new name) } for every tree
+    whose root row is replaced (its name and icon are then fixed by fix_roots).
+
+    Only PROVEN copies are renamed automatically: a root shared with another tree
+    that mentions the name more ('shared') gets TREE_NAME_OVERRIDES, else the name
+    its node descriptions use, else the treeID. An 'unmentioned' root is only
+    reported (inferring a name from descriptions is a guess: Falconry's nodes say
+    "Falcon"), unless TREE_NAME_OVERRIDES names it.
+    """
+    suspects = suspects or {}
+    names, replaced = {}, {}
+    by_tree = defaultdict(list)
+    for r in rows:
+        by_tree[r['treeID']].append(r)
         if r['nodeID'] == 0 and r['maxPoints'] == 0 and r['nodeName']:
             names[r['treeID']] = r['nodeName']
+    for t, (root, why) in suspects.items():
+        if t in TREE_NAME_OVERRIDES or why != 'shared':
+            continue
+        names[t] = infer_tree_name(by_tree[t]) or t
+        replaced[t] = (root, names[t])
+    for t, name in TREE_NAME_OVERRIDES.items():
+        if t in names and names[t] != name:  # the export has a root row, and it is wrong
+            replaced[t] = (names[t], name)
     names.update(TREE_NAME_OVERRIDES)
     names.update(passive_names)
-    return names
+    return names, replaced
+
+
+def fix_roots(rows, replaced):
+    """A replaced root row is another skill's: give it the tree's real name and drop its icon."""
+    for r in rows:
+        if r['treeID'] in replaced and r['nodeID'] == 0 and r['maxPoints'] == 0:
+            r['nodeName'] = replaced[r['treeID']][1]
+            r['icon'] = None
+    return rows
 
 
 def to_output(rows, names):
@@ -309,6 +432,13 @@ def validate_output(skills, passives, icons_dir):
             problems.append(f'passives: no nodes for passive tree {t}')
     if any(r['treeID'] in PASSIVE_TREE_IDS for r in skills):
         problems.append('skills: contains passive tree rows')
+    # Two skill trees with one name = a copied root row (see suspect_roots) — the app would show the wrong skill.
+    trees_by_name = defaultdict(set)
+    for r in skills:
+        trees_by_name[r['treeName']].add(r['treeID'])
+    for name, trees in sorted(trees_by_name.items()):
+        if len(trees) > 1:
+            problems.append(f'skills: trees {sorted(trees)} share the name "{name}" — add TREE_NAME_OVERRIDES')
     return problems
 
 
@@ -335,7 +465,9 @@ def main():
     if missing:
         sys.exit(f'classes.json passiveTreeByClass is missing: {missing}')
 
-    names = tree_names(rows, passive_names)
+    suspects = suspect_roots(rows)
+    names, replaced = tree_names(rows, passive_names, suspects)
+    rows = fix_roots(rows, replaced)
     out = to_output(rows, names)
 
     passives = [r for r in out if r['treeID'] in PASSIVE_TREE_IDS]
@@ -366,6 +498,16 @@ def main():
         if not n:
             print(f'  WARNING: no nodes for passive tree {t}')
 
+    for t, (old, new) in sorted(replaced.items()):
+        how = 'TREE_NAME_OVERRIDES' if t in TREE_NAME_OVERRIDES else 'its node descriptions'
+        print(f'  tree {t}: root "{old}" is copied from another tree → "{new}" (from {how}; root icon dropped)')
+    unconfirmed = {t: v for t, v in suspects.items() if v[1] == 'unmentioned' and t not in TREE_NAME_OVERRIDES}
+    if unconfirmed:
+        print(f'NOTE: {len(unconfirmed)} root names are never mentioned by their own nodes — check them, '
+              f'and add TREE_NAME_OVERRIDES if wrong:')
+        for t, (root, _) in sorted(unconfirmed.items()):
+            guess = infer_tree_name([r for r in rows if r['treeID'] == t])
+            print(f'  {t}: "{root}"' + (f' (nodes mostly mention "{guess}")' if guess else ''))
     unnamed = [t for t in skill_trees if names.get(t) is None]
     if unnamed:
         print(f'WARNING: {len(unnamed)} trees have no root name (add to TREE_NAME_OVERRIDES): {unnamed}')

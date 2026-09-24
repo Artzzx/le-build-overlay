@@ -68,6 +68,22 @@ describe(`data contract (${files.join(' + ')})`, () => {
     assert.ok(read(skillFile).every(r => !passiveIds.has(r.treeID)));
   });
 
+  test('every skill tree has its own name (a shared name means a copied root row)', () => {
+    const byName = new Map();
+    for (const r of read(skillFile)) {
+      if (!byName.has(r.treeName)) byName.set(r.treeName, new Set());
+      byName.get(r.treeName).add(r.treeID);
+    }
+    assert.deepEqual([...byName].filter(([, ids]) => ids.size > 1).map(([n, ids]) => `${n}: ${[...ids]}`), []);
+    const name = (id) => read(skillFile).find(r => r.treeID === id)?.treeName;
+    assert.deepEqual(['bl5st', 'sh4re', 'ex4tp', 'frc87w', 'ch0fs', 'fl44'].map(name),
+      ['Bladestorm', 'Shadow Rend', 'Explosive Trap', 'Frost Claw', 'Chthonic Fissure', 'Flay']);
+  });
+
+  test('Rogue masteries match real exports (1 Bladedancer, 2 Marksman, 3 Falconer)', () => {
+    assert.deepEqual(classes.masteriesByClass['4'], { 1: 'Bladedancer', 2: 'Marksman', 3: 'Falconer' });
+  });
+
   test('every row carries the icon field (null or a path)', () => {
     assert.deepEqual(rows.filter(r => !('icon' in r)).slice(0, 5).map(r => `${r.treeID}:${r.nodeID}`), []);
   });
