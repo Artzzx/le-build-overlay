@@ -144,7 +144,7 @@ Both files are committed (regenerate + commit after each patch). There is no fal
 
 ### Icons — db/data/icons/ + the `icon` field
 - **Source of truth is the data row**: `row.icon` is a path relative to `db/data/icons/`. The renderer loads `../db/data/icons/<icon>` (URL-encoded per segment) and never scans the folder.
-- **Tree icon** = the root node's icon (`nodeID 0`, `maxPoints 0`). This applies to skill trees only; class passive trees have no root node, so their lane shows a glyph.
+- **Tree icon** = the root node's icon (`nodeID 0`, `maxPoints 0`), drawn as a bare `<img>` in `.tree-art`, so it needs its own size rule in `lanes.css`. Without that rule the 128 px art shows only its dark top-left corner. This applies to skill trees only; class passive trees have no root node, so their lane shows a glyph.
 - **Fallback**: `icon: null`, or an image that fails to load, draws a glyph (initials, hue from a hash that skips the green band). Partial icon sets are fine.
 - **Rendering**: tiles get `.has-art` (thin rim + bottom shade over the image). Visual weight follows the reading order: current (green ring) and next are full brightness, later upcoming steps are dimmed, done steps are desaturated.
 
@@ -160,9 +160,10 @@ Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together. `extra
 Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `passives.json`. It drops orphan and placeholder rows, merges duplicates (keeping an icon from either copy), and derives `treeName` from the root node (or from `TREE_NAME_OVERRIDES`).
 
 - **Icons**: each input row's `iconFile` value (`ICON_INPUT_FIELDS = ('iconFile', 'icon')`, first non-empty wins; e.g. `"265676.png"`, icons are shared between nodes) is resolved against the images in `db/data/icons/` (`--icons-dir` to override), case-insensitively. It tries, in order: the relative path, the longest tail of an absolute/Windows path (both extension-agnostic, so `es6ai/12.png` finds `es6ai/12.webp` after conversion), the file name, then the file name without extension. Rows without a value fall back to `<treeID>/<nodeID>.<ext>`. A bare name that exists in several folders is ambiguous and is never guessed. Unresolved values become `null` and are reported (`--verbose` lists them); `--strict` makes them fail the run. Input fields that look icon-related (`/icon|sprite/i`) but aren't in `ICON_INPUT_FIELDS` trigger a warning, since that's the usual cause of "0 icons".
-- **Copied root rows**: the export sometimes gives a tree another tree's root row. For example, `bl5st` Bladestorm and `sh4re` Shadow Rend both carry Flay's root, with Flay's name *and* icon.
+- **Copied root rows**: the export sometimes gives a tree another tree's root *name*. For example, `bl5st` Bladestorm and `sh4re` Shadow Rend both have a root named "Flay". Their `iconFile` is their own, correct icon.
   - `suspect_roots()` flags a root when another tree with the same root name mentions that name more in its descriptions ('shared'), or when the tree's own nodes never mention it ('unmentioned'; `Summon X` counts as mentioned when X is).
-  - A 'shared' root, or any root named in `TREE_NAME_OVERRIDES`, is replaced by `fix_roots()`. The name comes from the override, else from `infer_tree_name()` over the node descriptions, else the treeID. The root's icon becomes null.
+  - A 'shared' root, or any root named in `TREE_NAME_OVERRIDES`, is renamed by `fix_roots()`. The name comes from the override, else from `infer_tree_name()` over the node descriptions, else the treeID.
+  - The root's icon is kept, unless it's the same file as the name owner's root icon (a full copy).
   - An 'unmentioned' root is only reported, because the inference is a guess (Falconry's nodes say "Falcon").
 - **Output contract**: `validate_output()` checks the exact field set, types, unique `(treeID, nodeID)`, unique skill tree names, all 5 passive trees present, no passive rows in the skill file, and that icon files exist. On any violation it writes **nothing** and exits 1. `tests/data-contract.test.js` checks the same things from the app's side.
 

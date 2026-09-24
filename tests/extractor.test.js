@@ -181,24 +181,32 @@ describe('extract.py — copied root rows', { skip: !PYTHON && 'python3 not inst
   before(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'le-extract-roots-'));
     touch(dir, 'flay.png');
+    touch(dir, 'storm.png');
   });
   after(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-  const tree = (id, rootName, skill, n = 6) => [
-    row(id, 0, rootName, { description: '', icon: 'flay.png' }),
+  const tree = (id, rootName, skill, n = 6, icon = 'flay.png') => [
+    row(id, 0, rootName, { description: '', icon }),
     ...Array.from({ length: n }, (_, i) => row(id, i + 1, `${skill} Node ${i + 1}`, { description: `${skill} deals more damage. ${skill} has a chance ${i}.` })),
   ];
 
-  test('a root shared with the tree that owns the name is renamed from its own nodes, and loses the copied icon', () => {
-    const { status, skills, stdout, stderr } = run(dir, [...PASSIVES, ...tree('flx1', 'Flay', 'Flay'), ...tree('zz9st', 'Flay', 'Bladestorm')]);
+  test('a root that copies only the name is renamed from its own nodes and keeps its own icon', () => {
+    const { status, skills, stdout, stderr } = run(dir, [...PASSIVES, ...tree('flx1', 'Flay', 'Flay'), ...tree('zz9st', 'Flay', 'Bladestorm', 6, 'storm.png')]);
     assert.equal(status, 0, stderr + stdout);
     const root = (t) => skills.find(r => r.treeID === t && r.nodeID === 0);
     assert.equal(root('flx1').treeName, 'Flay');
     assert.equal(root('flx1').icon, 'flay.png');
     assert.equal(root('zz9st').treeName, 'Bladestorm');
     assert.equal(root('zz9st').nodeName, 'Bladestorm');
-    assert.equal(root('zz9st').icon, null);
-    assert.match(stdout, /tree zz9st: root "Flay" is copied/);
+    assert.equal(root('zz9st').icon, 'storm.png');
+    assert.match(stdout, /tree zz9st: root name "Flay" is copied .*icon kept/);
+  });
+
+  test('a full copy (same icon file as the owner) loses the icon', () => {
+    const { status, skills, stdout } = run(dir, [...PASSIVES, ...tree('flx1', 'Flay', 'Flay'), ...tree('zz9st', 'Flay', 'Bladestorm')]);
+    assert.equal(status, 0);
+    assert.equal(skills.find(r => r.treeID === 'zz9st' && r.nodeID === 0).icon, null);
+    assert.match(stdout, /icon dropped: same file as flx1/);
   });
 
   test('a root its nodes never mention is only reported, not renamed', () => {
