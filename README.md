@@ -49,7 +49,9 @@ npm start          # or: npm run dev (opens DevTools)
 npm test
 ```
 
-Click **Load build**, paste your export codes, and you're set. Or click **Try the example build**.
+Click **Load build**, paste a **Maxroll planner link** (`https://maxroll.gg/last-epoch/planner/…`), press **Fetch**, and pick the variants you want. Each variant (e.g. *Starting Setup → Early → Intermediate → Final*) becomes a phase, with its own mastery. A link ending in `#2` pre-selects only the second variant. You can also paste export codes by hand, or click **Try the example build**.
+
+The Maxroll import uses the same public endpoint the planner page uses. It isn't an official API: if Maxroll changes or blocks it, the dialog says so, and pasting export codes still works.
 
 Your build, progress, settings and saved templates live in the per-user app data folder (`%APPDATA%/le-build-overlay` on Windows), not in the repo. Files from the old overlay's `config/` folder are migrated automatically on first launch.
 
@@ -276,8 +278,8 @@ Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `ext
 **A skill shows another skill's name or icon (e.g. two lanes called "Flay")**
 The export gave that tree another tree's root name (the icon is usually still its own). `extract.py` detects this and renames the tree. It keeps the icon unless it's the very same file as the other tree's. Its report lists each fix (`tree bl5st: root "Flay" is copied …`) and any root name its own nodes never mention. Add a `TREE_NAME_OVERRIDES` entry to pin a name. The real fix belongs in the exporter.
 
-**The passive lane shows the wrong mastery**
-Mastery IDs are per class, and only Rogue and Sentinel have been checked against real exports (`db/data/classes.json`, `unverifiedMasteries`). If an Acolyte, Mage or Primalist build shows the wrong mastery, share its export code so the mapping can be fixed. Mastery `0` is the plain class, before choosing a mastery.
+**The passive lane shows the wrong class or mastery**
+Class ids follow the game (0 Primalist, 1 Mage, 2 Sentinel, 3 Acolyte, 4 Rogue). Masteries follow the in-game order, and not every pair has been checked against a real planner yet (`db/data/classes.json`, `unverifiedMasteries`). If the Load build dialog warns that *passive points don't fit the tree*, or a mastery name is wrong, save that planner's JSON into `tests/fixtures/` so the mapping can be checked. Mastery `0` is the plain class, before choosing a mastery.
 
 **A hotkey doesn't work**
 The status bar and Settings report any key that couldn't be registered (already taken by another app). Record a different one in Settings.

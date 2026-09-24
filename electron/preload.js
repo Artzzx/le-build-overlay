@@ -17,7 +17,10 @@ contextBridge.exposeInMainWorld('api', {
 
   saveBuild: (build) => invoke('build:save', build),
   previewPhase: (json) => invoke('build:preview', { json }),
-  loadLoadout: (phases, loadoutName) => invoke('build:load', { phases, loadoutName }),
+  loadLoadout: (phases, loadoutName, source) => invoke('build:load', { phases, loadoutName, source }),
+  fetchMaxroll: (link) => invoke('maxroll:fetch', { link }),
+  maxrollClipboardLink: () => invoke('maxroll:clipboardLink'),
+  openMaxroll: (link) => invoke('maxroll:open', { link }),
   loadExample: () => invoke('build:example'),
 
   saveSettings: (settings) => invoke('settings:save', settings),

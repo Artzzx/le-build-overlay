@@ -101,6 +101,26 @@
 
   // ─── Node lookup ────────────────────────────────────────────────────────────
 
+  /**
+   * How well a passive history fits a passive tree: points on nodes the tree
+   * doesn't have, and points beyond a node's max. A real build fits its own
+   * class's tree exactly (0 / 0) — anything else means the class id maps to the
+   * wrong tree (see classes.json).
+   * @returns {{ missing: number, over: number, fits: boolean }}
+   */
+  function passiveFit(history, tree) {
+    const counts = new Map();
+    for (const id of history ?? []) counts.set(id, (counts.get(id) ?? 0) + 1);
+    let missing = 0;
+    let over = 0;
+    for (const [id, n] of counts) {
+      const node = tree?.nodes?.[String(id)];
+      if (!node) missing += n;
+      else if (Number.isFinite(node.maxPoints) && node.maxPoints > 0 && n > node.maxPoints) over += n - node.maxPoints;
+    }
+    return { missing, over, fits: !!tree && missing === 0 && over === 0 };
+  }
+
   /** Tree for a track: passive → classId → passiveTreeByClass; skill → skillKey (= treeID). */
   function treeForTrack(db, classId, track) {
     if (!db) return null;
@@ -248,5 +268,6 @@
     commonPrefixLength,
     computeTransition,
     applyCarryOver,
+    passiveFit,
   };
 }));

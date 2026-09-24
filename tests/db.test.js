@@ -11,7 +11,7 @@
  *
  * Node shape after indexing: { id, nodeName, description, maxPoints, stats, icon }
  *  - trees are keyed by treeID ("kn-1" passive tree, "fl44" = Flay, "fi9" = Fireball)
- *  - getPassive() takes (classId, nodeId) — classId 3 = Sentinel (kn-1)
+ *  - getPassive() takes (classId, nodeId) — classId 2 = Sentinel (kn-1) — ids are the game's class enum
  */
 
 'use strict';
@@ -59,11 +59,11 @@ describe('db.load + db.isPopulated', () => {
 // ─── getPassive ───────────────────────────────────────────────────────────────
 
 describe('db.getPassive', () => {
-  // classId 3 = Sentinel → tree "kn-1"; nodeId 0 = "Juggernaut"
+  // classId 2 = Sentinel → tree "kn-1"; nodeId 0 = "Juggernaut"
   test('returns passive node for known classId + nodeId (numbers)', () => {
     const db = freshDb();
     db.load();
-    const node = db.getPassive(3, 0);
+    const node = db.getPassive(2, 0);
     assert.ok(node, 'expected Sentinel nodeId 0 to exist');
     assert.equal(node.id, 0);
     assert.equal(node.nodeName, 'Juggernaut');
@@ -72,7 +72,7 @@ describe('db.getPassive', () => {
   test('returns passive node with string arguments', () => {
     const db = freshDb();
     db.load();
-    const node = db.getPassive('3', '0');
+    const node = db.getPassive('2', '0');
     assert.ok(node);
     assert.equal(node.id, 0);
   });
@@ -80,7 +80,7 @@ describe('db.getPassive', () => {
   test('returns null for unknown nodeId', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getPassive(3, 999999), null);
+    assert.equal(db.getPassive(2, 999999), null);
   });
 
   test('returns null for unknown classId', () => {
@@ -92,7 +92,7 @@ describe('db.getPassive', () => {
   test('passive node has expected shape', () => {
     const db = freshDb();
     db.load();
-    const node = db.getPassive(3, 0);
+    const node = db.getPassive(2, 0);
     assert.ok(node);
     assert.ok(typeof node.id === 'number');
     assert.ok(typeof node.nodeName === 'string');
@@ -105,16 +105,16 @@ describe('db.getPassive', () => {
 // ─── getPassiveTreeId ─────────────────────────────────────────────────────────
 
 describe('db.getPassiveTreeId', () => {
-  test('maps classId 3 (Sentinel) to kn-1', () => {
+  test('maps classId 2 (Sentinel) to kn-1', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getPassiveTreeId(3), 'kn-1');
+    assert.equal(db.getPassiveTreeId(2), 'kn-1');
   });
 
   test('maps all 5 base classes', () => {
     const db = freshDb();
     db.load();
-    const expected = { 1: 'ac-1', 2: 'mg-1', 3: 'kn-1', 4: 'rg-1', 5: 'pr-1' };
+    const expected = { 0: 'pr-1', 1: 'mg-1', 2: 'kn-1', 3: 'ac-1', 4: 'rg-1' };
     for (const [classId, treeId] of Object.entries(expected)) {
       assert.equal(db.getPassiveTreeId(classId), treeId,
         `classId ${classId} should map to ${treeId}`);
@@ -198,13 +198,13 @@ describe('db.getClassName', () => {
   test('returns class name for known ID (number)', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getClassName(3), 'Sentinel');
+    assert.equal(db.getClassName(2), 'Sentinel');
   });
 
   test('returns class name for known ID (string)', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getClassName('3'), 'Sentinel');
+    assert.equal(db.getClassName('2'), 'Sentinel');
   });
 
   test('returns null for unknown class ID', () => {
@@ -216,18 +216,18 @@ describe('db.getClassName', () => {
 
 describe('db.getMasteryName', () => {
   // Maxroll uses per-class relative mastery IDs (1–3), NOT global IDs.
-  // Sentinel (classId 3), mastery 2 = Void Knight.
+  // Sentinel (classId 2), mastery 1 = Void Knight (the game's mastery order).
   test('returns mastery name for known classId + per-class masteryId', () => {
     const db = freshDb();
     db.load();
-    const name = db.getMasteryName(3, 2); // Sentinel mastery 2 = Void Knight
+    const name = db.getMasteryName(2, 1); // Sentinel mastery 1 = Void Knight
     assert.equal(name, 'Void Knight');
   });
 
   test('returns null for unknown mastery ID', () => {
     const db = freshDb();
     db.load();
-    assert.equal(db.getMasteryName(3, 99), null);
+    assert.equal(db.getMasteryName(2, 99), null);
   });
 });
 
@@ -266,7 +266,7 @@ describe('db.all', () => {
     db.load();
     const { classes } = db.all();
     assert.ok(classes.passiveTreeByClass, 'expected passiveTreeByClass in classes');
-    assert.equal(classes.passiveTreeByClass['3'], 'kn-1');
+    assert.equal(classes.passiveTreeByClass['2'], 'kn-1');
   });
 });
 
@@ -282,7 +282,7 @@ describe('db.missingFiles', () => {
   test('every class has its passive tree available', () => {
     const db = freshDb();
     db.load();
-    for (const classId of [1, 2, 3, 4, 5]) {
+    for (const classId of [0, 1, 2, 3, 4]) {
       const tree = db.all().passives[db.getPassiveTreeId(classId)];
       assert.ok(tree && Object.keys(tree.nodes).length > 0, `expected passive tree for class ${classId}`);
     }

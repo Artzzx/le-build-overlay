@@ -23,7 +23,7 @@ const passive = (history, currentStep = 0) =>
 const skill = (skillKey, history, currentStep = 0) =>
   ({ type: 'skill', skillKey, label: skillKey, history, totalSteps: history.length, currentStep });
 
-const CTX = { db: DB, classId: 3, masteryId: 2 };
+const CTX = { db: DB, classId: 2, masteryId: 1 }; // Sentinel · Void Knight
 
 describe('buildLane — step states', () => {
   // fl44 (Flay): node 14 x2, node 4 x1, node 14 x1
@@ -93,7 +93,7 @@ describe('buildLane — titles and resolution', () => {
   });
 
   test('works with an empty DB', () => {
-    const lane = buildLane(passive([1]), 0, { db: makeDb([]), classId: 3, masteryId: 2 });
+    const lane = buildLane(passive([1]), 0, { db: makeDb([]), classId: 2, masteryId: 1 });
     assert.equal(lane.unresolved, true);
     assert.equal(lane.title, 'Old label');
   });
@@ -101,7 +101,7 @@ describe('buildLane — titles and resolution', () => {
 
 describe('buildView', () => {
   const loadout = {
-    name: 'VK', classId: 3, masteryId: 2, currentPhase: 1,
+    name: 'VK', classId: 2, masteryId: 1, currentPhase: 1,
     phases: [
       { name: 'Leveling', tracks: [passive([0, 0])] },
       { name: 'Endgame', tracks: [passive([0, 0, 1], 3), skill('fl44', [14, 14, 4], 1)] },
@@ -162,7 +162,7 @@ describe('stepStartProgress', () => {
 describe('colorSlots', () => {
   test('passive is 0; skills keep their slot across phases even when order changes', () => {
     const loadout = {
-      name: 'L', classId: 3, masteryId: 2, currentPhase: 1,
+      name: 'L', classId: 2, masteryId: 1, currentPhase: 1,
       phases: [
         { name: 'A', tracks: [passive([0]), skill('fl44', [14]), skill('fi9', [3]), skill('es6ai', [1])] },
         { name: 'B', tracks: [passive([0]), skill('es6ai', [1]), skill('v01cv', [2])] },
@@ -183,7 +183,7 @@ describe('icons', () => {
     { treeID: 'kn-1', treeName: 'Sentinel', nodeID: 0, nodeName: 'Juggernaut', description: '', maxPoints: 8, stats: [], icon: 'kn-1/0.png' },
   ];
   const db = makeDb(rows, DB.classes);
-  const ctx = { db, classId: 3, masteryId: 2 };
+  const ctx = { db, classId: 2, masteryId: 1 };
 
   test('steps carry the node icon path; missing icon is null', () => {
     const lane = buildLane(skill('es6ai', [12, 13]), 1, ctx);
@@ -201,5 +201,15 @@ describe('icons', () => {
     const legacy = makeDb([{ ...rows[1], icon: undefined }], DB.classes);
     assert.equal(buildLane(skill('es6ai', [12, 99]), 1, { ...ctx, db: legacy }).steps[0].icon, null);
     assert.equal(buildLane(skill('es6ai', [12, 99]), 1, ctx).steps[1].icon, null);
+  });
+});
+
+describe('class id 0 (Primalist) is a real class, not "missing"', () => {
+  test('passive lane resolves pr-1 and names', () => {
+    const lane = buildLane(passive([0]), 0, { db: DB, classId: 0, masteryId: 3 });
+    assert.equal(lane.treeId, 'pr-1');
+    assert.equal(lane.unresolved, false);
+    assert.equal(lane.title, 'Druid');
+    assert.equal(buildLane(passive([0]), 0, { db: DB, classId: 0, masteryId: 0 }).title, 'Primalist');
   });
 });

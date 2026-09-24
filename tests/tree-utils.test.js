@@ -14,7 +14,7 @@ const assert = require('node:assert/strict');
 
 const {
   indexNodes, makeDb, groupHistory, findCurrentGroup, lookupNode, isTrackUnresolved,
-  normalizeBuild, stepTrack, commonPrefixLength, computeTransition, applyCarryOver,
+  normalizeBuild, stepTrack, commonPrefixLength, computeTransition, applyCarryOver, passiveFit,
 } = require('../shared/tree-utils');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ const ROWS = [
   row('fl44', 14, 'Go For The Throat'),
 ];
 
-const CLASSES = { classes: { 3: 'Sentinel' }, masteriesByClass: {}, passiveTreeByClass: { 3: 'kn-1' } };
+const CLASSES = { classes: { 2: 'Sentinel' }, masteriesByClass: {}, passiveTreeByClass: { 2: 'kn-1' } };
 
 const passive = (history, currentStep = 0) =>
   ({ type: 'passive', label: 'Passives', history, totalSteps: history.length, currentStep });
@@ -39,7 +39,7 @@ const skill = (skillKey, history, currentStep = 0) =>
   ({ type: 'skill', skillKey, label: skillKey, history, totalSteps: history.length, currentStep });
 
 const loadout = (phases, currentPhase = 0) =>
-  ({ name: 'L', classId: 3, masteryId: 2, currentPhase, phases });
+  ({ name: 'L', classId: 2, masteryId: 1, currentPhase, phases });
 
 // ─── indexNodes / makeDb ──────────────────────────────────────────────────────
 
@@ -124,16 +124,16 @@ describe('lookupNode', () => {
   const db = makeDb(ROWS, CLASSES);
 
   test('passive: classId → passiveTreeByClass → node', () => {
-    assert.equal(lookupNode(db, 3, passive([0]), 0).nodeName, 'Juggernaut');
+    assert.equal(lookupNode(db, 2, passive([0]), 0).nodeName, 'Juggernaut');
   });
 
   test('skill: skillKey is the treeID', () => {
-    assert.equal(lookupNode(db, 3, skill('fl44', [4]), '14').nodeName, 'Go For The Throat');
+    assert.equal(lookupNode(db, 2, skill('fl44', [4]), '14').nodeName, 'Go For The Throat');
   });
 
   test('returns null for unknown node, tree, class, or missing db', () => {
-    assert.equal(lookupNode(db, 3, skill('fl44', [4]), 999), null);
-    assert.equal(lookupNode(db, 3, skill('nope', [4]), 4), null);
+    assert.equal(lookupNode(db, 2, skill('fl44', [4]), 999), null);
+    assert.equal(lookupNode(db, 2, skill('nope', [4]), 4), null);
     assert.equal(lookupNode(db, 99, passive([0]), 0), null);
     assert.equal(lookupNode(null, 3, passive([0]), 0), null);
   });
@@ -142,11 +142,11 @@ describe('lookupNode', () => {
 describe('isTrackUnresolved', () => {
   const db = makeDb(ROWS, CLASSES);
   test('false when the tree exists', () => {
-    assert.equal(isTrackUnresolved(db, 3, passive([0])), false);
-    assert.equal(isTrackUnresolved(db, 3, skill('fl44', [4])), false);
+    assert.equal(isTrackUnresolved(db, 2, passive([0])), false);
+    assert.equal(isTrackUnresolved(db, 2, skill('fl44', [4])), false);
   });
   test('true when the tree is missing', () => {
-    assert.equal(isTrackUnresolved(db, 3, skill('nope', [4])), true);
+    assert.equal(isTrackUnresolved(db, 2, skill('nope', [4])), true);
     assert.equal(isTrackUnresolved(db, 99, passive([0])), true);
   });
 });
@@ -156,7 +156,7 @@ describe('isTrackUnresolved', () => {
 describe('normalizeBuild', () => {
   test('wraps legacy single-phase build', () => {
     const tracks = [passive([1])];
-    const out = normalizeBuild({ name: 'B', classId: 3, masteryId: 2, tracks });
+    const out = normalizeBuild({ name: 'B', classId: 2, masteryId: 1, tracks });
     assert.equal(out.currentPhase, 0);
     assert.equal(out.phases.length, 1);
     assert.equal(out.phases[0].tracks, tracks);
@@ -218,11 +218,22 @@ describe('commonPrefixLength', () => {
   });
 });
 
+describe('passiveFit', () => {
+  const tree = { nodes: { 1: { maxPoints: 2 }, 2: { maxPoints: 5 }, 3: { maxPoints: 0 } } };
+  test('a real build fits its tree exactly', () => {
+    assert.deepEqual(passiveFit([1, 1, 2, 2, 2], tree), { missing: 0, over: 0, fits: true });
+  });
+  test('counts points on unknown nodes and over a node\'s max', () => {
+    assert.deepEqual(passiveFit([1, 1, 1, 9, 9], tree), { missing: 2, over: 1, fits: false });
+    assert.equal(passiveFit([1], null).fits, false);
+  });
+});
+
 describe('per-phase mastery', () => {
   test('normalizeBuild backfills phase.masteryId from the loadout', () => {
     const n = normalizeBuild({ ...loadout([{ name: 'A', tracks: [] }, { name: 'B', masteryId: 0, tracks: [] }]), masteryId: 2 });
     assert.deepEqual(n.phases.map(p => p.masteryId), [2, 0]);
-    assert.equal(normalizeBuild({ name: 'x', classId: 3, masteryId: 1, tracks: [] }).phases[0].masteryId, 1);
+    assert.equal(normalizeBuild({ name: 'x', classId: 2, masteryId: 1, tracks: [] }).phases[0].masteryId, 1);
   });
 
   test('computeTransition reports a mastery change', () => {

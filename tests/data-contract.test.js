@@ -90,6 +90,31 @@ describe(`data contract (${files.join(' + ')})`, () => {
     assert.deepEqual(classes.masteriesByClass['4'], { 1: 'Bladedancer', 2: 'Marksman', 3: 'Falconer' });
   });
 
+  test('class ids are the game enum (0 Primalist, 1 Mage, 2 Sentinel, 3 Acolyte, 4 Rogue)', () => {
+    assert.deepEqual(classes.classes, { 0: 'Primalist', 1: 'Mage', 2: 'Sentinel', 3: 'Acolyte', 4: 'Rogue' });
+    assert.deepEqual(classes.passiveTreeByClass, { 0: 'pr-1', 1: 'mg-1', 2: 'kn-1', 3: 'ac-1', 4: 'rg-1' });
+    assert.equal(classes.masteriesByClass['1']['2'], 'Spellblade');
+    assert.equal(classes.masteriesByClass['2']['3'], 'Paladin');
+  });
+
+  test('every real Maxroll planner in tests/fixtures fits ITS class passive tree (and no other)', () => {
+    const { passiveFit, makeDb } = require('../shared/tree-utils');
+    const trees = makeDb(read('passives.json'), classes).passives;
+    const dir = path.join(__dirname, 'fixtures');
+    const planners = fs.readdirSync(dir).filter(f => f.endsWith('.json'))
+      .map(f => ({ f, raw: JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) }))
+      .filter(({ raw }) => raw.game === 'le' && typeof raw.data === 'string');
+    assert.ok(planners.length >= 3);
+    for (const { f, raw } of planners) {
+      const profiles = JSON.parse(raw.data).profiles;
+      const p = profiles.reduce((a, b) => (b.passives.history.length > a.passives.history.length ? b : a));
+      const own = classes.passiveTreeByClass[String(p.class)];
+      assert.ok(passiveFit(p.passives.history, trees[own]).fits, `${f}: class ${p.class} → ${own} should fit`);
+      const others = Object.values(classes.passiveTreeByClass).filter(t => t !== own && passiveFit(p.passives.history, trees[t]).fits);
+      assert.deepEqual(others, [], `${f}: fits other trees too — the check would not catch a wrong id`);
+    }
+  });
+
   test('every row carries the icon field (null or a path)', () => {
     assert.deepEqual(rows.filter(r => !('icon' in r)).slice(0, 5).map(r => `${r.treeID}:${r.nodeID}`), []);
   });

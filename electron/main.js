@@ -23,6 +23,10 @@
  *   settings:save (settings) → { ok, settings, failedHotkeys }
  *   hotkeys:pause ({ paused }) → { ok }   (while recording a shortcut)
  *   window:setMode ({ mode }) → { ok, settings }   ('full' | 'compact')
+ *   maxroll:fetch ({ link }) → { ok, planner: { id, name, author, pick, variants: [{ …, summary, json }] } }
+ *                              | { ok:false, error, canOpen }
+ *   maxroll:clipboardLink    → { ok, link|null }   (pre-fills the import field; never auto-fetches)
+ *   maxroll:open ({ link })  → { ok }              (opens the planner in the browser)
  *   templates:list | templates:save | templates:load | templates:delete
  *
  * main → renderer:
@@ -31,12 +35,15 @@
 
 'use strict';
 
-const { app, BrowserWindow, globalShortcut, ipcMain, screen, Menu, shell } = require('electron');
+const { app, BrowserWindow, globalShortcut, ipcMain, screen, Menu, shell, net, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 const { createStore, DEFAULT_SETTINGS, COMPACT_MIN } = require('./store');
 const { createHotkeys } = require('./hotkeys');
+const { createMaxrollClient, hiddenWindowLoader } = require('./maxroll');
+const MaxrollImport = require('../shared/maxroll-import');
+const TreeUtils = require('../shared/tree-utils');
 
 const ROOT = path.join(__dirname, '..');
 const EXAMPLE_BUILD = path.join(ROOT, 'config', 'build.example.json');
@@ -210,6 +217,48 @@ function emitHotkey(payload) {
   if (win && !win.isDestroyed()) win.webContents.send('hotkey', payload);
 }
 
+// ─── Maxroll import ───────────────────────────────────────────────────────────
+
+let maxrollClient = null;
+function maxroll() {
+  if (!maxrollClient) {
+    maxrollClient = createMaxrollClient({
+      fetch: (url, init) => net.fetch(url, init),
+      loadInWindow: hiddenWindowLoader(BrowserWindow),
+      fixturesDir: process.env.LE_MAXROLL_FIXTURES ? path.resolve(process.env.LE_MAXROLL_FIXTURES) : null,
+    });
+  }
+  return maxrollClient;
+}
+
+/** What the Load build dialog shows for one phase: class, points, skills (known or not). */
+function summarizeBuild(json) {
+  const { parseBuild } = require('../parser/maxroll');
+  const { db } = loadGameData();
+  const build = parseBuild(json, db.skills, db.classes, 'Preview');
+  const [passive, ...skills] = build.tracks;
+  const className = db.classes.classes?.[build.classId] ?? `Class ${build.classId}`;
+  const passiveTreeId = db.classes.passiveTreeByClass?.[String(build.classId)];
+  const fit = TreeUtils.passiveFit(passive.history, db.skills[passiveTreeId]);
+  return {
+    // Points that don't fit the class's tree = a wrong class id mapping, never a real build.
+    passiveMismatch: passive.history.length && !fit.fits
+      ? `These passive points don’t fit the ${className} tree (${fit.missing} on unknown nodes, ${fit.over} over a node’s max) — the class may be mapped wrong.`
+      : null,
+    classId: build.classId,
+    className,
+    masteryId: build.masteryId,
+    classLabel: passive.label.replace(/ Passives$/, ''),
+    passivePoints: passive.history.length,
+    skills: skills.map(t => ({
+      key: t.skillKey,
+      name: db.skills[t.skillKey]?.name ?? t.skillKey,
+      points: t.history.length,
+      known: !!db.skills[t.skillKey],
+    })),
+  };
+}
+
 // ─── IPC ──────────────────────────────────────────────────────────────────────
 
 /** Wrap a handler so thrown errors become { ok:false, error } instead of rejections. */
@@ -219,7 +268,7 @@ function handle(channel, fn) {
       return { ok: true, ...(await fn(arg)) };
     } catch (err) {
       console.error(`[main] ${channel}:`, err.message);
-      return { ok: false, error: err.message };
+      return { ok: false, error: err.message, ...(err.canOpen ? { canOpen: true } : {}) };
     }
   });
 }
@@ -244,32 +293,41 @@ function registerIpc() {
     return {};
   });
 
-  handle('build:preview', ({ json }) => {
-    const { parseBuild } = require('../parser/maxroll');
-    const { db } = loadGameData();
-    const build = parseBuild(json, db.skills, db.classes, 'Preview');
-    const [passive, ...skills] = build.tracks;
-    return {
-      summary: {
-        classId: build.classId,
-        className: db.classes.classes?.[build.classId] ?? `Class ${build.classId}`,
-        masteryId: build.masteryId,
-        classLabel: passive.label.replace(/ Passives$/, ''),
-        passivePoints: passive.history.length,
-        skills: skills.map(t => ({
-          key: t.skillKey,
-          name: db.skills[t.skillKey]?.name ?? t.skillKey,
-          points: t.history.length,
-          known: !!db.skills[t.skillKey],
-        })),
-      },
-    };
+  handle('build:preview', ({ json }) => ({ summary: summarizeBuild(json) }));
+
+  handle('maxroll:fetch', async ({ link }) => {
+    const parsed = MaxrollImport.parseMaxrollLink(link);
+    if (!parsed) throw new Error('That is not a Maxroll Last Epoch planner link (maxroll.gg/last-epoch/planner/…).');
+    const raw = await maxroll().fetchPlanner(parsed.id);
+    const planner = MaxrollImport.decodePlanner(raw, loadGameData().db.skills);
+    const variants = planner.variants.map(v => {
+      let summary = null;
+      let error = null;
+      try { summary = summarizeBuild(v.build); } catch (err) { error = err.message; }
+      return { ...v, summary, error, json: JSON.stringify(v.build) };
+    });
+    // "#N" in the link = the N-th visible variant: pre-select just that one.
+    const pick = MaxrollImport.visibleVariantIndex(variants, parsed.variant);
+    return { planner: { ...planner, variants, pick, link: `https://maxroll.gg/last-epoch/planner/${parsed.id}` } };
   });
 
-  handle('build:load', ({ phases, loadoutName }) => {
+  handle('maxroll:clipboardLink', () => {
+    const text = clipboard.readText().trim();
+    return { link: text.length < 300 && /maxroll\.gg\/last-epoch\/planner\//i.test(text) && MaxrollImport.parseMaxrollLink(text) ? text : null };
+  });
+
+  handle('maxroll:open', ({ link }) => {
+    const parsed = MaxrollImport.parseMaxrollLink(link);
+    if (parsed) shell.openExternal(`https://maxroll.gg/last-epoch/planner/${parsed.id}`);
+    return {};
+  });
+
+  handle('build:load', ({ phases, loadoutName, source }) => {
     const { parseLoadout } = require('../parser/maxroll');
     const { db } = loadGameData();
     const build = parseLoadout(phases, db.skills, db.classes, loadoutName || 'Imported loadout');
+    // Where it came from (e.g. { maxroll: 'sb62zd0e' }) — lets the dialog offer "update from Maxroll".
+    if (source && typeof source.maxroll === 'string') build.source = { maxroll: source.maxroll };
     store.saveBuild(build);
     return { build };
   });

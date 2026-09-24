@@ -11,7 +11,7 @@
  *     "history": [1,1,1,1,1,6,6,6,6,6,...],
  *     "position": 113          ← total passive points (= history.length)
  *   },
- *   "class": 3,               ← integer classId (maps to classes.json)
+ *   "class": 2,               ← integer classId, the game's enum (0 Primalist, 1 Mage, 2 Sentinel, 3 Acolyte, 4 Rogue)
  *   "mastery": 2,             ← integer masteryId (maps to classes.json)
  *   "skillTrees": {
  *     "fl44": {"history": [4,4,14,11,12,...], "position": 26},
