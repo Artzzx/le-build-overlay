@@ -32,12 +32,13 @@
  *  To look up a passive node you need classId → treeID → nodeId:
  *    db.getPassive(classId, nodeId)
  *
- *  classId → treeID mapping (from classes.json passiveTreeByClass):
- *    1 (Acolyte)   → "ac-1"
- *    2 (Mage)      → "mg-1"
- *    3 (Sentinel)  → "kn-1"
+ *  classId → treeID mapping (from classes.json passiveTreeByClass; ids are the
+ *  game's class enum, as Maxroll uses them):
+ *    0 (Primalist) → "pr-1"
+ *    1 (Mage)      → "mg-1"
+ *    2 (Sentinel)  → "kn-1"
+ *    3 (Acolyte)   → "ac-1"
  *    4 (Rogue)     → "rg-1"
- *    5 (Primalist) → "pr-1"
  *
  * ─── treeID = Maxroll skillKey ───────────────────────────────────────────────
  *
@@ -50,12 +51,12 @@
  *   const db = require('./build-db');
  *   db.load();
  *
- *   db.getPassive(3, 49)           // classId=3 (Sentinel), nodeId=49 → node | null
+ *   db.getPassive(2, 49)           // classId=2 (Sentinel), nodeId=49 → node | null
  *   db.getSkillNode('es6ai', 2)    // skillKey, nodeId → node | null
  *   db.getSkillName('es6ai')       // → "Erasing Strike" | null
- *   db.getPassiveTreeId(3)         // classId → "kn-1"
- *   db.getClassName(3)             // → "Sentinel" | null
- *   db.getMasteryName(3, 2)         // → "Void Knight" | null  (classId, per-class masteryId)
+ *   db.getPassiveTreeId(2)         // classId → "kn-1"
+ *   db.getClassName(2)             // → "Sentinel" | null
+ *   db.getMasteryName(2, 1)        // → "Void Knight" | null  (classId, per-class masteryId)
  *   db.all()                       // → { passives, skills, classes }
  */
 
@@ -134,7 +135,7 @@ function loadJsonFile(filename, fallback) {
  * Look up a passive node by classId + nodeId.
  * Resolves classId → treeID → node automatically.
  *
- * @param {number|string} classId  — e.g. 3 for Sentinel
+ * @param {number|string} classId  — e.g. 2 for Sentinel
  * @param {number|string} nodeId   — node id from Maxroll history[]
  * @returns {object|null}
  */

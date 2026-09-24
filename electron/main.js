@@ -43,6 +43,7 @@ const { createStore, DEFAULT_SETTINGS, COMPACT_MIN } = require('./store');
 const { createHotkeys } = require('./hotkeys');
 const { createMaxrollClient, hiddenWindowLoader } = require('./maxroll');
 const MaxrollImport = require('../shared/maxroll-import');
+const TreeUtils = require('../shared/tree-utils');
 
 const ROOT = path.join(__dirname, '..');
 const EXAMPLE_BUILD = path.join(ROOT, 'config', 'build.example.json');
@@ -236,9 +237,16 @@ function summarizeBuild(json) {
   const { db } = loadGameData();
   const build = parseBuild(json, db.skills, db.classes, 'Preview');
   const [passive, ...skills] = build.tracks;
+  const className = db.classes.classes?.[build.classId] ?? `Class ${build.classId}`;
+  const passiveTreeId = db.classes.passiveTreeByClass?.[String(build.classId)];
+  const fit = TreeUtils.passiveFit(passive.history, db.skills[passiveTreeId]);
   return {
+    // Points that don't fit the class's tree = a wrong class id mapping, never a real build.
+    passiveMismatch: passive.history.length && !fit.fits
+      ? `These passive points don’t fit the ${className} tree (${fit.missing} on unknown nodes, ${fit.over} over a node’s max) — the class may be mapped wrong.`
+      : null,
     classId: build.classId,
-    className: db.classes.classes?.[build.classId] ?? `Class ${build.classId}`,
+    className,
     masteryId: build.masteryId,
     classLabel: passive.label.replace(/ Passives$/, ''),
     passivePoints: passive.history.length,

@@ -40,7 +40,7 @@ le-build-overlay/
 │   ├── js/dom.js                 ← h(), mount(), svg(), richText()
 │   └── styles/                   ← tokens.css, app.css (shell), lanes.css, mini.css, dialogs.css
 ├── shared/                       ← PURE logic, UMD: require() in Node, window.* in the renderer
-│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over
+│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over, passiveFit
 │   ├── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
 │   ├── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
 │   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree
@@ -96,11 +96,15 @@ View-model step states: `done` / `current` (the NEXT UP step, may be partly allo
 ### Skill keys = treeIDs
 Maxroll `skillTrees` keys are the game's `treeID` verbatim (`es6ai` = Erasing Strike, `fl44` = Flay). No mapping table.
 
-### Mastery IDs are per-class relative (1–3); 0 = no mastery yet
-- Lookup: `classes.json → masteriesByClass[classId][masteryId]`.
-- Confirmed from real exports: Rogue 1 = Bladedancer, 2 = Marksman, 3 = Falconer; Sentinel 2 = Void Knight.
-- `unverifiedMasteries` lists the classes (Acolyte, Mage, Primalist) never checked against an export.
-- Mastery `0` is the plain class, used while leveling before the mastery quest. Labels are just the class name ("Rogue").
+### Class ids are the game's enum; mastery ids are per class (1–3), 0 = no mastery yet
+- **Class ids**: 0 Primalist, 1 Mage, 2 Sentinel, 3 Acolyte, 4 Rogue. Maxroll uses the game's enum, so it's not alphabetical and 0 is a real class. Never test class ids for truthiness.
+  - Proven by the planners in `tests/fixtures`: each build's passive history fits **only** its own class's tree (`passiveFit()`).
+  - An earlier table numbered them 1–5 alphabetically. Rogue happened to be 4 in both, which hid the bug until a Sentinel and a Mage planner were imported.
+- **Masteries** follow the in-game order (Sentinel: 1 Void Knight, 2 Forge Guard, 3 Paladin …). Lookup: `classes.json → masteriesByClass[classId][masteryId]`.
+  - Proven: Rogue 1 = Bladedancer, 2 = Marksman; Mage 2 = Spellblade; Sentinel 3 = Paladin.
+  - `unverifiedMasteries` lists the `class:mastery` pairs never seen in a real export.
+- **Mastery `0`** is the plain class, used while leveling before the mastery quest. Labels are just the class name ("Rogue").
+- **Safety net**: `summarizeBuild()` reports `passiveMismatch` when a passive history doesn't fit its class's tree, and the Load build dialog shows it. `tests/data-contract.test.js` runs the same check on every planner fixture. **Add a fixture for each new class/mastery you import.**
 
 ### Phases
 A loadout has 1–5 phases, all with the same **class**. Each phase has its own `masteryId` (e.g. Leveling = 0, Endgame = Bladedancer), and `loadout.masteryId` = the highest one. The view uses the active phase's mastery, and `computeTransition` returns `masteryChange`, which the banner shows as "Choose the Bladedancer mastery". `gotoPhase`: `applyCarryOver` sets each target track to `min(fromProgress, commonPrefixLength(histories))`, and `computeTransition` lists points to unspec and skills to remove. That list is shown as a banner until the user dismisses it. Phase switches, loads and *Start from here* offer an Undo toast.
@@ -131,8 +135,8 @@ One JSON object per line (passives/class/mastery line + one line per skill); `me
 
 ### <userData>/build.json — multi-phase loadout
 ```json
-{ "name": "Void Knight Erasing Strike", "classId": 3, "masteryId": 2, "currentPhase": 0,
-  "phases": [ { "name": "Leveling", "masteryId": 2, "tracks": [
+{ "name": "Void Knight Erasing Strike", "classId": 2, "masteryId": 1, "currentPhase": 0,
+  "phases": [ { "name": "Leveling", "masteryId": 1, "tracks": [
     { "type": "passive", "label": "Sentinel — Void Knight Passives", "history": [0,0,1], "totalSteps": 3, "currentStep": 0 },
     { "type": "skill", "skillKey": "v01cv", "label": "Void Cleave", "history": [2,2,4], "totalSteps": 3, "currentStep": 0 } ] } ] }
 ```
@@ -159,7 +163,7 @@ trees = { [treeID]: { name, icon, nodes: { [String(nodeID)]: { id, nodeName, des
 Both files are committed (regenerate + commit after each patch). There is no fallback: if either is missing, `build-db.missingFiles()` reports it and the status bar shows **Game data missing**.
 
 ### classes.json (hand-maintained)
-`{ classes:{"3":"Sentinel"}, masteriesByClass:{"3":{"1":"Forge Guard","2":"Void Knight","3":"Paladin"}}, passiveTreeByClass:{"3":"kn-1"} }`
+`{ classes:{"2":"Sentinel"}, masteriesByClass:{"2":{"1":"Void Knight","2":"Forge Guard","3":"Paladin"}}, passiveTreeByClass:{"2":"kn-1"}, unverifiedMasteries:["2:1",…] }`
 
 ### Icons — db/data/icons/ + the `icon` field
 - **Source of truth is the data row**: `row.icon` is a path relative to `db/data/icons/`. The renderer loads `../db/data/icons/<icon>` (URL-encoded per segment) and never scans the folder.

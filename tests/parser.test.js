@@ -19,8 +19,8 @@ const { parseBuild, parseLoadout, mergeRawLines, resolveClassName, resolveSkillN
 
 const SAMPLE_MAXROLL = {
   passives: { history: [1, 1, 1, 6, 6, 6, 6, 6, 4, 4], position: 10 },
-  class: 3,
-  mastery: 2,   // 2 = Void Knight (per-class relative ID for Sentinel)
+  class: 2,     // Sentinel (the game's class enum: 0 Primalist, 1 Mage, 2 Sentinel, 3 Acolyte, 4 Rogue)
+  mastery: 1,   // 1 = Void Knight (per-class relative ID, in-game order)
   skillTrees: {
     fl44: { history: [4, 4, 14, 11, 12], position: 5 },
     fi9:  { history: [3, 3, 7], position: 3 },
@@ -45,11 +45,11 @@ const SAMPLE_SKILLS_DB = {
 // Classes DB fixture: uses masteriesByClass (per-class relative IDs 1–3).
 // Matches the format in db/data/classes.json — Maxroll uses relative IDs, NOT global ones.
 const SAMPLE_CLASSES_DB = {
-  classes: { 3: 'Sentinel' },
+  classes: { 2: 'Sentinel' },
   masteriesByClass: {
-    3: { 1: 'Forge Guard', 2: 'Void Knight', 3: 'Paladin' },
+    2: { 1: 'Void Knight', 2: 'Forge Guard', 3: 'Paladin' },
   },
-  passiveTreeByClass: { 3: 'kn-1' },
+  passiveTreeByClass: { 2: 'kn-1' },
 };
 
 // ─── groupHistory ─────────────────────────────────────────────────────────────
@@ -210,14 +210,14 @@ describe('parseBuild', () => {
   test('parses valid Maxroll object', () => {
     const build = parseBuild(SAMPLE_MAXROLL, SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB, 'My Build');
     assert.equal(build.name, 'My Build');
-    assert.equal(build.classId, 3);
-    assert.equal(build.masteryId, 2);
+    assert.equal(build.classId, 2);
+    assert.equal(build.masteryId, 1);
     assert.equal(build.tracks.length, 3); // 1 passive + 2 skills
   });
 
   test('parses valid Maxroll JSON string', () => {
     const build = parseBuild(JSON.stringify(SAMPLE_MAXROLL), SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    assert.equal(build.classId, 3);
+    assert.equal(build.classId, 2);
   });
 
   test('passive track has correct history', () => {
@@ -268,14 +268,14 @@ describe('parseBuild', () => {
 describe('resolveClassName', () => {
   test('resolves class and mastery names using per-class relative IDs', () => {
     // Maxroll uses per-class relative mastery IDs (1–3), not global sequential IDs.
-    // Sentinel (class 3) mastery 2 = Void Knight.
-    const result = resolveClassName(3, 2, SAMPLE_CLASSES_DB);
+    // Sentinel (class 2) mastery 1 = Void Knight.
+    const result = resolveClassName(2, 1, SAMPLE_CLASSES_DB);
     assert.equal(result, 'Sentinel — Void Knight');
   });
 
   test('falls back gracefully when DB is null', () => {
-    const result = resolveClassName(3, 2, null);
-    assert.equal(result, 'Class 3');
+    const result = resolveClassName(2, 1, null);
+    assert.equal(result, 'Class 2');
   });
 
   test('falls back to ID when class not in DB', () => {
@@ -284,7 +284,7 @@ describe('resolveClassName', () => {
   });
 
   test('falls back to mastery ID when mastery not in DB', () => {
-    const result = resolveClassName(3, 99, SAMPLE_CLASSES_DB);
+    const result = resolveClassName(2, 99, SAMPLE_CLASSES_DB);
     assert.ok(result.includes('Mastery 99'));
   });
 });
@@ -416,8 +416,8 @@ describe('parseLoadout', () => {
     assert.equal(loadout.phases[0].name, 'Leveling');
     assert.equal(loadout.phases[1].name, 'Endgame');
     assert.equal(loadout.currentPhase, 0);
-    assert.equal(loadout.classId, 3);
-    assert.equal(loadout.masteryId, 2);
+    assert.equal(loadout.classId, 2);
+    assert.equal(loadout.masteryId, 1);
   });
 
   test('all tracks in each phase start at currentStep 0', () => {
@@ -457,8 +457,8 @@ describe('parseLoadout', () => {
   test('phases may change mastery (mastery 0 = plain class while leveling)', () => {
     const leveling = JSON.stringify({ ...SAMPLE_MAXROLL, mastery: 0 });
     const loadout = parseLoadout([{ name: 'Leveling', json: leveling }, { name: 'Endgame', json: PHASE2_JSON }], SAMPLE_SKILLS_DB, SAMPLE_CLASSES_DB);
-    assert.deepEqual(loadout.phases.map(p => p.masteryId), [0, 2]);
-    assert.equal(loadout.masteryId, 2, 'loadout.masteryId = highest phase mastery');
+    assert.deepEqual(loadout.phases.map(p => p.masteryId), [0, 1]);
+    assert.equal(loadout.masteryId, 1, 'loadout.masteryId = highest phase mastery');
     assert.match(loadout.phases[0].tracks[0].label, /^Sentinel Passives$/);
   });
 

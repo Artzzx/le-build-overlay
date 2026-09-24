@@ -116,3 +116,34 @@ describe('decodePlanner (edge cases)', () => {
     assert.throws(() => M.decodePlanner({ data: '{oops' }, DB.skills), /cannot read/);
   });
 });
+
+describe('decodePlanner (more real planners — class ids are the game enum)', () => {
+  const load = (f) => {
+    const planner = M.decodePlanner(fs.readFileSync(path.join(__dirname, 'fixtures', f), 'utf8'), DB.skills);
+    const loadout = parseLoadout(planner.variants.map(v => ({ name: v.name, json: JSON.stringify(v.build) })), DB.skills, DB.classes, planner.name);
+    const view = (phase) => buildView({ ...loadout, currentPhase: phase }, DB);
+    return { planner, loadout, view };
+  };
+
+  test('Sentinel (class 2) leveling: plain Sentinel, then Paladin (mastery 3) on the kn-1 tree', () => {
+    const { planner, loadout, view } = load('sentinel_leveling.json');
+    assert.deepEqual(loadout.phases.map(p => p.masteryId), [0, 3, 3, 3]);
+    assert.equal(view(0).classLabel, 'Sentinel');
+    const final = view(3);
+    assert.equal(final.classLabel, 'Sentinel · Paladin');
+    assert.equal(final.lanes[0].treeId, 'kn-1');
+    assert.deepEqual(final.lanes.slice(1).map(l => l.title), ['Multistrike', 'Healing Hands', 'Judgement', 'Sigils Of Hope', 'Holy Aura']);
+    assert.deepEqual(Object.keys(planner.variants[1].build.skillTrees).map(id => DB.skills[id].name), ['Rive', 'Healing Hands', 'Javelin']);
+    assert.ok(final.lanes.every(l => !l.unresolved));
+  });
+
+  test('Mage (class 1) leveling: Spellblade (mastery 2) on the mg-1 tree; null skill slots ignored', () => {
+    const { planner, view } = load('mage_leveling.json');
+    assert.deepEqual(planner.variants.map(v => v.masteryId), [2, 2, 2]);
+    assert.deepEqual(planner.variants[0].unmatched, [], 'Maxroll pads specializedSkills with nulls');
+    const final = view(2);
+    assert.equal(final.classLabel, 'Mage · Spellblade');
+    assert.equal(final.lanes[0].treeId, 'mg-1');
+    assert.deepEqual(final.lanes.slice(1).map(l => l.title), ['Enchant Weapon', 'Mana Strike', 'Shatter Strike', 'Flame Ward', 'Surge']);
+  });
+});

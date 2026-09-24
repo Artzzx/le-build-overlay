@@ -1,8 +1,8 @@
 {
   "_comment": "Example 2-phase loadout for development/testing. Load it from the app (Try the example build). Skill keys and node ids are real treeIDs/nodeIDs from db/data, but the allocation order is illustrative, not a real guide.",
   "name": "Void Knight Erasing Strike",
-  "classId": 3,
-  "masteryId": 2,
+  "classId": 2,
+  "masteryId": 1,
   "currentPhase": 0,
   "phases": [
     {

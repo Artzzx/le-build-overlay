@@ -107,6 +107,7 @@ export function openLoadout({ dialog, api, hasProgress, onLoaded }) {
         ? s.skills.map(k => h('span.skill-chip', { class: k.known ? '' : 'is-unknown', title: k.known ? k.key : `“${k.key}” is not in the game data` }, k.name, h('span.muted', k.points)))
         : h('span.muted', 'No skill trees in this phase')),
       unknown.length ? h('div.preview-warn', ui('alert', { size: 14 }), `${unknown.length} skill${unknown.length > 1 ? 's' : ''} not in the game data — ${unknown.length > 1 ? 'they' : 'it'} will show as “No tree data”.`) : null,
+      s.passiveMismatch ? h('div.preview-warn', ui('alert', { size: 14 }), s.passiveMismatch) : null,
     );
   }
 
@@ -242,6 +243,7 @@ export function openLoadout({ dialog, api, hasProgress, onLoaded }) {
           ? s.skills.map(k => h('span.skill-chip', { class: k.known ? '' : 'is-unknown' }, k.name, h('span.muted', k.points)))
           : h('span.muted', 'No specialized skills yet')) : null,
         v.unmatched?.length ? h('div.preview-warn', ui('alert', { size: 13 }), `Not found in the game data: ${v.unmatched.join(', ')}`) : null,
+        s?.passiveMismatch ? h('div.preview-warn', ui('alert', { size: 13 }), s.passiveMismatch) : null,
         ...(v.warnings ?? []).map(w => h('div.preview-warn', ui('alert', { size: 13 }), w)),
       ));
   }
