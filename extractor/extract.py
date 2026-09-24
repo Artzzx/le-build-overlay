@@ -59,8 +59,9 @@ Both outputs are flat arrays with the same row shape:
        - fallback: the treeID itself
      The export sometimes copies one tree's root row into another tree
      (bl5st Bladestorm and sh4re Shadow Rend both carry Flay's root). A root
-     whose name another tree mentions more is replaced: name from
-     TREE_NAME_OVERRIDES or the tree's own descriptions, icon dropped.
+     whose name another tree mentions more is renamed: TREE_NAME_OVERRIDES or
+     the tree's own descriptions. Only the name is copied — the root's icon is
+     the tree's own and is kept, unless it is the same file as the owner's.
      Every skill tree name must be unique (output contract).
 
 ─── Usage ───────────────────────────────────────────────────────────────────
@@ -304,12 +305,27 @@ def tree_names(rows, passive_names, suspects=None):
 
 
 def fix_roots(rows, replaced):
-    """A replaced root row is another skill's: give it the tree's real name and drop its icon."""
+    """
+    Give each replaced root row its tree's real name. The export copies only the
+    NAME (bl5st's root says "Flay" but its icon is Bladestorm's own), so the icon
+    is kept — unless it is the very file the name's owner uses, i.e. a full copy.
+    Returns { treeID: owner treeID } for the roots whose icon was dropped.
+    """
+    is_root = lambda r: r['nodeID'] == 0 and r['maxPoints'] == 0
+    owner_icons = {}  # root name → { icon: treeID } for roots that keep their name
     for r in rows:
-        if r['treeID'] in replaced and r['nodeID'] == 0 and r['maxPoints'] == 0:
-            r['nodeName'] = replaced[r['treeID']][1]
-            r['icon'] = None
-    return rows
+        if is_root(r) and r['treeID'] not in replaced and r['icon']:
+            owner_icons.setdefault(r['nodeName'], {})[r['icon']] = r['treeID']
+    dropped = {}
+    for r in rows:
+        if r['treeID'] in replaced and is_root(r):
+            old, new = replaced[r['treeID']]
+            owner = owner_icons.get(old, {}).get(r['icon'])
+            if owner:
+                r['icon'] = None
+                dropped[r['treeID']] = owner
+            r['nodeName'] = new
+    return dropped
 
 
 def to_output(rows, names):
@@ -467,7 +483,7 @@ def main():
 
     suspects = suspect_roots(rows)
     names, replaced = tree_names(rows, passive_names, suspects)
-    rows = fix_roots(rows, replaced)
+    dropped_icons = fix_roots(rows, replaced)
     out = to_output(rows, names)
 
     passives = [r for r in out if r['treeID'] in PASSIVE_TREE_IDS]
@@ -500,7 +516,8 @@ def main():
 
     for t, (old, new) in sorted(replaced.items()):
         how = 'TREE_NAME_OVERRIDES' if t in TREE_NAME_OVERRIDES else 'its node descriptions'
-        print(f'  tree {t}: root "{old}" is copied from another tree → "{new}" (from {how}; root icon dropped)')
+        icon = f'icon dropped: same file as {dropped_icons[t]}' if t in dropped_icons else 'icon kept'
+        print(f'  tree {t}: root name "{old}" is copied from another tree → "{new}" (from {how}; {icon})')
     unconfirmed = {t: v for t, v in suspects.items() if v[1] == 'unmentioned' and t not in TREE_NAME_OVERRIDES}
     if unconfirmed:
         print(f'NOTE: {len(unconfirmed)} root names are never mentioned by their own nodes — check them, '

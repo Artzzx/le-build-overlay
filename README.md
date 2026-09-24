@@ -274,7 +274,7 @@ It has no `iconFile` value, or the value matches no file in `db/data/icons/`. `p
 Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `extract.py`.
 
 **A skill shows another skill's name or icon (e.g. two lanes called "Flay")**
-The export gave that tree a copy of another tree's root row. `extract.py` detects this, renames the tree and drops the copied icon. Its report lists each fix (`tree bl5st: root "Flay" is copied …`) and any root name its own nodes never mention. Add a `TREE_NAME_OVERRIDES` entry to pin a name. The real fix belongs in the exporter.
+The export gave that tree another tree's root name (the icon is usually still its own). `extract.py` detects this and renames the tree. It keeps the icon unless it's the very same file as the other tree's. Its report lists each fix (`tree bl5st: root "Flay" is copied …`) and any root name its own nodes never mention. Add a `TREE_NAME_OVERRIDES` entry to pin a name. The real fix belongs in the exporter.
 
 **The passive lane shows the wrong mastery**
 Mastery IDs are per class, and only Rogue and Sentinel have been checked against real exports (`db/data/classes.json`, `unverifiedMasteries`). If an Acolyte, Mage or Primalist build shows the wrong mastery, share its export code so the mapping can be fixed. Mastery `0` is the plain class, before choosing a mastery.

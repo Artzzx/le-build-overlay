@@ -59,6 +59,14 @@
 }
 .tree-art { flex: none; width: var(--tile-sm); height: var(--tile-sm); border-radius: 9px; overflow: hidden; display: grid; }
 .tree-art .glyph { font-size: 12px; }
+/* The emblem is a bare <img> (not a .tile): size it, or the 128 px art shows only its top-left corner. */
+.tree-art { position: relative; }
+.tree-art > .art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tree-art:has(> .art)::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
 .lane-titles { min-width: 0; }
 .lane-title { font: 650 var(--fs-md)/1.2 var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lane-sub { color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

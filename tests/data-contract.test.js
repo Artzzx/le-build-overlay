@@ -80,6 +80,12 @@ describe(`data contract (${files.join(' + ')})`, () => {
       ['Bladestorm', 'Shadow Rend', 'Explosive Trap', 'Frost Claw', 'Chthonic Fissure', 'Flay']);
   });
 
+  test('renamed trees keep their own root icon (the export copies only the name)', () => {
+    const rootIcon = (id) => read(skillFile).find(r => r.treeID === id && r.nodeID === 0)?.icon;
+    for (const id of ['bl5st', 'sh4re', 'ex4tp', 'frc87w', 'ch0fs']) assert.ok(rootIcon(id), `${id} root icon`);
+    assert.notEqual(rootIcon('bl5st'), rootIcon('fl44'));
+  });
+
   test('Rogue masteries match real exports (1 Bladedancer, 2 Marksman, 3 Falconer)', () => {
     assert.deepEqual(classes.masteriesByClass['4'], { 1: 'Bladedancer', 2: 'Marksman', 3: 'Falconer' });
   });
