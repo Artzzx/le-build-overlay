@@ -49,7 +49,9 @@ npm start          # or: npm run dev (opens DevTools)
 npm test
 ```
 
-Click **Load build**, paste your export codes, and you're set. Or click **Try the example build**.
+Click **Load build**, paste a **Maxroll planner link** (`https://maxroll.gg/last-epoch/planner/…`), press **Fetch**, and pick the variants you want. Each variant (e.g. *Starting Setup → Early → Intermediate → Final*) becomes a phase, with its own mastery. A link ending in `#2` pre-selects only the second variant. You can also paste export codes by hand, or click **Try the example build**.
+
+The Maxroll import uses the same public endpoint the planner page uses. It isn't an official API: if Maxroll changes or blocks it, the dialog says so, and pasting export codes still works.
 
 Your build, progress, settings and saved templates live in the per-user app data folder (`%APPDATA%/le-build-overlay` on Windows), not in the repo. Files from the old overlay's `config/` folder are migrated automatically on first launch.
 

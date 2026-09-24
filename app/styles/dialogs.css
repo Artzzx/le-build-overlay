@@ -132,6 +132,29 @@
 
 /* ─── Loadout dialog ──────────────────────────────────────────────────────── */
 
+/* From Maxroll */
+.mx-section { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: var(--r-lg); border: 1px solid var(--line-2); background: var(--bg-raised); }
+.mx-section .field-label { font-size: var(--fs-sm); color: var(--text-2); }
+.mx-row { display: flex; gap: 8px; }
+.mx-row .input { flex: 1; min-width: 0; }
+.mx-open { margin-left: 8px; }
+.mx-result { display: flex; flex-direction: column; gap: 8px; }
+.mx-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: var(--fs-sm); }
+.mx-variants { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.mx-variant { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.mx-variant.is-on { border-color: var(--now-line); background: color-mix(in srgb, var(--now) 6%, var(--surface)); }
+.mx-variant.is-hidden:not(.is-on) { opacity: 0.7; }
+.mx-variant.is-error { cursor: default; }
+.mx-variant input { margin-top: 3px; accent-color: var(--now); }
+.mx-variant-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.mx-variant-name { font-weight: 650; }
+.mx-variant-meta { color: var(--text-3); font-size: var(--fs-sm); }
+.mx-variant-meta.is-error { color: var(--danger); }
+.mx-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.mx-used { display: flex; align-items: center; gap: 8px; color: var(--now); font-size: var(--fs-sm); }
+.mx-used span { color: var(--text-2); flex: 1; }
+.mx-used b { color: var(--text); }
+
 .loadout-top { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
 .template-bar { display: flex; align-items: center; gap: 6px; }
 .template-bar .select { max-width: 260px; }

@@ -24,6 +24,7 @@ le-build-overlay/
 │   ├── main.js        ← window, IPC handlers, lifecycle, game-data cache
 │   ├── store.js       ← <userData>/build.json, settings.json, saves/ (atomic writes, migration)
 │   ├── hotkeys.js     ← global shortcuts: direct / latch ("arm first"), suspend while focused, pause
+│   ├── maxroll.js     ← fetch a Maxroll planner by id (net.fetch → hidden-window fallback; LE_MAXROLL_FIXTURES for tests)
 │   └── preload.js     ← window.api — the ONLY renderer bridge (contextIsolation + sandbox)
 ├── app/                          ← renderer: vanilla JS ES modules, no framework, no bundler
 │   ├── index.html                ← strict CSP; loads shared/*.js (classic) then js/main.js (module)
@@ -32,7 +33,7 @@ le-build-overlay/
 │   ├── js/mini.js                ← mini mode rows (display.mode 'compact')
 │   ├── js/feedback.js            ← WebAudio sound cues for global hotkey events
 │   ├── js/inspector.js           ← node details + route list
-│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): phases, live preview, templates
+│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): From Maxroll (link → variants → phases), phases, live preview, templates
 │   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, mini opacity, sound, lane keys, hotkeys (key recorder, conflict check)
 │   ├── js/icons.js               ← node/tree artwork from db/data/icons, glyph fallback, UI svg icons
 │   ├── js/keys.js                ← KeyboardEvent → Electron accelerator, keyRecorder()
@@ -41,7 +42,8 @@ le-build-overlay/
 ├── shared/                       ← PURE logic, UMD: require() in Node, window.* in the renderer
 │   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over
 │   ├── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
-│   └── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
+│   ├── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
+│   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree
 ├── parser/                       ← maxroll.js (paste → loadout), build-schema.js (validators)
 ├── db/
 │   ├── build-db.js               ← loads db/data (main process + tests)
@@ -106,6 +108,23 @@ A loadout has 1–5 phases, all with the same **class**. Each phase has its own 
 ---
 
 ## Data Formats
+
+### Maxroll planner import (link → phases)
+- **Endpoint** (undocumented, public): `GET https://planners.maxroll.gg/profiles/le/<id>` → `{ id, name, game:'le', user:{username}, data:"<JSON string>" }`, with `data` = `{ profiles:[variant…], activeProfile }`. A real response is committed as `tests/fixtures/maxroll-profile-le.json`.
+- **Variant**: `{ name, class, mastery, level, hidden?, passives:{history,position}, skillTrees:{<treeID>:{history,position}}, specializedSkills:[ability names] }`.
+- **Traps** handled by `decodePlanner()`:
+  - `skillTrees` keeps every tree ever touched (stale Falconer trees in a Bladedancer planner). The build's skills are `specializedSkills`, which are ability names (`"Bladestorm Throw"`, `"Umbral Blades 1"`, `"ShadowRend"`), matched to the variant's trees by `matchSkillTree()` (normalized name, exact then prefix).
+  - `position` is the planner cursor: `history.slice(0, position)`.
+- **Links**: `maxroll.gg/last-epoch/planner/<id>`, with `#N` = the N-th *visible* variant (1-based), which pre-selects only that variant. The API URL or a bare id also works.
+- **Flow**:
+  1. `api.fetchMaxroll(link)` → main `maxroll:fetch` → `electron/maxroll.js`.
+     - It uses `net.fetch` with an identifying User-Agent, a 10 s timeout, 1 retry and a 10 min cache.
+     - A non-JSON answer (bot check) falls back to a hidden sandboxed window.
+     - `public:false` still imports, since it only means unlisted.
+  2. Each variant is summarized with `summarizeBuild()`, the same helper as `build:preview`.
+  3. The dialog fills one phase tab per chosen variant with `JSON.stringify(variant.build)`, so preview, templates and load are unchanged.
+  4. Loadouts from Maxroll carry `source: { maxroll: id }`.
+- Requests happen only on the user's click (a clipboard link is only pre-filled). Export paste stays the fallback for every error, and errors can offer **Open in browser**.
 
 ### Raw Maxroll paste
 One JSON object per line (passives/class/mastery line + one line per skill); `mergeRawLines` merges them. A single combined object also works. See `config/maxroll-paste.example.txt`.
@@ -194,7 +213,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - The Settings dialog refuses to save when `hotkeyConflicts()` finds a clash.
 
 ### IPC (`window.api` → main, all `invoke`)
-`init`, `saveBuild`, `previewPhase(json)`, `loadLoadout(phases, name)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`. Main → renderer: `hotkey` events via `onHotkey(cb)`.
+`init`, `saveBuild`, `previewPhase(json)`, `loadLoadout(phases, name, source?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`. Main → renderer: `hotkey` events via `onHotkey(cb)`.
 
 ### In-app keyboard (renderer, ignored while typing or a dialog is open)
 - Lanes: `1`–`6` and the configured lane keys (`F1`–`F6` / numpad), `Shift` = undo. `Ctrl`+`1`–`6` / `Ctrl+Enter` fill the step.
