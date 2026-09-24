@@ -6,12 +6,10 @@
  *
  * Run: npm test
  *
- * NOTE: Tests run against whichever node file build-db loads — the full
- * db/data/skill_tree_reconciled.json if present, else the committed
- * skill_tree_reconciled.sample.json. The sample is a verbatim subset of the
- * full file, so every assertion here must hold for both.
+ * NOTE: Tests run against the committed game data in db/data/. Don't assert
+ * names of nodes affected by (treeID, nodeID) collisions (see CLAUDE.md).
  *
- * Node shape after indexing: { id, nodeName, description, maxPoints, stats }
+ * Node shape after indexing: { id, nodeName, description, maxPoints, stats, icon }
  *  - trees are keyed by treeID ("kn-1" passive tree, "fl44" = Flay, "fi9" = Fireball)
  *  - getPassive() takes (classId, nodeId) — classId 3 = Sentinel (kn-1)
  */
@@ -274,14 +272,11 @@ describe('db.all', () => {
 
 // ─── data source ──────────────────────────────────────────────────────────────
 
-describe('db.source', () => {
-  test('reports which node file was loaded (full or committed sample)', () => {
+describe('db.missingFiles', () => {
+  test('both committed data files are present', () => {
     const db = freshDb();
     db.load();
-    assert.ok(
-      ['skill_tree_reconciled.json', 'skill_tree_reconciled.sample.json'].includes(db.source()),
-      `unexpected source: ${db.source()}`
-    );
+    assert.deepEqual(db.missingFiles(), []);
   });
 
   test('every class has its passive tree available', () => {

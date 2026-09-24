@@ -50,7 +50,22 @@ describe('indexNodes', () => {
     assert.equal(trees['kn-1'].name, 'KN-1');
     assert.equal(trees['fl44'].nodes['4'].nodeName, 'Scent of Death');
     assert.deepEqual(Object.keys(trees['fl44'].nodes['4']).sort(),
-      ['description', 'id', 'maxPoints', 'nodeName', 'stats']);
+      ['description', 'icon', 'id', 'maxPoints', 'nodeName', 'stats']);
+    assert.equal(trees['fl44'].nodes['4'].icon, null);
+  });
+
+  test('icons: node icon kept; tree icon = root node (id 0, 0 points) only', () => {
+    const { trees } = indexNodes([
+      row('sk1', 0, 'Skill', { maxPoints: 0, icon: 'sk1/0.png' }),
+      row('sk1', 3, 'Upgrade', { icon: 'sk1/3.png' }),
+      row('kn-1', 0, 'Juggernaut', { maxPoints: 8, icon: 'kn-1/0.png' }),
+      row('sk2', 1, 'Blank icon', { icon: '' }),
+    ]);
+    assert.equal(trees.sk1.icon, 'sk1/0.png');
+    assert.equal(trees.sk1.nodes['3'].icon, 'sk1/3.png');
+    assert.equal(trees['kn-1'].icon, null, 'a real passive node 0 is not a tree emblem');
+    assert.equal(trees['kn-1'].nodes['0'].icon, 'kn-1/0.png');
+    assert.equal(trees.sk2.nodes['1'].icon, null, 'empty string normalised to null');
   });
 
   test('duplicate (treeID, nodeID): named row beats blank placeholder', () => {

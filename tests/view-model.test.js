@@ -2,7 +2,7 @@
  * tests/view-model.test.js
  * ─────────────────────────
  * Unit tests for shared/view-model.js — what the UI renders per lane.
- * Runs against the loaded DB (full data or committed sample; both contain the
+ * Runs against the committed game data (which contains the
  * trees used here).
  */
 
@@ -69,7 +69,7 @@ describe('buildLane — step states', () => {
     assert.deepEqual(lane.steps.map(s => s.nodeTotalAfter), [2, 1, 3]);
   });
 
-  test('iconKey is "<treeId>/<nodeId>"', () => {
+  test('iconKey is "<treeId>/<nodeId>" (placeholder seed)', () => {
     assert.equal(buildLane(track, 1, CTX).steps[1].iconKey, 'fl44/4');
   });
 });
@@ -148,5 +148,34 @@ describe('colorSlots', () => {
     assert.deepEqual([...slots], [['fl44', 1], ['fi9', 2], ['es6ai', 3], ['v01cv', 4]]);
     const v = buildView(loadout, DB);
     assert.deepEqual(v.lanes.map(l => l.colorSlot), [0, 3, 4]);
+  });
+});
+
+describe('icons', () => {
+  const rows = [
+    { treeID: 'es6ai', treeName: 'Erasing Strike', nodeID: 0, nodeName: 'Erasing Strike', description: '', maxPoints: 0, stats: [], icon: 'es6ai/0.png' },
+    { treeID: 'es6ai', treeName: 'Erasing Strike', nodeID: 12, nodeName: 'Void Lens', description: '', maxPoints: 2, stats: [], icon: 'es6ai/12.png' },
+    { treeID: 'es6ai', treeName: 'Erasing Strike', nodeID: 13, nodeName: 'Time Loop', description: '', maxPoints: 3, stats: [], icon: null },
+    { treeID: 'kn-1', treeName: 'Sentinel', nodeID: 0, nodeName: 'Juggernaut', description: '', maxPoints: 8, stats: [], icon: 'kn-1/0.png' },
+  ];
+  const db = makeDb(rows, DB.classes);
+  const ctx = { db, classId: 3, masteryId: 2 };
+
+  test('steps carry the node icon path; missing icon is null', () => {
+    const lane = buildLane(skill('es6ai', [12, 13]), 1, ctx);
+    assert.deepEqual(lane.steps.map(s => s.icon), ['es6ai/12.png', null]);
+  });
+
+  test('skill lanes use the root node icon as tree icon; passive lanes have none', () => {
+    assert.equal(buildLane(skill('es6ai', [12]), 1, ctx).treeIcon, 'es6ai/0.png');
+    // kn-1 node 0 is a real passive node (8 pts), not a tree root → no emblem.
+    assert.equal(buildLane(passive([0]), 0, ctx).treeIcon, null);
+    assert.equal(buildLane(passive([0]), 0, ctx).steps[0].icon, 'kn-1/0.png');
+  });
+
+  test('unknown nodes and legacy rows without an icon field give null', () => {
+    const legacy = makeDb([{ ...rows[1], icon: undefined }], DB.classes);
+    assert.equal(buildLane(skill('es6ai', [12, 99]), 1, { ...ctx, db: legacy }).steps[0].icon, null);
+    assert.equal(buildLane(skill('es6ai', [12, 99]), 1, ctx).steps[1].icon, null);
   });
 });

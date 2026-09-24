@@ -168,6 +168,7 @@
 .tile-xl { --size: var(--tile-xl); }
 
 .tile-art {
+  position: relative;
   display: grid;
   overflow: hidden;
   border-radius: inherit;
@@ -175,6 +176,12 @@
   background: var(--surface-3);
 }
 .tile-art > .art { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Game art sits in a frame: thin light rim + soft bottom shade, drawn over the image. */
+.tile.has-art .tile-art::after {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), inset 0 -10px 14px -6px rgba(0, 0, 0, 0.45);
+}
 
 .glyph {
   --glyph-hue: 210;
@@ -191,12 +198,13 @@
   user-select: none;
 }
 
-/* States */
+/* States — visual weight follows the reading order NOW → next → later → done */
 .tile.is-done { opacity: 0.5; filter: saturate(0.35); }
-.tile.is-upcoming { opacity: 0.92; }
-.step.is-next .tile { opacity: 1; }
+.step.is-upcoming:not(.is-next) .tile-art { filter: brightness(0.7) saturate(0.85); transition: filter var(--t-fast); }
+.step.is-upcoming .step-btn:hover .tile-art,
+.step.is-upcoming .step-btn:focus-visible .tile-art,
+.step.is-selected .tile-art { filter: none; }
 .step.is-next .tile-art { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
-.step.is-upcoming:not(.is-next) ~ .step.is-upcoming:not(.is-next) .tile { opacity: 0.8; }
 
 /* Current: green ring that fills with the points already put into this step */
 .tile.is-current::before {
