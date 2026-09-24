@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 extractor/convert_icons.py
 ───────────────────────────
@@ -97,3 +98,32 @@ def main():
             print(f'would convert {rel}')
             converted += 1
             continue
+        try:
+            old, new, note = convert_one(src, dst, args.size, args.quality, Image)
+        except Exception as err:  # corrupt / unsupported file: keep the original
+            failed.append(f'{rel}: {err}')
+            continue
+        converted += 1
+        before += old
+        after += new
+        if note:
+            notes.append(f'{rel}: {note}')
+        if not args.keep_originals:
+            src.unlink()
+
+    verb = 'would convert' if args.dry_run else 'converted'
+    print(f'{verb} {converted}, already up to date {skipped}, failed {len(failed)} — in {args.icons_dir}')
+    if before:
+        print(f'size: {human(before)} → {human(after)} ({100 - after * 100 / before:.0f}% smaller)')
+    for n in notes[:20]:
+        print(f'  note: {n}')
+    if len(notes) > 20:
+        print(f'  … {len(notes) - 20} more notes')
+    for f in failed:
+        print(f'  FAILED {f}', file=sys.stderr)
+    if failed:
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

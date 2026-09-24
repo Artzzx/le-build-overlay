@@ -29,4 +29,5 @@ config/saves/
 Global Tree Data.json
 EXTRACTION_GUIDE.md
 extractor/raw/
+db/data/icons/
 extractor/skillkey-map.json
