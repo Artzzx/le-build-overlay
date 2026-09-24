@@ -372,6 +372,8 @@ function showLoadout() {
   openLoadout({
     dialog: els['dlg-loadout'],
     api,
+    trees: state.db?.skills ?? {},
+    currentSource: state.build?.source ?? null,
     hasProgress: lanes().some(l => l.done > 0),
     onLoaded(build) {
       state.pinned = null;

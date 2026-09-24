@@ -33,7 +33,7 @@ le-build-overlay/
 │   ├── js/mini.js                ← mini mode rows (display.mode 'compact')
 │   ├── js/feedback.js            ← WebAudio sound cues for global hotkey events
 │   ├── js/inspector.js           ← node details + route list
-│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): From Maxroll (link → variants → phases), phases, live preview, templates
+│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): choose screen (Maxroll link | export codes | templates) → horizontal workspace
 │   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, mini opacity, sound, lane keys, hotkeys (key recorder, conflict check)
 │   ├── js/icons.js               ← node/tree artwork from db/data/icons, glyph fallback, UI svg icons
 │   ├── js/keys.js                ← KeyboardEvent → Electron accelerator, keyRecorder()
@@ -126,7 +126,14 @@ A loadout has 1–5 phases, all with the same **class**. Each phase has its own 
      - A non-JSON answer (bot check) falls back to a hidden sandboxed window.
      - `public:false` still imports, since it only means unlisted.
   2. Each variant is summarized with `summarizeBuild()`, the same helper as `build:preview`.
-  3. The dialog fills one phase tab per chosen variant with `JSON.stringify(variant.build)`, so preview, templates and load are unchanged.
+  3. **The Load build dialog** (`loadout-dialog.js`, one wide fixed-size modal, three views that keep their state while it's open):
+     - **Choose**: two cards (`1` Maxroll link, `2` export codes), saved templates, and "re-import the current build".
+       - A Maxroll link on the clipboard adds a one-click **Fetch this build**.
+     - **Maxroll workspace**: variant rail (tick up to 5) plus a pane for the focused variant (stats, skill cards with tree icons, phase name).
+       - Load uses the ticked variants' `json` directly.
+       - "Edit as codes" moves them into the codes workspace.
+     - **Codes workspace**: phase rail, codes editor, live preview.
+     - **Keys**: `Ctrl+Enter` loads and `Alt+←` goes back. Shortcuts listen on the document while the dialog is open, and re-renders restore focus.
   4. Loadouts from Maxroll carry `source: { maxroll: id }`.
 - Requests happen only on the user's click (a clipboard link is only pre-filled). Export paste stays the fallback for every error, and errors can offer **Open in browser**.
 
