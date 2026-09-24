@@ -8,17 +8,29 @@
  * digit typed into a textarea.
  *
  * Modes (settings.hotkeys.hotkeyMode):
- *   direct — 1–6 always captured while the app is in the background
- *   latch  — only the latch key is captured; it arms 1–6 until LATCH_TIMEOUT_MS
+ *   direct — lane keys (F1–F6 by default) always captured while the app is in the background
+ *   latch  — only the latch key is captured; it arms the lane keys until LATCH_TIMEOUT_MS
  *            passes without an advance/undo (each use re-arms the timer)
+ *
+ * Which keys drive the lanes (F1–F6 / 1–6 / numpad + modifiers) comes from
+ * shared/hotkey-scheme.js, the same module the UI uses for its keycaps.
  *
  * Every registration goes through safeRegister(): a malformed or already-taken
  * accelerator is reported, never thrown, and never blocks the other keys.
+ *
+ * Key auto-repeat: a held key re-fires a global shortcut ~30×/s. Every handler is
+ * wrapped in repeatGuard(): an event less than REPEAT_GUARD_MS after the previous
+ * event of the SAME accelerator is dropped (and still resets the clock), so a held
+ * key can never burn through points or cycle phases. Deliberate taps are further
+ * apart than that and all count.
  */
 
 'use strict';
 
+const { trackAccelerators } = require('../shared/hotkey-scheme');
+
 const LATCH_TIMEOUT_MS = 5000;
+const REPEAT_GUARD_MS = 110;
 
 /**
  * @param {object} deps
@@ -26,19 +38,30 @@ const LATCH_TIMEOUT_MS = 5000;
  * @param {(event: object) => void} deps.emit   — forward { action, ... } to the renderer
  * @param {() => void} deps.toggleWindow        — show / hide the app window
  */
-function createHotkeys({ globalShortcut, emit, toggleWindow, log = console }) {
+function createHotkeys({ globalShortcut, emit, toggleWindow, log = console, now = Date.now }) {
   let hk = null;              // current settings.hotkeys
   let suspended = false;      // app window focused → track keys released
   let paused = false;         // settings key recorder active → nothing registered
   let latchArmed = false;
   let latchTimer = null;
   let failures = [];
+  const lastEvent = new Map(); // accelerator → time of its last event (repeat guard)
+
+  function repeatGuard(accelerator, handler) {
+    return () => {
+      const t = now();
+      const prev = lastEvent.get(accelerator);
+      lastEvent.set(accelerator, t);
+      if (prev != null && t - prev < REPEAT_GUARD_MS) return;
+      handler();
+    };
+  }
 
   function safeRegister(accelerator, handler) {
     if (!accelerator) return false;
     let ok = false;
     try {
-      ok = globalShortcut.register(accelerator, handler);
+      ok = globalShortcut.register(accelerator, repeatGuard(accelerator, handler));
     } catch (err) {
       log.error(`[hotkeys] invalid "${accelerator}": ${err.message}`);
     }
@@ -54,15 +77,7 @@ function createHotkeys({ globalShortcut, emit, toggleWindow, log = console }) {
     try { globalShortcut.unregister(accelerator); } catch { /* invalid accelerator */ }
   }
 
-  function trackKeys() {
-    const keys = [];
-    for (let i = 1; i <= 6; i++) {
-      const adv = hk.advanceModifier ? `${hk.advanceModifier}+${i}` : `${i}`;
-      const undo = hk.undoModifier ? `${hk.undoModifier}+${i}` : `${i}`;
-      keys.push({ trackIndex: i - 1, adv, undo: undo === adv ? null : undo });
-    }
-    return keys;
-  }
+  const trackKeys = () => trackAccelerators(hk);
 
   function onTrackKey(action, trackIndex) {
     emit({ action, trackIndex, source: 'global' });
@@ -175,4 +190,4 @@ function createHotkeys({ globalShortcut, emit, toggleWindow, log = console }) {
   return { apply, setSuspended, pause, dispose, getFailures: () => [...failures] };
 }
 
-module.exports = { createHotkeys, LATCH_TIMEOUT_MS };
+module.exports = { createHotkeys, LATCH_TIMEOUT_MS, REPEAT_GUARD_MS };

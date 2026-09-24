@@ -4,7 +4,13 @@
 
 A standalone **Electron desktop app** for the game **Last Epoch (LE)**. The player loads a build (Maxroll planner or in-game export codes) and follows it point by point. The main view shows **every tree at once** (the class passive tree and up to 5 skill trees), with the node to allocate **next** in each tree highlighted, what comes after it, and the full allocation path.
 
-Design constraint that drives every UI decision: **the user is playing the game at the same time.** The window sits on a second monitor or next to a windowed game and is read in a half-second glance. That means large readable text, few colours with fixed meanings, and one-key actions. Global hotkeys let the player tick points off without leaving the game.
+Design constraint that drives every UI decision: **the user is playing the game at the same time.** The window sits on a second monitor or next to a windowed game and is read in a half-second glance. That means large readable text, few colours with fixed meanings, and one-key actions. Global hotkeys (`F1`–`F6` by default) let the player tick points off without leaving the game.
+
+Rules that follow from it:
+- **Never take keys the game needs.** Bare digits are only used when the user picks them. Nothing global uses `Esc`, `Ctrl+Z` or letters.
+- **Every global key press must be confirmable without looking**: a sound cue plus the status bar's last-action chip.
+- **A held key must never repeat an action**: the repeat guard in `hotkeys.js` and the `e.repeat` check in the app.
+- **A stray key in the planner must not disrupt the game**: `Esc` never leaves mini mode, and mini mode never steals focus.
 
 The app used to be a transparent click-through overlay (`overlay/`). That code is gone; the repo/package name `le-build-overlay` is kept because the user-data folder path derives from it.
 
@@ -22,17 +28,20 @@ le-build-overlay/
 ├── app/                          ← renderer: vanilla JS ES modules, no framework, no bundler
 │   ├── index.html                ← strict CSP; loads shared/*.js (classic) then js/main.js (module)
 │   ├── js/main.js                ← state, actions (allocate/undo/setCurrent/gotoPhase), rendering, keyboard, toasts
-│   ├── js/lanes.js               ← lane = identity · NEXT UP card · path strip; nodeTile(); laneAccent()
+│   ├── js/lanes.js               ← lane = identity · NEXT UP card (Allocate / Fill ×N / undo) · path strip; nodeTile(); laneAccent()
+│   ├── js/mini.js                ← mini mode rows (display.mode 'compact')
+│   ├── js/feedback.js            ← WebAudio sound cues for global hotkey events
 │   ├── js/inspector.js           ← node details + route list
 │   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): phases, live preview, templates
-│   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, hotkeys (key recorder)
+│   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, mini opacity, sound, lane keys, hotkeys (key recorder, conflict check)
 │   ├── js/icons.js               ← node/tree artwork from db/data/icons, glyph fallback, UI svg icons
 │   ├── js/keys.js                ← KeyboardEvent → Electron accelerator, keyRecorder()
 │   ├── js/dom.js                 ← h(), mount(), svg(), richText()
-│   └── styles/                   ← tokens.css, app.css (shell), lanes.css, dialogs.css
+│   └── styles/                   ← tokens.css, app.css (shell), lanes.css, mini.css, dialogs.css
 ├── shared/                       ← PURE logic, UMD: require() in Node, window.* in the renderer
 │   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over
-│   └── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
+│   ├── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
+│   └── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
 ├── parser/                       ← maxroll.js (paste → loadout), build-schema.js (validators)
 ├── db/
 │   ├── build-db.js               ← loads db/data (main process + tests)
@@ -63,6 +72,7 @@ app/js/main.js
 - Logic needed by more than one side (main, renderer, tests) goes in `shared/`. It must stay pure: no `fs`, no DOM, no Electron. Never re-implement grouping/lookup/stepping in `app/`.
 - The renderer never touches the filesystem. Everything goes through `window.api` (preload), and every invoke resolves to `{ ok: true, ... }` or `{ ok: false, error }`.
 - `commit(next, { lanes })` is the single path for build changes: it persists, rebuilds the view, and re-renders only the listed lanes (keeps strip scroll positions).
+- Point changes go through `allocate(i, delta, { source, fill })`. It pushes onto `undoStack` (Ctrl+Z), sets `lastAction` (the status bar chip), plays a cue when `source === 'global'`, and fires the milestone toasts (tree done; phase done → "Go to ‹next›").
 - Render via `h()`/`mount()` only (textContent, never innerHTML with data). CSP forbids inline scripts/styles; set styles through the CSSOM (`h(..., { style: {...} })`).
 
 ---
@@ -107,7 +117,10 @@ One JSON object per line (passives/class/mastery line + one line per skill); `me
 Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`. `label` is baked at import time; the UI prefers live DB names (view-model titles).
 
 ### <userData>/settings.json
-`{ window:{x,y,width,height,maximized}, display:{uiScale,alwaysOnTop}, hotkeys:{enabled,hotkeyMode,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey} }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
+`{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey} }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
+- `display.mode` is `'full'` or `'compact'` (mini mode). Only main changes it, via `window:setMode`.
+- `opacity` applies to mini mode only.
+- `laneKeys` is `'fkeys'`, `'digits'` or `'numpad'`. A saved `hotkeys` block without `laneKeys` predates the setting and becomes `'digits'` (its old `F1` toggle would clash with lane 1). Fresh installs get `'fkeys'`.
 
 ### db/data/skill_tree_reconciled.json + passives.json — flat node rows
 ```json
@@ -154,6 +167,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 ## Electron Architecture
 
 - **One window**: normal frame, resizable (min 420×480), `sandbox`, `contextIsolation`, no `nodeIntegration`, no app menu, navigation and `window.open` blocked. Bounds, maximized state, zoom (UI scale) and always-on-top persist. Saved bounds are only reused if they're still on a connected display.
+- **Mini mode** (`window:setMode`) is the same window: bounds are saved into the outgoing mode's slot and the incoming slot is restored (first use goes to the top-right of the display). It has min 260×180, is always on top, and uses `setOpacity(display.opacity)`, which does nothing on Linux. The frame stays native, because Electron can't switch frames at runtime.
 - **Single instance**: a second launch focuses the existing window.
 - **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). Old `config/build.json`, the hotkeys from `config/settings.json`, and `config/saves/` are migrated once.
 - **Game data** is loaded once and cached in main; `app:init` refreshes it (so a window reload picks up re-extracted data).
@@ -161,18 +175,26 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 ### Hotkeys (`electron/hotkeys.js`)
 | Default | Action | While the app window is focused |
 |---|---|---|
-| `1`–`6` / `Shift`+`1`–`6` | allocate / undo (direct mode) | **released** (the app handles keys itself; typing works) |
-| `` ` `` | arm `1`–`6` for 5 s, re-armed by each use (latch mode) | **released** |
-| `F1` | show / hide window (`showInactive`, never steals focus) | active |
-| `F6` / `Shift`+`F6` | next / previous phase | active |
+| `F1`–`F6` / `Shift`+`F1`–`F6` | allocate / undo (direct mode; lane keys from `shared/hotkey-scheme.js`) | **released** (the app handles keys itself; typing works) |
+| `` ` `` | arm the lane keys for 5 s, re-armed by each use (latch mode) | **released** |
+| `F8` | show / hide window (`showInactive`, never steals focus) | active |
+| `F9` / `Shift`+`F9` | next / previous phase (`F7` left free as a buffer) | active |
 
-`safeRegister()` never throws. Failures are returned to Settings and shown in the status bar. `pause(true)` releases everything while the Settings key recorder is listening.
+- `safeRegister()` never throws. Failures are returned to Settings and shown in the status bar.
+- `pause(true)` releases everything while the Settings key recorder is listening.
+- Every handler goes through `repeatGuard()`. OS auto-repeat re-fires global shortcuts, so an event within `REPEAT_GUARD_MS` (110 ms) of the same accelerator's previous event is dropped. A held key yields at most 2 events (the press plus the first repeat after the OS delay); taps count normally.
+- The Settings dialog refuses to save when `hotkeyConflicts()` finds a clash.
 
 ### IPC (`window.api` → main, all `invoke`)
 `init`, `saveBuild`, `previewPhase(json)`, `loadLoadout(phases, name)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`. Main → renderer: `hotkey` events via `onHotkey(cb)`.
 
 ### In-app keyboard (renderer, ignored while typing or a dialog is open)
-`1`–`6` / `Shift`+`1`–`6`, `↑↓` focus tree, `←→` browse steps (pins inspector), `Enter`/`Space` allocate focused tree, `Backspace` undo, `Esc` unpin / dismiss banner, `PgUp`/`PgDn` phase, `Ctrl+O` load, `Ctrl+,` settings, `Ctrl+=/-/0` UI scale.
+- Lanes: `1`–`6` and the configured lane keys (`F1`–`F6` / numpad), `Shift` = undo. `Ctrl`+`1`–`6` / `Ctrl+Enter` fill the step.
+- Navigation: `↑↓` focus a tree, `←→` browse steps (pins the inspector), `Enter`/`Space` allocate in the focused tree, `Backspace` undo.
+- `Ctrl+Z` undoes the last change in any tree (phase-scoped stack, capped at 50).
+- `Esc` unpins the inspector or dismisses the banner. It never leaves mini mode.
+- Everything else: `PgUp`/`PgDn` phase, `Ctrl+M` mini mode, `?` shortcut sheet (also `F1` when F-keys aren't the lane keys), `Ctrl+O` load, `Ctrl+,` settings, `Ctrl+=/-/0` UI scale.
+- Toasts: an identical message refreshes the existing toast instead of stacking another. Toasts with an action (Undo, "Go to Endgame") are evicted last.
 
 ### Responsive layout
 - ≥1180 px: lanes plus an inspector column.
@@ -197,6 +219,6 @@ python extractor/convert_icons.py && python extractor/extract.py   # regenerate 
 
 ## Known Open Issues / Decisions
 1. **Duplicate nodes in data**: see above; needs an upstream exporter fix.
-2. **Direct hotkey mode is the default** and captures `1`–`6` system-wide while the game has focus (game chat digits). *Arm first* avoids that; consider making it the default.
+2. **Global keys swallow the key for every app** (Windows `RegisterHotKey`). The lane keys therefore default to `F1`–`F6`. Users migrated from older settings stay on digits until they switch. The repeat guard and the sounds are defensive against Windows behaviour that can't be exercised in Linux CI: check them by hand on Windows after changes to `hotkeys.js`.
 3. **No installer/packaging yet** (electron-builder etc.). Paths are already packaging-safe (userData for state, read-only app dir).
 4. **Committed `nodes_flat.json` predates `iconFile`**: the 1,027 icons are committed, but the committed export doesn't have `iconFile` yet, so the committed outputs have `icon: null`. Commit the new `nodes_flat.json` together with the regenerated `db/data/*.json`.

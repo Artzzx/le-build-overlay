@@ -6,7 +6,11 @@
  *   ┌ topbar ─ build · phase switcher · overall progress · actions ─────────┐
  *   ├ banner ─ phase-change instructions (unspec / remove skills)           │
  *   ├ lanes (passive + skills) ───────────────────────┬ inspector ──────────┤
- *   └ statusbar ─ hotkey legend · data / hotkey warnings ───────────────────┘
+ *   └ statusbar ─ last action (+undo) · hotkey legend · warnings ───────────┘
+ *
+ * Mini mode (settings.display.mode = 'compact', Ctrl+M) swaps the lanes for
+ * one-line rows (mini.js) and hides the inspector and legend; main.js in the
+ * electron folder resizes the window and keeps it on top.
  *
  * State changes go through commit(), which persists the build and re-renders
  * only what changed. All pure logic lives in shared/ (TreeUtils, ViewModel).
@@ -14,11 +18,14 @@
 
 import { h, mount } from './dom.js';
 import { ui } from './icons.js';
-import { renderLane, revealCurrent, keycap } from './lanes.js';
+import { renderLane, revealCurrent, keycap, laneAccent } from './lanes.js';
+import { renderMiniLane } from './mini.js';
+import { playCue } from './feedback.js';
 import { renderInspector } from './inspector.js';
 import { openLoadout } from './loadout-dialog.js';
 import { openSettings } from './settings-dialog.js';
-import { prettyAccelerator } from './keys.js';
+
+const { laneKeyLabel, laneKey, laneFromCode, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
 
 const { normalizeBuild, stepTrack, setTrackProgress, computeTransition, applyCarryOver } = window.TreeUtils;
 const { buildView, stepStartProgress } = window.ViewModel;
@@ -40,7 +47,11 @@ const state = {
   hover: null,         // { lane, step } — hovered node (transient)
   transition: null,    // { toName, unspecNeeded } after a phase switch
   latch: false,        // global hotkeys armed (latch mode)
+  undoStack: [],       // [{ phase, lane, prev }] — Ctrl+Z / "Undo" in the status bar, newest last
+  lastAction: null,    // { lane, sign, amount, title, detail, accent } — status bar chip
 };
+
+const UNDO_LIMIT = 50;
 
 const $ = (id) => document.getElementById(id);
 const els = {};
@@ -48,7 +59,7 @@ const els = {};
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 async function boot() {
-  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings']) {
+  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help']) {
     els[id] = $(id);
   }
 
@@ -96,9 +107,13 @@ function inspectorContext() {
   return lane?.now ? { lane, step: lane.now, mode: 'next' } : null;
 }
 
-function hotkeyLabel(index) {
-  const mod = state.settings?.hotkeys?.advanceModifier;
-  return mod ? `${mod}+${index + 1}` : String(index + 1);
+const isCompact = () => state.settings?.display.mode === 'compact';
+
+/** Key shown on a lane: the in-game key when global hotkeys are on, else the in-app digit. */
+function hotkeyLabel(index, kind = 'adv') {
+  const hk = state.settings?.hotkeys;
+  if (hk?.enabled) return laneKeyLabel(hk, index, kind);
+  return kind === 'undo' ? `Shift+${index + 1}` : String(index + 1);
 }
 
 // ─── Mutations ────────────────────────────────────────────────────────────────
@@ -126,27 +141,119 @@ function commit(next, o = {}) {
   return true;
 }
 
-function allocate(i, delta) {
+/**
+ * Move lane i by one point (delta ±1) — or, with `fill`, to the end of its
+ * current step. `source: 'global'` = a hotkey pressed while the game had focus:
+ * those get a sound cue, since the player is not looking at this window.
+ */
+function allocate(i, delta, { source = 'app', fill = false } = {}) {
   const lane = lanes()[i];
   if (!lane) return;
+  const cue = (name) => { if (source === 'global' && state.settings.display.sound) playCue(name, state.settings.display.volume); };
   if (lane.unresolved) {
+    cue('denied');
     toast(`${lane.title} has no tree data — it can’t be tracked yet.`, { kind: 'warn' });
     return;
   }
+  const phase = state.build.currentPhase;
+  const prev = state.build.phases[phase].tracks[i].currentStep;
+  const next = fill && delta > 0 && lane.now
+    ? setTrackProgress(state.build, i, lane.now.startIdx + lane.now.count)
+    : stepTrack(state.build, i, delta);
+
   const prevFocus = state.focusLane;
   state.focusLane = i;
   const hadPin = state.pinned;
   state.pinned = null;
   if (state.transition) dismissTransition(false);
-  const changed = commit(stepTrack(state.build, i, delta), {
+  const changed = commit(next, {
     lanes: [...new Set([i, prevFocus, hadPin?.lane].filter(n => n != null))],
     flash: delta > 0 ? i : null,
   });
   if (!changed) {
+    cue('denied');
     if (delta > 0 && lane.complete) toast(`${lane.title} is already complete.`);
     // Still reflect the focus change.
     [i, prevFocus].forEach(n => renderLaneAt(n));
     renderInspectorPanel();
+    return;
+  }
+
+  const after = lanes()[i];
+  pushUndo({ phase, lane: i, prev });
+  const treeDone = after.complete && !lane.complete;
+  const stepDone = delta > 0 && after.nowIdx !== lane.nowIdx;
+  cue(delta < 0 ? 'undo' : treeDone ? 'treeDone' : stepDone ? 'stepDone' : 'allocate');
+  setLastAction(lane, after, after.done - lane.done);
+  if (treeDone) celebrate(after);
+}
+
+function pushUndo(entry) {
+  state.undoStack.push(entry);
+  if (state.undoStack.length > UNDO_LIMIT) state.undoStack.shift();
+}
+
+/** Revert the most recent point change in this phase, whichever tree it was in (Ctrl+Z). */
+function undoLast() {
+  const phase = state.build?.currentPhase;
+  while (state.undoStack.length && state.undoStack[state.undoStack.length - 1].phase !== phase) state.undoStack.pop();
+  const entry = state.undoStack.pop();
+  if (!entry) {
+    toast('Nothing to undo.', { duration: 1800 });
+    return;
+  }
+  const before = lanes()[entry.lane];
+  state.pinned = null;
+  state.focusLane = entry.lane;
+  if (commit(setTrackProgress(state.build, entry.lane, entry.prev), { lanes: [entry.lane] })) {
+    const after = lanes()[entry.lane];
+    setLastAction(before, after, after.done - before.done, { undone: true });
+  } else {
+    renderStatusbar();
+  }
+}
+
+/** Status bar chip: what the last key press did, so a global press can be checked at a glance. */
+function setLastAction(before, after, amount, { undone = false } = {}) {
+  if (!amount) return;
+  // Added points: the step they went into. Removed: the step they came out of.
+  const step = amount > 0 ? before.now : (after.now ?? after.steps[after.steps.length - 1]);
+  let detail = step?.name ?? '';
+  if (amount > 0 && step?.maxPoints) {
+    const inNode = step.nodeTotalAfter - step.count + Math.min(step.count, step.pointsDone + amount);
+    detail += ` ${inNode}/${step.maxPoints}`;
+  }
+  state.lastAction = {
+    lane: after.index,
+    sign: amount > 0 ? '+' : '−',
+    amount: Math.abs(amount),
+    title: after.title,
+    detail,
+    undone,
+    accent: laneAccent(after),
+    complete: after.complete,
+  };
+  renderStatusbar();
+}
+
+/** Tree complete → toast; whole phase complete → offer the next phase. */
+function celebrate(lane) {
+  const all = lanes();
+  const phaseDone = all.every(l => l.complete || l.unresolved);
+  const v = state.view;
+  if (!phaseDone) {
+    toast(`${lane.title}${lane.type === 'passive' ? ' passives' : ''} complete ✓`, { kind: 'success' });
+    return;
+  }
+  const nextPhase = v.phases[v.currentPhase + 1];
+  if (nextPhase) {
+    toast(`${v.phases[v.currentPhase].name} complete — every tree is done.`, {
+      kind: 'success',
+      duration: 12000,
+      action: { label: `Go to ${nextPhase.name}`, run: () => gotoPhase(nextPhase.index) },
+    });
+  } else {
+    toast(`Build complete — all ${v.total} points allocated. GG!`, { kind: 'success', duration: 8000 });
   }
 }
 
@@ -158,6 +265,7 @@ function setCurrent(laneIdx, stepIdx) {
   state.focusLane = laneIdx;
   if (commit(setTrackProgress(state.build, laneIdx, stepStartProgress(track, stepIdx)), { lanes: [laneIdx] })) {
     const lane = lanes()[laneIdx];
+    pushUndo({ phase, lane: laneIdx, prev: previousStep });
     toast(`${lane.title}: now at step ${stepIdx + 1} of ${lane.steps.length}.`, {
       // Undo only this tree's progress — never clobber points allocated elsewhere since.
       action: {
@@ -183,6 +291,9 @@ function gotoPhase(to) {
   state.pinned = null;
   state.hover = null;
   state.focusLane = 0;
+  state.lastAction = null;
+  // Carry-over rewrites the target phase's progress: its old undo entries no longer apply.
+  state.undoStack = state.undoStack.filter(u => u.phase !== to);
   commit({ ...b, currentPhase: to, phases: applyCarryOver(b.phases, from, to) });
   if (transition.unspecNeeded.length) {
     state.transition = transition;
@@ -197,6 +308,8 @@ function gotoPhase(to) {
       run: () => {
         if (state.build.currentPhase !== to) return;
         dismissTransition();
+        state.undoStack = state.undoStack.filter(u => u.phase !== to);
+        state.lastAction = null;
         commit({ ...state.build, currentPhase: from, phases: state.build.phases.map((p, i) => (i === to ? targetBefore : p)) });
       },
     },
@@ -214,6 +327,23 @@ function setUiScale(scale) {
   saveSettings({ ...state.settings, display: { ...state.settings.display, uiScale } }).then(r => {
     if (r.ok) toast(`Interface size ${Math.round(uiScale * 100)}%`, { duration: 1500 });
   });
+}
+
+function resetHistory() {
+  state.undoStack = [];
+  state.lastAction = null;
+}
+
+/** Full window ↔ mini mode. Main resizes the window; the renderer swaps layouts. */
+async function toggleMiniMode() {
+  const mode = isCompact() ? 'full' : 'compact';
+  const res = await api.setWindowMode(mode);
+  if (!res.ok) return toast(`Couldn’t switch layout: ${res.error}`, { kind: 'error' });
+  state.settings = res.settings;
+  state.pinned = null;
+  state.hover = null;
+  renderAll();
+  requestAnimationFrame(() => revealAll(false));
 }
 
 function toggleOnTop() {
@@ -248,6 +378,7 @@ function showLoadout() {
       state.hover = null;
       state.focusLane = 0;
       state.transition = null;
+      resetHistory();
       state.build = null; // force full render
       commit(normalizeBuild(build));
       renderBanner();
@@ -270,6 +401,7 @@ function showSettings() {
 async function loadExample() {
   const res = await api.loadExample();
   if (!res.ok) return toast(`Couldn’t load the example: ${res.error}`, { kind: 'error' });
+  resetHistory();
   state.build = null;
   commit(normalizeBuild(res.build));
   toast('Example build loaded — replace it with yours any time (Ctrl+O).');
@@ -280,12 +412,14 @@ async function loadExample() {
 function onGlobalHotkey(e) {
   if (e.action === 'latch') {
     state.latch = e.active;
+    if (state.settings.display.sound) playCue(e.active ? 'armed' : 'disarmed', state.settings.display.volume);
     renderTopbar();
     return;
   }
   if (!state.build) return;
-  if (e.action === 'advance') allocate(e.trackIndex, +1);
-  else if (e.action === 'undo') allocate(e.trackIndex, -1);
+  const source = e.source ?? 'global';
+  if (e.action === 'advance') allocate(e.trackIndex, +1, { source });
+  else if (e.action === 'undo') allocate(e.trackIndex, -1, { source });
   else if (e.action === 'phase') gotoPhase(state.build.currentPhase + e.direction);
 }
 
@@ -298,9 +432,19 @@ function onKeyDown(e) {
   const ctrl = e.ctrlKey || e.metaKey;
 
   if (ctrl) {
+    // Ctrl+1–6 / Ctrl+Enter: put every remaining point of the step in.
+    const fillDigit = /^(Digit|Numpad)([1-6])$/.exec(e.code);
+    if (fillDigit && state.view && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      if (!e.repeat) allocate(Number(fillDigit[2]) - 1, +1, { fill: true });
+      return;
+    }
     const actions = {
       KeyO: showLoadout,
       Comma: showSettings,
+      KeyM: toggleMiniMode,
+      KeyZ: () => { if (state.view && !e.shiftKey) undoLast(); },
+      Enter: () => { if (state.view && !e.repeat) allocate(state.focusLane, +1, { fill: true }); },
       Equal: () => setUiScale(state.settings.display.uiScale + 0.1),
       NumpadAdd: () => setUiScale(state.settings.display.uiScale + 0.1),
       Minus: () => setUiScale(state.settings.display.uiScale - 0.1),
@@ -310,13 +454,24 @@ function onKeyDown(e) {
     if (actions[e.code]) { e.preventDefault(); actions[e.code](); }
     return;
   }
-  if (isTyping(e.target) || !state.view || e.altKey) return;
+  if (isTyping(e.target) || e.altKey) return;
 
+  // Shortcut sheet: "?" anywhere, F1 when F-keys aren't the lane keys.
+  if (e.key === '?' || (e.code === 'F1' && state.settings?.hotkeys.laneKeys !== 'fkeys')) {
+    e.preventDefault();
+    showHelp();
+    return;
+  }
+  if (!state.view) return;
+
+  // Lane keys: digits always; the in-game lane keys (F1–F6 / numpad) too, so
+  // the same fingers work whether the game or this window has focus.
   const digit = /^(Digit|Numpad)([1-6])$/.exec(e.code);
-  if (digit) {
+  const laneKeyIdx = laneFromCode(state.settings.hotkeys, e.code);
+  if (digit || laneKeyIdx >= 0) {
     e.preventDefault();
     if (e.repeat) return; // holding a key must never burn through points
-    allocate(Number(digit[2]) - 1, e.shiftKey ? -1 : +1);
+    allocate(digit ? Number(digit[2]) - 1 : laneKeyIdx, e.shiftKey ? -1 : +1);
     return;
   }
 
@@ -357,6 +512,8 @@ function onKeyDown(e) {
       if (!e.repeat) allocate(focus, -1);
       break;
     case 'Escape':
+      // Never leaves mini mode: Esc is the game's menu key, a stray press must not
+      // blow the window up over the game.
       if (state.pinned) unpin();
       else if (state.transition) dismissTransition();
       break;
@@ -388,6 +545,7 @@ function pin(laneIdx, stepIdx, { reveal = false } = {}) {
 function renderAll() {
   refreshView();
   document.body.classList.toggle('has-build', !!state.view);
+  document.body.classList.toggle('is-compact', isCompact());
   document.title = state.build ? `${state.build.name} — LE Build Planner` : 'LE Build Planner';
   renderTopbar();
   renderBanner();
@@ -400,6 +558,7 @@ function renderTopbar() {
   const actions = h('div.top-actions',
     state.latch ? h('span.latch-pill', { title: 'Global number keys are armed' }, h('span.pulse'), 'Hotkeys armed') : null,
     h('button.btn.btn-secondary', { type: 'button', onclick: showLoadout, title: 'Load build (Ctrl+O)' }, ui('upload', { size: 16 }), h('span.btn-text', v ? 'Load build' : 'Load')),
+    h('button.btn-icon', { type: 'button', onclick: toggleMiniMode, title: 'Mini mode — small, always on top (Ctrl+M)', 'aria-label': 'Switch to mini mode' }, ui('shrink', { size: 18 })),
     h('button.btn-icon', {
       type: 'button', onclick: toggleOnTop,
       class: state.settings?.display.alwaysOnTop ? 'is-on' : '',
@@ -409,6 +568,11 @@ function renderTopbar() {
     }, ui('pin', { size: 18 })),
     h('button.btn-icon', { type: 'button', onclick: showSettings, title: 'Settings (Ctrl+,)', 'aria-label': 'Settings' }, ui('gear', { size: 18 })),
   );
+
+  if (isCompact()) {
+    mount(els.topbar, miniTopbar(v));
+    return;
+  }
 
   if (!v) {
     mount(els.topbar, h('div.brand', h('span.brand-mark', ui('sparkles', { size: 18 })), h('span.brand-name', 'LE Build Planner')), h('div.top-spacer'), actions);
@@ -441,6 +605,27 @@ function renderTopbar() {
       h('div.overall-text', h('b', `${v.done} / ${v.total}`), h('span', 'points this phase'))),
     actions,
   );
+}
+
+/** Mini mode header: phase (with arrows) · points · expand / settings. */
+function miniTopbar(v) {
+  const multi = v && v.phases.length > 1;
+  const arrow = (dir) => h('button.btn-icon.btn-xs', {
+    type: 'button', 'aria-label': dir < 0 ? 'Previous phase' : 'Next phase',
+    onclick: () => gotoPhase(v.currentPhase + dir),
+  }, ui(dir < 0 ? 'chevronLeft' : 'chevronRight', { size: 14 }));
+  return [
+    h('div.mini-head',
+      multi ? arrow(-1) : null,
+      h('div.mini-phase', { title: v ? `${v.name} · ${v.classLabel}` : '' },
+        h('span.mini-phase-name', v ? (multi ? v.phases[v.currentPhase].name : v.name) : 'LE Build Planner'),
+        v ? h('span.mini-phase-pts', `${v.done}/${v.total}`) : null),
+      multi ? arrow(+1) : null),
+    state.latch ? h('span.latch-pill.is-mini', { title: 'Global lane keys are armed' }, h('span.pulse')) : null,
+    h('div.top-spacer'),
+    h('button.btn-icon.btn-xs', { type: 'button', onclick: toggleMiniMode, title: 'Full window (Ctrl+M)', 'aria-label': 'Back to the full window' }, ui('expand', { size: 15 })),
+    h('button.btn-icon.btn-xs', { type: 'button', onclick: showSettings, title: 'Settings (Ctrl+,)', 'aria-label': 'Settings' }, ui('gear', { size: 15 })),
+  ];
 }
 
 function renderBanner() {
@@ -484,12 +669,22 @@ function renderWorkspace() {
 }
 
 function laneElement(lane) {
+  if (isCompact()) {
+    return renderMiniLane(lane, {
+      keyLabel: hotkeyLabel(lane.index),
+      focused: lane.index === state.focusLane,
+      onAllocate: () => allocate(lane.index, +1),
+      onUndo: () => allocate(lane.index, -1),
+    });
+  }
   return renderLane(lane, {
     focused: lane.index === state.focusLane,
     selectedIdx: state.pinned?.lane === lane.index ? state.pinned.step : null,
     hotkeyLabel: hotkeyLabel(lane.index),
+    undoLabel: hotkeyLabel(lane.index, 'undo'),
     onAllocate: () => allocate(lane.index, +1),
     onUndo: () => allocate(lane.index, -1),
+    onFill: () => allocate(lane.index, +1, { fill: true }),
     onSelect: (stepIdx) => pin(lane.index, stepIdx),
     onHover: (stepIdx) => {
       const next = stepIdx == null ? null : { lane: lane.index, step: stepIdx };
@@ -527,7 +722,7 @@ function revealAll(smooth) {
 }
 
 function flashLane(i) {
-  const el = laneEl(i)?.querySelector('.lane-now');
+  const el = laneEl(i)?.querySelector('.lane-now, .mini-hit');
   if (!el) return;
   el.classList.remove('flash');
   void el.offsetWidth;
@@ -542,7 +737,7 @@ function unpin() {
 }
 
 function renderInspectorPanel() {
-  if (!state.view) return;
+  if (!state.view || isCompact()) return;
   // On narrow windows the inspector is a drawer, open while a node is pinned.
   els.workspace.classList.toggle('is-inspecting', !!state.pinned);
   const ctx = inspectorContext();
@@ -560,20 +755,25 @@ function renderInspectorPanel() {
 
 function renderStatusbar() {
   const hk = state.settings?.hotkeys;
+  const global = !!hk?.enabled;
   const legend = [];
   const item = (keys, label) => h('span.legend-item', keys, h('span', label));
-  const range = (mod) => [mod ? [keycap(mod), h('span.plus', '+')] : null, keycap('1'), h('span.dash', '–'), keycap('6')];
+  // "[mod] + [F1] – [F6]": in-game keys when global hotkeys are on, in-app digits otherwise.
+  const range = (mod) => {
+    const k = (i) => prettyAccelerator(global ? laneKey(hk, i) : String(i + 1));
+    return [mod ? [keycap(mod), h('span.plus', '+')] : null, keycap(k(0)), h('span.dash', '–'), keycap(k(5))];
+  };
 
   if (state.view) {
-    if (hk?.enabled && hk.hotkeyMode === 'latch') legend.push(item([keycap(prettyAccelerator(hk.latchKey))], 'arm'));
-    legend.push(item(range(hk?.enabled ? hk.advanceModifier : ''), 'allocate'));
-    legend.push(item(range(hk?.enabled ? hk.undoModifier || 'Shift' : 'Shift'), 'undo'));
-    if (state.view.phases.length > 1 && hk?.enabled && hk.phaseNextKey) legend.push(item([keycap(prettyAccelerator(hk.phaseNextKey))], 'next phase'));
-    if (hk?.enabled && hk.toggle) legend.push(item([keycap(prettyAccelerator(hk.toggle))], 'show / hide'));
+    if (global && hk.hotkeyMode === 'latch') legend.push(item([keycap(prettyAccelerator(hk.latchKey))], 'arm'));
+    legend.push(item(range(global ? hk.advanceModifier : ''), 'allocate'));
+    legend.push(item(range(global ? hk.undoModifier || 'Shift' : 'Shift'), 'undo'));
+    if (state.view.phases.length > 1 && global && hk.phaseNextKey) legend.push(item([keycap(prettyAccelerator(hk.phaseNextKey))], 'next phase'));
+    if (global && hk.toggle) legend.push(item([keycap(prettyAccelerator(hk.toggle))], 'show / hide'));
   }
 
   const notes = [];
-  if (state.view && !hk?.enabled) notes.push(h('span.note', 'Global hotkeys off'));
+  if (state.view && !global) notes.push(h('span.note', 'Global hotkeys off'));
   if (state.failedHotkeys.length) {
     notes.push(h('button.note.note-warn', { type: 'button', onclick: showSettings, title: 'Open settings' },
       ui('alert', { size: 13 }), `Hotkey unavailable: ${state.failedHotkeys.map(prettyAccelerator).join(', ')}`));
@@ -582,11 +782,81 @@ function renderStatusbar() {
     notes.push(h('span.note.note-error', { title: `Missing in db/data/: ${state.missingData.join(', ')} — run python extractor/extract.py` },
       ui('alert', { size: 13 }), 'Game data missing'));
   }
+  notes.push(h('button.note.note-help', { type: 'button', onclick: showHelp, title: 'Keyboard shortcuts (?)', 'aria-label': 'Keyboard shortcuts' }, ui('keyboard', { size: 14 }), h('span.note-help-text', 'Shortcuts')));
 
   mount(els.statusbar,
-    h('div.legend', legend.length ? [h('span.legend-scope', hk?.enabled ? 'In game' : 'In app'), legend] : null),
+    lastActionChip(),
+    h('div.legend', legend.length ? [h('span.legend-scope', global ? 'In game' : 'In app'), legend] : null),
     h('div.notes', notes),
   );
+}
+
+/** "+1 Flay · Go For The Throat 2/3  [Undo]" — confirms what the last key press did. */
+function lastActionChip() {
+  const a = state.lastAction;
+  if (!a || !state.view) return null;
+  const canUndo = state.undoStack.some(u => u.phase === state.build.currentPhase);
+  return h('div.last-action', { style: { '--accent': a.accent }, role: 'status', title: a.undone ? 'Undone' : 'Last change' },
+    h('span.last-delta', { class: a.sign === '+' ? 'is-add' : 'is-remove' }, `${a.sign}${a.amount}`),
+    h('span.last-text',
+      h('b', a.title),
+      a.detail ? h('span.last-detail', ` · ${a.detail}`) : null,
+      a.complete ? h('span.last-done', ' ✓') : null),
+    canUndo ? h('button.last-undo', { type: 'button', onclick: undoLast, title: 'Undo the last change (Ctrl+Z)' }, ui('undo', { size: 13 }), h('span', 'Undo')) : null,
+  );
+}
+
+// ─── Shortcut sheet ───────────────────────────────────────────────────────────
+
+function showHelp() {
+  const dialog = els['dlg-help'];
+  if (dialog.open) return;
+  const hk = state.settings.hotkeys;
+  const k = (acc) => acc.split('+').map((p, i) => [i ? h('span.plus', '+') : null, keycap(prettyAccelerator(p), 'key-sm')]);
+  const row = (keys, label) => h('div.help-row', h('span.help-keys', keys), h('span.help-label', label));
+  const lanes = (kind) => [k(laneKeyLabel(hk, 0, kind).replace(/ /g, '')), h('span.dash', '–'), k(prettyAccelerator(laneKey(hk, 5)).replace(/ /g, ''))];
+
+  const inGame = hk.enabled
+    ? [
+      hk.hotkeyMode === 'latch' ? row(k(hk.latchKey), 'Arm the lane keys for 5 s') : null,
+      row(lanes('adv'), 'Allocate the next point in lane 1–6'),
+      row(lanes('undo'), 'Undo the last point in that lane'),
+      hk.phaseNextKey ? row(k(hk.phaseNextKey), 'Next phase') : null,
+      hk.phasePrevKey ? row(k(hk.phasePrevKey), 'Previous phase') : null,
+      hk.toggle ? row(k(hk.toggle), 'Show / hide this window') : null,
+    ]
+    : [h('p.help-off', 'Global hotkeys are off — turn them on in Settings to allocate without leaving the game.')];
+
+  const inApp = [
+    row([keycap('1', 'key-sm'), h('span.dash', '–'), keycap('6', 'key-sm'), hk.laneKeys !== 'digits' ? [h('span.help-or', 'or'), keycap(LANE_KEYSET_LABELS[hk.laneKeys], 'key-sm')] : null], 'Allocate (Shift = undo)'),
+    row(k('Ctrl+1'), 'Fill: every remaining point of the step (Ctrl+1–6)'),
+    row(k('Ctrl+Z'), 'Undo the last change, in any tree'),
+    row([keycap('↑', 'key-sm'), keycap('↓', 'key-sm')], 'Focus a tree'),
+    row([keycap('←', 'key-sm'), keycap('→', 'key-sm')], 'Browse its steps'),
+    row([keycap('Enter', 'key-sm')], 'Allocate in the focused tree'),
+    row(k('PageDown'), 'Next phase (PageUp: previous)'),
+    row(k('Ctrl+M'), 'Mini mode ↔ full window'),
+    row(k('Ctrl+O'), 'Load build'),
+    row(k('Ctrl+,'), 'Settings'),
+    row([keycap('Ctrl', 'key-sm'), h('span.plus', '+'), keycap('+', 'key-sm'), keycap('−', 'key-sm')], 'Interface size'),
+  ];
+
+  mount(dialog,
+    h('div.dialog-card.dialog-help',
+      h('header.dialog-head',
+        h('h2', 'Shortcuts'),
+        h('button.btn-icon', { type: 'button', 'aria-label': 'Close', onclick: () => dialog.close() }, ui('x', { size: 18 }))),
+      h('div.dialog-body',
+        h('section.dialog-section', h('h3', 'While playing'), inGame),
+        h('section.dialog-section', h('h3', 'In this window'), inApp)),
+      h('footer.dialog-foot',
+        h('div.dialog-status'),
+        h('div.dialog-foot-actions',
+          h('button.btn.btn-secondary', { type: 'button', onclick: () => { dialog.close(); showSettings(); } }, ui('gear', { size: 15 }), 'Change keys'),
+          h('button.btn.btn-primary', { type: 'button', onclick: () => dialog.close() }, 'Got it'))),
+    ),
+  );
+  dialog.showModal();
 }
 
 function emptyState() {
@@ -598,7 +868,7 @@ function emptyState() {
       h('ol.empty-steps',
         h('li', h('b', 'Copy'), ' the export codes from your Maxroll planner (or the in-game export).'),
         h('li', h('b', 'Paste'), ' them into ', h('i', 'Load build'), '. Add phases for leveling and endgame.'),
-        h('li', h('b', 'Allocate'), ' in game, then press the lane’s number key — even while the game has focus.')),
+        h('li', h('b', 'Allocate'), ' in game, then press the lane’s key (', h('b', state.settings?.hotkeys.enabled ? LANE_KEYSET_LABELS[state.settings.hotkeys.laneKeys] : '1–6'), ') — even while the game has focus.')),
       h('div.empty-actions',
         h('button.btn.btn-primary.btn-lg', { type: 'button', onclick: showLoadout }, ui('upload', { size: 18 }), 'Load build', h('kbd.key.key-sm.key-on-primary', 'Ctrl O')),
         h('button.btn.btn-ghost.btn-lg', { type: 'button', onclick: loadExample }, 'Try the example build')),
@@ -609,7 +879,14 @@ function emptyState() {
 // ─── Toasts ───────────────────────────────────────────────────────────────────
 
 function toast(message, { kind = 'info', action = null, duration = action ? 6000 : 3200 } = {}) {
-  const el = h(`div.toast.toast-${kind}`, { role: 'status' },
+  // The same message again (e.g. a lane key hammered on a finished tree) refreshes
+  // the existing toast instead of stacking copies that push useful ones out.
+  const same = [...els.toasts.children].find(t => t.dataset.msg === message && !t.classList.contains('is-leaving'));
+  if (same && !action) {
+    same.restartTimer(duration);
+    return;
+  }
+  const el = h(`div.toast.toast-${kind}`, { role: 'status', dataset: { msg: message } },
     h('span.toast-msg', message),
     action ? h('button.toast-action', { type: 'button', onclick: () => { action.run(); remove(); } }, action.label) : null,
     h('button.toast-x', { type: 'button', 'aria-label': 'Dismiss', onclick: () => remove() }, ui('x', { size: 14 })),
@@ -618,10 +895,16 @@ function toast(message, { kind = 'info', action = null, duration = action ? 6000
     el.classList.add('is-leaving');
     setTimeout(() => el.remove(), 180);
   }
-  // Keep at most 3 toasts.
-  while (els.toasts.children.length >= 3) els.toasts.firstElementChild.remove();
+  let timer = null;
+  el.restartTimer = (ms) => { clearTimeout(timer); timer = setTimeout(remove, ms); };
+  if (action) el.classList.add('has-action');
+  // Keep at most 3 toasts; evict plain ones first so an offer like "Go to Endgame"
+  // survives a burst of key presses.
+  while (els.toasts.children.length >= 3) {
+    (els.toasts.querySelector('.toast:not(.has-action)') ?? els.toasts.firstElementChild).remove();
+  }
   els.toasts.append(el);
-  setTimeout(remove, duration);
+  el.restartTimer(duration);
 }
 
 boot();

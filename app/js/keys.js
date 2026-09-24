@@ -41,11 +41,8 @@ export function eventToAccelerator(e) {
   return [...mods, key].join('+');
 }
 
-/** Pretty label for an accelerator (keeps it short for keycaps). */
-export function prettyAccelerator(acc) {
-  if (!acc) return '—';
-  return acc.replace(/num(\d)/, 'Num $1').replace('Super', 'Win');
-}
+/** Pretty label for an accelerator (keeps it short for keycaps) — see shared/hotkey-scheme.js. */
+export const prettyAccelerator = (acc) => window.HotkeyScheme.prettyAccelerator(acc);
 
 /**
  * A button that records the next key combo pressed.

@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('api', {
 
   saveSettings: (settings) => invoke('settings:save', settings),
   pauseHotkeys: (paused) => invoke('hotkeys:pause', { paused }),
+  setWindowMode: (mode) => invoke('window:setMode', { mode }),
 
   listTemplates: () => invoke('templates:list'),
   saveTemplate: (loadoutName, phases) => invoke('templates:save', { loadoutName, phases }),

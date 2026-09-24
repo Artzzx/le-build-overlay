@@ -1,0 +1,108 @@
+/*
+ * app/styles/mini.css — mini mode (body.is-compact).
+ * A small always-on-top window parked over the game: one row per tree, read
+ * in a glance. Everything that isn't "what's next" is hidden.
+ */
+
+body.is-compact {
+  background: var(--bg);
+  font-size: var(--fs-sm);
+}
+
+/* Shell */
+.is-compact .topbar { min-height: 38px; padding: 4px 6px 4px 8px; gap: 6px; flex-wrap: nowrap; backdrop-filter: none; }
+.is-compact .banner-slot { padding: 6px 6px 0; }
+.is-compact .banner { padding: 8px 10px; gap: 8px; font-size: var(--fs-xs); }
+.is-compact .banner > svg { display: none; }
+.is-compact .workspace { grid-template-columns: minmax(0, 1fr); padding: 6px; gap: 0; }
+.is-compact .inspector { display: none; }
+.is-compact .lanes { gap: 4px; padding: 0; margin: 0; }
+.is-compact .statusbar { min-height: 0; padding: 4px 6px; gap: 6px; }
+.is-compact .statusbar:not(:has(.last-action, .note-warn, .note-error)) { display: none; }
+.is-compact .legend, .is-compact .note-help, .is-compact .notes > .note:not(.note-warn):not(.note-error) { display: none; }
+.is-compact .last-action { flex: 1; height: 26px; font-size: var(--fs-xs); }
+/* Toasts: one line over the bottom edge, newest only — never a wall over the rows. */
+.is-compact .toasts { left: 6px; right: 6px; bottom: 6px; transform: none; align-items: stretch; }
+.is-compact .toast { max-width: none; padding: 4px 4px 4px 12px; font-size: var(--fs-xs); gap: 6px; }
+.is-compact .toast:not(:last-child) { display: none; }
+.is-compact .toasts:has(.has-action) .toast:not(.has-action) { display: none; }
+.is-compact .toasts:has(.has-action) .toast.has-action { display: flex; }
+.is-compact .toast-msg { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.is-compact .empty-card h1 { font-size: 20px; }
+.is-compact .empty-lead, .is-compact .empty-steps, .is-compact .empty-mark { display: none; }
+
+/* Header */
+.mini-head { display: flex; align-items: center; gap: 2px; min-width: 0; flex: 0 1 auto; }
+.mini-phase { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding: 0 4px; }
+.mini-phase-name { font: 650 var(--fs-md)/1.2 var(--font-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-phase-pts { color: var(--text-3); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
+.latch-pill.is-mini { width: 22px; height: 22px; padding: 0; justify-content: center; }
+
+/* Rows */
+.mini-lane {
+  --accent: var(--gold);
+  --pct: 0;
+  position: relative;
+  flex: none;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+/* Progress along the bottom edge, in the tree's colour. */
+.mini-lane::after {
+  content: "";
+  position: absolute; left: 0; bottom: 0; height: 3px;
+  width: calc(var(--pct) * 100%);
+  background: var(--accent);
+  transition: width var(--t-med) var(--ease);
+}
+.mini-lane.is-focused { border-color: color-mix(in srgb, var(--accent) 45%, var(--line-2)); }
+
+.mini-hit {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; min-height: 48px;
+  padding: 6px 10px 8px 8px;
+  border: 0; background: none; text-align: left;
+}
+.mini-hit:hover { background: var(--surface-hover); }
+.mini-hit:active { background: var(--surface-2); }
+.mini-hit .key-lane {
+  flex: none; min-width: 28px; height: 24px; font-size: 12px;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line-2));
+}
+.mini-hit .tile { --size: 34px; }
+.mini-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mini-name { font: 650 var(--fs-md)/1.2 var(--font-display); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-sub { color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-then { color: var(--text-4); }
+.mini-count {
+  flex: none;
+  min-width: 34px; height: 22px; padding: 0 6px;
+  display: grid; place-items: center;
+  border-radius: 6px;
+  background: var(--now-soft); color: var(--now);
+  font-size: var(--fs-xs); font-weight: 800;
+}
+.mini-count.is-multi { background: var(--now); color: var(--now-ink); }
+.mini-hit.flash { animation: flash 520ms var(--ease); }
+
+/* Done / missing trees collapse to one quiet line. */
+.mini-lane.is-complete { background: transparent; border-color: transparent; }
+.mini-lane.is-complete::after { display: none; }
+.mini-lane.is-complete .mini-hit { min-height: 0; padding: 3px 10px 3px 8px; opacity: 0.55; }
+.mini-lane.is-complete .key-lane { height: 20px; min-width: 24px; font-size: 11px; }
+.mini-lane.is-complete .mini-name { font-size: var(--fs-sm); font-weight: 600; }
+.mini-lane.is-complete .mini-count { background: none; color: var(--text-3); font-weight: 600; }
+.mini-state { display: grid; place-items: center; width: 22px; color: var(--now); flex: none; }
+.mini-lane.is-unresolved .mini-state { color: var(--warn); }
+.mini-lane.is-unresolved .mini-hit { opacity: 0.7; }
+
+/* Very small mini windows: drop the "→ then" line, keep the next node. */
+@media (max-height: 260px), (max-width: 290px) {
+  .mini-sub { display: none; }
+  .mini-hit { min-height: 38px; padding: 4px 8px 6px 6px; }
+  .mini-hit .tile { --size: 28px; }
+  .is-compact .statusbar { display: none; }
+}

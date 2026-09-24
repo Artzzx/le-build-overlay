@@ -25,25 +25,39 @@ const path = require('path');
 
 const DEFAULT_SETTINGS = Object.freeze({
   window: { x: null, y: null, width: 1280, height: 860, maximized: false },
-  display: { uiScale: 1, alwaysOnTop: false },
+  // Mini mode keeps its own bounds; x/y null = top-right of the display on first use.
+  compactWindow: { x: null, y: null, width: 340, height: 460 },
+  display: {
+    uiScale: 1,
+    alwaysOnTop: false,       // full mode only — mini mode is always on top
+    mode: 'full',             // 'full' | 'compact' (mini mode)
+    opacity: 0.92,            // mini mode only
+    sound: true,              // audio cue when a global hotkey lands
+    volume: 0.6,
+  },
   hotkeys: {
     enabled: true,
     hotkeyMode: 'direct',     // 'direct' | 'latch'
+    laneKeys: 'fkeys',        // 'fkeys' | 'digits' | 'numpad' — see shared/hotkey-scheme.js
     latchKey: '`',
     advanceModifier: '',      // '' | 'Alt' | 'Ctrl' | 'Shift'
     undoModifier: 'Shift',
-    toggle: 'F1',             // show / hide the window
-    phaseNextKey: 'F6',
-    phasePrevKey: 'Shift+F6',
+    toggle: 'F8',             // show / hide the window
+    phaseNextKey: 'F9',       // F7 left free: a slip off lane 6 must not switch phase
+    phasePrevKey: 'Shift+F9',
   },
 });
 
 const UI_SCALE_MIN = 0.8;
 const UI_SCALE_MAX = 1.6;
 const MODIFIERS = ['', 'Alt', 'Ctrl', 'Shift'];
+const LANE_KEYS = ['fkeys', 'digits', 'numpad'];
+const OPACITY_MIN = 0.35;
+const COMPACT_MIN = { width: 260, height: 180 };
 
 const num = (v, fallback) => (Number.isFinite(v) ? v : fallback);
 const str = (v, fallback) => (typeof v === 'string' ? v : fallback);
+const clamp = (v, lo, hi, fallback) => Math.min(hi, Math.max(lo, num(v, fallback)));
 
 /**
  * Merge a possibly partial / outdated / hand-edited settings object over the
@@ -54,6 +68,7 @@ function mergeSettings(raw) {
   const w = raw?.window ?? {};
   const disp = raw?.display ?? {};
   const hk = raw?.hotkeys ?? {};
+  const cw = raw?.compactWindow ?? {};
   return {
     window: {
       x: Number.isFinite(w.x) ? w.x : null,
@@ -62,13 +77,26 @@ function mergeSettings(raw) {
       height: Math.max(480, num(w.height, d.window.height)),
       maximized: w.maximized === true,
     },
+    compactWindow: {
+      x: Number.isFinite(cw.x) ? cw.x : null,
+      y: Number.isFinite(cw.y) ? cw.y : null,
+      width: Math.max(COMPACT_MIN.width, num(cw.width, d.compactWindow.width)),
+      height: Math.max(COMPACT_MIN.height, num(cw.height, d.compactWindow.height)),
+    },
     display: {
-      uiScale: Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, num(disp.uiScale, d.display.uiScale))),
+      uiScale: clamp(disp.uiScale, UI_SCALE_MIN, UI_SCALE_MAX, d.display.uiScale),
       alwaysOnTop: disp.alwaysOnTop === true,
+      mode: disp.mode === 'compact' ? 'compact' : 'full',
+      opacity: clamp(disp.opacity, OPACITY_MIN, 1, d.display.opacity),
+      sound: disp.sound !== false,
+      volume: clamp(disp.volume, 0, 1, d.display.volume),
     },
     hotkeys: {
       enabled: hk.enabled !== false,
       hotkeyMode: hk.hotkeyMode === 'latch' ? 'latch' : 'direct',
+      // Settings saved before lane keys existed used bare digits (and F1 for show/hide,
+      // which would now collide with lane 1) — keep them on digits. Fresh installs get F-keys.
+      laneKeys: LANE_KEYS.includes(hk.laneKeys) ? hk.laneKeys : (raw?.hotkeys ? 'digits' : d.hotkeys.laneKeys),
       latchKey: str(hk.latchKey, d.hotkeys.latchKey),
       advanceModifier: MODIFIERS.includes(hk.advanceModifier) ? hk.advanceModifier : d.hotkeys.advanceModifier,
       undoModifier: MODIFIERS.includes(hk.undoModifier) ? hk.undoModifier : d.hotkeys.undoModifier,
@@ -214,4 +242,4 @@ function createStore({ dir, legacyDir = null, log = console }) {
   };
 }
 
-module.exports = { createStore, mergeSettings, DEFAULT_SETTINGS, UI_SCALE_MIN, UI_SCALE_MAX };
+module.exports = { createStore, mergeSettings, DEFAULT_SETTINGS, UI_SCALE_MIN, UI_SCALE_MAX, OPACITY_MIN, COMPACT_MIN };
