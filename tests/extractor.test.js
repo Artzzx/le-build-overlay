@@ -132,3 +132,46 @@ describe('extract.py', { skip: !PYTHON && 'python3 not installed' }, () => {
     fs.rmSync(bare, { recursive: true, force: true });
   });
 });
+
+// Mirrors the real export: `iconFile: "<spriteId>.png"` against the committed,
+// flat, already-converted db/data/icons/<spriteId>.webp folder.
+describe('extract.py — real export layout (iconFile + committed icons)', { skip: !PYTHON && 'python3 not installed' }, () => {
+  const REAL_ICONS = path.join(__dirname, '..', 'db', 'data', 'icons');
+  const realIcons = fs.existsSync(REAL_ICONS) ? fs.readdirSync(REAL_ICONS).filter(f => f.endsWith('.webp')).slice(0, 3) : [];
+  let dir;
+  before(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'le-extract-real-')); });
+  after(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  test('"<id>.png" iconFile values resolve to the committed <id>.webp files', { skip: realIcons.length < 3 && 'no committed icons' }, () => {
+    const ids = realIcons.map(f => f.replace('.webp', ''));
+    const exportRow = (nodeID, iconFile) => ({
+      sourceType: 'SkillTreeNode', nodeID, nodeName: `Node ${nodeID}`, description: 'x', maxPoints: 1,
+      treeID: 'mush9', iconFile,
+      treeFile: 'Tree.json', treeRawFields: { $treeType: 'Tree', treeID: 'mush9' },
+      stats: [{ statName: 'Projectiles Can Hit The Same Target', value: '' }],
+    });
+    const rows = [
+      ...PASSIVES,
+      exportRow(28, `${ids[0]}.png`),
+      exportRow(29, `${ids[1]}.png`),
+      exportRow(30, `${ids[1]}.png`),          // icons are shared between nodes
+      exportRow(31, `${ids[2]}.PNG`),
+      exportRow(32, '999999999.png'),          // not in the folder
+    ];
+    const input = path.join(dir, 'nodes_flat.json');
+    fs.writeFileSync(input, JSON.stringify(rows));
+    const res = spawnSync(PYTHON, [SCRIPT, '--input', input, '--out-dir', path.join(dir, 'out'), '--icons-dir', REAL_ICONS], { encoding: 'utf8' });
+    assert.equal(res.status, 0, res.stderr);
+    const skills = JSON.parse(fs.readFileSync(path.join(dir, 'out', 'skill_tree_reconciled.json'), 'utf8'));
+    assert.deepEqual(skills.map(s => s.icon), [`${ids[0]}.webp`, `${ids[1]}.webp`, `${ids[1]}.webp`, `${ids[2]}.webp`, null]);
+    assert.match(res.stdout, /icons: 4\/\d+ nodes have an icon \(4 from icon values/);
+    assert.doesNotMatch(res.stdout, /not WebP/);
+  });
+
+  test('icon-looking fields that are not read are called out', () => {
+    const rows = [...PASSIVES, row('es6ai', 3, 'Plain', { spriteName: 'abc.png' })];
+    const { status, stdout } = run(dir, rows);
+    assert.equal(status, 0);
+    assert.match(stdout, /icon-like fields that are not read: \['spriteName'\]/);
+  });
+});
