@@ -66,10 +66,10 @@ function nowMeta(step) {
   return parts.join(' · ');
 }
 
-function nowCard(lane, { hotkeyLabel, onAllocate, onUndo, onSelect }) {
+function nowCard(lane, { hotkeyLabel, undoLabel, onAllocate, onUndo, onFill, onSelect }) {
   const undo = h('button.btn-icon.btn-undo', {
     type: 'button',
-    title: `Undo last point (Shift+${hotkeyLabel})`,
+    title: `Undo last point (${undoLabel})`,
     'aria-label': `Undo last point in ${lane.title}`,
     disabled: lane.unresolved || lane.done === 0,
     onclick: onUndo,
@@ -101,6 +101,16 @@ function nowCard(lane, { hotkeyLabel, onAllocate, onUndo, onSelect }) {
   }
 
   const { now, next } = lane;
+  const left = now.count - now.pointsDone;
+  // Multi-point steps: one click puts in every remaining point of this step.
+  const fill = left > 1
+    ? h('button.btn-fill', {
+      type: 'button',
+      title: `Allocate all ${left} remaining points of this step (Ctrl+${lane.hotkey})`,
+      'aria-label': `Allocate all ${left} remaining points of ${now.name}`,
+      onclick: onFill,
+    }, `Fill ×${left}`)
+    : null;
   return h('div.lane-now',
     h('div.now-label', h('span.pulse'), 'Next up'),
     h('div.now-body',
@@ -122,7 +132,7 @@ function nowCard(lane, { hotkeyLabel, onAllocate, onUndo, onSelect }) {
           'aria-label': `Allocate ${now.name}`,
           onclick: onAllocate,
         }, ui('plus', { size: 18, stroke: 2.5 }), h('span.btn-allocate-label', 'Allocate')),
-        undo,
+        h('div.now-sub-actions', fill, undo),
       ),
     ),
   );
@@ -164,7 +174,7 @@ function pathStrip(lane, { selectedIdx, onSelect, onHover }) {
 
 /**
  * @param {object} lane   — from ViewModel.buildLane
- * @param {object} opts   — { focused, selectedIdx, hotkeyLabel, onAllocate, onUndo, onSelect, onHover, onFocus }
+ * @param {object} opts   — { focused, selectedIdx, hotkeyLabel, undoLabel, onAllocate, onUndo, onFill, onSelect, onHover, onFocus }
  */
 export function renderLane(lane, opts) {
   const cls = ['lane'];

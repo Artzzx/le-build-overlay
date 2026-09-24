@@ -115,6 +115,20 @@
 
 .hk-preview { margin-top: 8px; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface-2); color: var(--text-2); font-size: var(--fs-sm); line-height: 2; }
 .hk-preview.is-off { color: var(--text-3); }
+.hk-preview.has-conflict { box-shadow: inset 0 0 0 1px rgba(255, 107, 107, 0.45); }
+.hk-conflict { color: var(--danger); }
+.seg-field { flex-wrap: wrap; }
+.seg-field .seg { height: 30px; }
+
+/* Shortcut sheet */
+.dialog-help { width: min(560px, calc(100vw - 32px)); }
+.help-row { display: grid; grid-template-columns: minmax(150px, auto) 1fr; align-items: center; gap: 14px; padding: 6px 0; border-top: 1px solid var(--line); }
+.help-row:first-of-type { border-top: 0; }
+.help-keys { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
+.help-keys .key + .key { margin-left: 4px; }
+.help-label { color: var(--text-2); font-size: var(--fs-sm); }
+.help-or { color: var(--text-4); font-size: var(--fs-xs); margin: 0 6px; }
+.help-off { color: var(--text-3); margin: 0; }
 
 /* ─── Loadout dialog ──────────────────────────────────────────────────────── */
 

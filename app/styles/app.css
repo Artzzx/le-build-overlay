@@ -100,6 +100,7 @@ b { font-weight: 600; }
 .btn-icon:disabled { opacity: 0.3; }
 .btn-icon.is-on { color: var(--now); background: var(--now-soft); }
 .btn-icon.btn-sm { width: 28px; height: 28px; border-radius: var(--r-sm); }
+.btn-icon.btn-xs { width: 26px; height: 26px; border-radius: var(--r-sm); }
 
 /* ─── Top bar ─────────────────────────────────────────────────────────────── */
 
@@ -289,7 +290,8 @@ b { font-weight: 600; }
   color: var(--text-3);
   font-size: var(--fs-sm);
 }
-.legend { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.legend { display: flex; align-items: center; gap: 18px; flex-wrap: nowrap; flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
+.legend-item { flex: none; }
 .legend-scope { color: var(--text-4); font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .legend-item { display: inline-flex; align-items: center; gap: 6px; }
 .legend-item > span:last-child { margin-left: 2px; }
@@ -298,6 +300,37 @@ b { font-weight: 600; }
 .note-warn { color: var(--warn); border-color: rgba(255, 198, 92, 0.35); }
 .note-error { color: var(--danger); border-color: rgba(255, 107, 107, 0.4); }
 button.note:hover { background: var(--surface-2); }
+.note-help { color: var(--text-3); }
+
+/* Last action: confirms at a glance what the last key press did (global presses too). */
+.last-action {
+  --accent: var(--now);
+  display: inline-flex; align-items: center; gap: 8px; min-width: 0; flex: 0 1 auto;
+  height: 28px; padding: 0 4px 0 4px;
+  border-radius: 99px;
+  background: var(--surface-2);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line-2));
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  animation: chip-in var(--t-med) var(--ease);
+}
+.last-delta {
+  display: grid; place-items: center; flex: none;
+  min-width: 30px; height: 20px; padding: 0 6px; border-radius: 99px;
+  font-weight: 800; font-size: var(--fs-xs);
+}
+.last-delta.is-add { background: var(--now); color: var(--now-ink); }
+.last-delta.is-remove { background: var(--surface-3); color: var(--text); }
+.last-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.last-text b { color: color-mix(in srgb, var(--accent) 70%, var(--text)); }
+.last-done { color: var(--now); font-weight: 700; }
+.last-undo {
+  display: inline-flex; align-items: center; gap: 4px; flex: none;
+  height: 22px; padding: 0 9px; border: 0; border-radius: 99px;
+  background: transparent; color: var(--text-3); font-size: var(--fs-xs); font-weight: 700;
+}
+.last-undo:hover { background: var(--surface-3); color: var(--text); }
+@keyframes chip-in { from { opacity: 0.2; transform: translateY(3px); } }
 
 /* ─── Toasts ──────────────────────────────────────────────────────────────── */
 
@@ -345,6 +378,11 @@ button.note:hover { background: var(--surface-2); }
 
 /* ─── Responsive shell ────────────────────────────────────────────────────── */
 
+/* Status bar: keep the legend on one line — the essentials (arm / allocate / undo) stay. */
+@media (max-width: 1320px) {
+  .legend-item:nth-child(n + 5) { display: none; }
+}
+
 /* Below 1180px the inspector is a slide-over drawer, opened by clicking a node. */
 .inspector-close { display: none; }
 
@@ -376,6 +414,7 @@ button.note:hover { background: var(--surface-2); }
   .statusbar { padding: 6px 14px; }
   .legend-scope { display: none; }
   .build-name { max-width: 52vw; }
+  .legend-item:nth-child(n + 4) { display: none; }
 }
 
 @media (max-width: 560px) {
@@ -383,6 +422,6 @@ button.note:hover { background: var(--surface-2); }
   .brand { flex: 1; }
   .top-spacer { display: none; }
   .inspector { top: 64px; right: 8px; left: 8px; bottom: 48px; width: auto; }
-  .legend { gap: 10px; }
-  .legend-item:nth-child(n + 4) { display: none; }
+  .legend { display: none; }
+  .note-help-text { display: none; }
 }

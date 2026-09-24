@@ -116,7 +116,18 @@
 .btn-allocate:hover { background: var(--now); color: var(--now-ink); }
 .btn-allocate:active { transform: scale(0.97); }
 .btn-allocate-label { font-size: 10px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+.now-sub-actions { display: flex; align-items: center; gap: 4px; }
 .btn-undo { width: 30px; height: 26px; }
+.btn-fill {
+  height: 26px; padding: 0 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--now-line);
+  background: transparent;
+  color: var(--now);
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.btn-fill:hover { background: var(--now); color: var(--now-ink); }
 
 .now-complete { background: none; }
 .now-complete .now-label { color: var(--text-3); }
@@ -267,5 +278,6 @@
   .tile-lg { --size: 48px; }
   .now-then { display: none; }
   .btn-allocate { width: 64px; height: 44px; }
+  .btn-fill { padding: 0 6px; }
   .btn-allocate-label { display: none; }
 }

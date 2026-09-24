@@ -8,7 +8,10 @@ Built to be read at a glance while you play:
 
 - **One lane per tree.** Each lane has three parts: the tree and its progress, the node to allocate next (with what comes after it), and the full path as a strip of nodes, like the game's own allocation history bar.
 - **Green always means "allocate this next".** Done nodes fade, and each tree keeps its colour in every phase.
-- **Tick points off without leaving the game.** Global hotkeys work while the game has focus. They're released when the app window is focused, so typing in the app always works.
+- **Tick points off without leaving the game.** `F1`–`F6` allocate in lanes 1–6 while the game has focus, and `Shift` undoes. The game keeps its number keys, and a held key can't burn through points. The keys are released while the app window is focused, so typing in the app always works.
+- **Know it worked without looking.** A short sound confirms each global key press (a tick per point, a chime when a step or tree is done, a buzz when nothing happened). The status bar shows the last change with an **Undo** button.
+- **Mini mode** (`Ctrl`+`M`). A small, always-on-top, see-through window for a corner of the screen, with one line per tree showing the next node and its key. It keeps its own size and position. Finished trees shrink to a single line.
+- **Less clicking.** **Fill ×N** puts every remaining point of a multi-point step in at once. `Ctrl`+`Z` undoes the last change in any tree. When every tree in a phase is done, the app offers to move to the next phase.
 - **Phases.** Leveling → Endgame (up to 5). Switching phases keeps your progress where the trees overlap, and tells you exactly what to respec in game.
 - **Node details.** Description, per-point stats, and the route around any node. *Start from here* catches the app up to a character you've already levelled.
 - **Node icons.** Every node shows its in-game icon (see [Node icons](#node-icons)). Nodes without art get a generated glyph.
@@ -17,15 +20,24 @@ Built to be read at a glance while you play:
 
 | | In game (global) | In the app |
 |---|---|---|
-| Allocate a point | `1`–`6` | `1`–`6`, the **Allocate** button, or `Enter` on the focused tree |
-| Undo a point | `Shift`+`1`–`6` | `Shift`+`1`–`6`, the undo button, or `Backspace` |
-| Next / previous phase | `F6` / `Shift`+`F6` | click the phase, or `PgDn` / `PgUp` |
-| Show / hide the window | `F1` | — |
+| Allocate a point | `F1`–`F6` | `1`–`6` or `F1`–`F6`, the **Allocate** button, or `Enter` on the focused tree |
+| Undo a point | `Shift`+`F1`–`F6` | `Shift`+`1`–`6` / `F1`–`F6`, the undo button, or `Backspace` |
+| Fill the whole step | — | `Ctrl`+`1`–`6`, `Ctrl`+`Enter`, or **Fill ×N** |
+| Undo the last change (any tree) | — | `Ctrl`+`Z` or **Undo** in the status bar |
+| Next / previous phase | `F9` / `Shift`+`F9` | click the phase, or `PgDn` / `PgUp` |
+| Show / hide the window | `F8` | — |
+| Mini mode ↔ full window | — | `Ctrl`+`M` |
 | Move between trees / nodes | — | `↑` `↓` / `←` `→`, `Esc` to go back to Next up |
-| Load build · Settings | — | `Ctrl`+`O` · `Ctrl`+`,` |
+| Load build · Settings · Shortcuts | — | `Ctrl`+`O` · `Ctrl`+`,` · `?` |
 | Interface size | — | `Ctrl`+`=` / `Ctrl`+`-` / `Ctrl`+`0` |
 
-All global keys can be changed in Settings. **Arm first** mode keeps number keys free for game chat: press `` ` ``, then numbers work for 5 s.
+All global keys can be changed in Settings:
+- **Lane keys** can be `F1`–`F6` (the default), `1`–`6`, or numpad `1`–`6`.
+- Settings won't save a key assigned to two actions.
+- Laptops may need **Fn Lock** for the F-keys.
+- If your settings predate lane keys, you stay on `1`–`6` until you switch in Settings. Bare digits are taken away from the game and its chat while the planner runs; **Arm first** mode avoids that: press `` ` ``, then the lane keys work for 5 s.
+
+The window can only stay on top of the game when the game runs in **Windowed** or **Borderless** mode, not exclusive fullscreen.
 
 ---
 
@@ -108,11 +120,12 @@ le-build-overlay/
 │   └── preload.js            ← the only renderer bridge (window.api)
 ├── app/                      ← the UI (vanilla JS modules, no framework, no bundler)
 │   ├── index.html
-│   ├── js/                   ← main, lanes, inspector, dialogs, icons, keys, dom
-│   └── styles/               ← tokens, app shell, lanes, dialogs
+│   ├── js/                   ← main, lanes, mini, inspector, dialogs, feedback (sounds), icons, keys, dom
+│   └── styles/               ← tokens, app shell, lanes, mini, dialogs
 ├── shared/                   ← pure logic, used by main, the UI and the tests
 │   ├── tree-utils.js         ← indexing, grouping, stepping, phase carry-over
-│   └── view-model.js         ← what each lane shows (now / next / steps / colours)
+│   ├── view-model.js         ← what each lane shows (now / next / steps / colours)
+│   └── hotkey-scheme.js      ← lane keys, labels and conflict checks (main + UI)
 ├── parser/                   ← Maxroll paste → normalized multi-phase loadout
 ├── db/                       ← game data loader + db/data/ (node data, classes, icons/)
 ├── extractor/                ← nodes_flat.json → db/data/ (convert_icons.py + extract.py, run per patch)
@@ -263,8 +276,17 @@ Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `ext
 **A hotkey doesn't work**
 The status bar and Settings report any key that couldn't be registered (already taken by another app). Record a different one in Settings.
 
-**Number keys don't reach game chat**
-That's *Direct* mode. Switch to *Arm first* in Settings.
+**Number keys don't reach the game or its chat**
+Your lane keys are `1`–`6` in *Direct* mode, so the planner takes those keys. In Settings, switch **Lane keys** to `F1`–`F6` (or numpad), or use *Arm first*.
+
+**F-keys don't do anything (laptop)**
+Your keyboard sends media keys by default. Turn on **Fn Lock** (often `Fn`+`Esc`), or pick numpad or `1`–`6` + *Arm first* in Settings.
+
+**No sound on hotkeys**
+Check **Settings › Sound** (the **Test** button plays a cue). Sounds play only for global hotkeys, which are pressed while the game has focus; clicks and in-app keys are silent.
+
+**Mini mode isn't see-through**
+Window opacity works on Windows and macOS only, and the game must be Windowed or Borderless.
 
 ---
 
