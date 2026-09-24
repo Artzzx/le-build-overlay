@@ -12,7 +12,7 @@ Built to be read at a glance while you play:
 - **Know it worked without looking.** A short sound confirms each global key press (a tick per point, a chime when a step or tree is done, a buzz when nothing happened). The status bar shows the last change with an **Undo** button.
 - **Mini mode** (`Ctrl`+`M`). A small, always-on-top, see-through window for a corner of the screen, with one line per tree showing the next node and its key. It keeps its own size and position. Finished trees shrink to a single line.
 - **Less clicking.** **Fill ×N** puts every remaining point of a multi-point step in at once. `Ctrl`+`Z` undoes the last change in any tree. When every tree in a phase is done, the app offers to move to the next phase.
-- **Phases.** Leveling → Endgame (up to 5). Switching phases keeps your progress where the trees overlap, and tells you exactly what to respec in game.
+- **Phases.** Leveling → Endgame (up to 5). Every phase must be the same class, but the mastery can change: level as a plain Rogue (mastery 0), then switch to Bladedancer. Switching phases keeps your progress where the trees overlap, and tells you exactly what to respec (and which mastery to pick) in game.
 - **Node details.** Description, per-point stats, and the route around any node. *Start from here* catches the app up to a character you've already levelled.
 - **Node icons.** Every node shows its in-game icon (see [Node icons](#node-icons)). Nodes without art get a generated glyph.
 
@@ -272,6 +272,12 @@ It has no `iconFile` value, or the value matches no file in `db/data/icons/`. `p
 
 **A skill shows its treeID instead of a name**
 Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `extract.py`.
+
+**A skill shows another skill's name or icon (e.g. two lanes called "Flay")**
+The export gave that tree a copy of another tree's root row. `extract.py` detects this, renames the tree and drops the copied icon. Its report lists each fix (`tree bl5st: root "Flay" is copied …`) and any root name its own nodes never mention. Add a `TREE_NAME_OVERRIDES` entry to pin a name. The real fix belongs in the exporter.
+
+**The passive lane shows the wrong mastery**
+Mastery IDs are per class, and only Rogue and Sentinel have been checked against real exports (`db/data/classes.json`, `unverifiedMasteries`). If an Acolyte, Mage or Primalist build shows the wrong mastery, share its export code so the mapping can be fixed. Mastery `0` is the plain class, before choosing a mastery.
 
 **A hotkey doesn't work**
 The status bar and Settings report any key that couldn't be registered (already taken by another app). Record a different one in Settings.

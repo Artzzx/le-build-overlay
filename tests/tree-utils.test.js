@@ -162,7 +162,7 @@ describe('normalizeBuild', () => {
     assert.equal(out.phases[0].tracks, tracks);
   });
   test('passes loadouts through; rejects junk', () => {
-    const l = loadout([{ name: 'P', tracks: [] }]);
+    const l = loadout([{ name: 'P', masteryId: 2, tracks: [] }]);
     assert.equal(normalizeBuild(l), l);
     assert.equal(normalizeBuild(null), null);
     assert.equal(normalizeBuild({}), null);
@@ -215,6 +215,20 @@ describe('commonPrefixLength', () => {
     assert.equal(commonPrefixLength([1, 1, 2, 3], [1, 1, 5]), 2);
     assert.equal(commonPrefixLength([], [1]), 0);
     assert.equal(commonPrefixLength([1, 2], [1, 2]), 2);
+  });
+});
+
+describe('per-phase mastery', () => {
+  test('normalizeBuild backfills phase.masteryId from the loadout', () => {
+    const n = normalizeBuild({ ...loadout([{ name: 'A', tracks: [] }, { name: 'B', masteryId: 0, tracks: [] }]), masteryId: 2 });
+    assert.deepEqual(n.phases.map(p => p.masteryId), [2, 0]);
+    assert.equal(normalizeBuild({ name: 'x', classId: 3, masteryId: 1, tracks: [] }).phases[0].masteryId, 1);
+  });
+
+  test('computeTransition reports a mastery change', () => {
+    const phases = [{ name: 'Leveling', masteryId: 0, tracks: [] }, { name: 'Endgame', masteryId: 1, tracks: [] }];
+    assert.deepEqual(computeTransition(phases, 0, 1).masteryChange, { from: 0, to: 1 });
+    assert.equal(computeTransition([phases[1], phases[1]], 0, 1).masteryChange, null);
   });
 });
 

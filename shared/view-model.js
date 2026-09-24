@@ -44,7 +44,9 @@
     return db?.classes?.classes?.[String(classId)] ?? null;
   }
 
+  /** Mastery name, or null for mastery 0 (no mastery chosen yet — the plain class). */
   function masteryName(db, classId, masteryId) {
+    if (!masteryId) return null;
     return db?.classes?.masteriesByClass?.[String(classId)]?.[String(masteryId)] ?? null;
   }
 
@@ -155,7 +157,10 @@
   function buildView(loadout, db) {
     if (!loadout?.phases?.length) return null;
     const currentPhase = Math.min(Math.max(loadout.currentPhase ?? 0, 0), loadout.phases.length - 1);
-    const ctx = { db, classId: loadout.classId, masteryId: loadout.masteryId };
+    // Mastery is per phase (leveling can be the plain class, mastery 0).
+    const phaseMastery = (p) => (typeof p?.masteryId === 'number' ? p.masteryId : loadout.masteryId);
+    const masteryId = phaseMastery(loadout.phases[currentPhase]);
+    const ctx = { db, classId: loadout.classId, masteryId };
     const slots = colorSlots(loadout);
     const lanes = loadout.phases[currentPhase].tracks.map((t, i) => ({
       ...buildLane(t, i, ctx),
@@ -164,11 +169,17 @@
     const done = lanes.reduce((n, l) => n + l.done, 0);
     const total = lanes.reduce((n, l) => n + l.total, 0);
     const cls = className(db, loadout.classId);
-    const mastery = masteryName(db, loadout.classId, loadout.masteryId);
+    const mastery = masteryName(db, loadout.classId, masteryId);
     return {
       name: loadout.name,
       classLabel: [cls, mastery].filter(Boolean).join(' · ') || `Class ${loadout.classId}`,
-      phases: loadout.phases.map((p, i) => ({ index: i, name: p.name })),
+      masteryId,
+      phases: loadout.phases.map((p, i) => ({
+        index: i,
+        name: p.name,
+        masteryId: phaseMastery(p),
+        masteryName: masteryName(db, loadout.classId, phaseMastery(p)),
+      })),
       currentPhase,
       lanes,
       done,
@@ -186,5 +197,5 @@
     return g ? g.startIdx : track.currentStep;
   }
 
-  return { buildLane, buildView, colorSlots, stepStartProgress };
+  return { buildLane, buildView, colorSlots, stepStartProgress, masteryName };
 }));

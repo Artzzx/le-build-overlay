@@ -4282,7 +4282,399 @@
         "value": "+1"
       }
     ],
-    "icon": "632282.webp"
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 0,
+    "nodeName": "Bladestorm",
+    "description": "",
+    "maxPoints": 0,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 1,
+    "nodeName": "Efficient Manufacturing",
+    "description": "Bladestorms have an increased duration and lower mana cost.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 2,
+    "nodeName": "Razorain",
+    "description": "Directly casting Bladestorm throws up to your maximum number of Bladestorms in a spread in front of you, but Bladestorm has additional mana cost.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Throws Maximum Bladestorms",
+        "value": ""
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+10"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 3,
+    "nodeName": "Hurricane",
+    "description": "Bladestorms have increased movement speed based on your dexterity.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Bladestorm Movement Speed per 1 Dexterity",
+        "value": "+1%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 4,
+    "nodeName": "Momentum",
+    "description": "Bladestorms gain more movement speed (multiplicative with other modifiers) for 1 second if you {Shift} through any part of the Bladestorm.",
+    "maxPoints": 2,
+    "stats": [
+      {
+        "statName": "Bladestorm Movement Speed",
+        "value": "+150%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 5,
+    "nodeName": "Slagstorm",
+    "description": "Each {Umbral Blade} thrown into a Bladestorm is destroyed upon landing to grant the Bladestorm more damage and radius (both multiplicative with other modifiers) for 4 seconds, up to 40 stacks.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Damage per Umbral Blade",
+        "value": "+3%"
+      },
+      {
+        "statName": "Radius per Umbral Blade",
+        "value": "+3%"
+      },
+      {
+        "statName": "Buff Duration (seconds)",
+        "value": "4"
+      },
+      {
+        "statName": "Maximum Stacks",
+        "value": "40"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 6,
+    "nodeName": "Blade Frenzy",
+    "description": "Each Bladestorm created grants stacks of {Blade Frenzy}. Your next direct cast of Shurikens or Umbral Blades consumes all stacks to gain additional throwing damage and projectiles thrown per stack.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 7,
+    "nodeName": "Surge of Steel",
+    "description": "Bladestorms cast {Shurikens} with increased frequency.",
+    "maxPoints": 4,
+    "stats": [
+      {
+        "statName": "Shurikens Frequency",
+        "value": "+12%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 8,
+    "nodeName": "High Carbon Steel",
+    "description": "Bladestorms have a chance to shred armor on hit.",
+    "maxPoints": 4,
+    "stats": [
+      {
+        "statName": "Armor Shred Chance",
+        "value": "+25%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 9,
+    "nodeName": "Shattering",
+    "description": "{Acid Flasks} which explode inside a Bladestorm deal more damage and have more radius (both multiplicative with other modifiers).",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Acid Flask Radius",
+        "value": "+25%"
+      },
+      {
+        "statName": "Acid Flask Damage",
+        "value": "+10%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 10,
+    "nodeName": "Strength of Arms",
+    "description": "Bladestorm has increased area with a two handed melee weapon or bow equipped.\n\nBladestorm has increased hit rate while dual wielding.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 11,
+    "nodeName": "Open the Armory",
+    "description": "Bladestorm has additional critical strike chance per equipped dagger, chance to inflict bleed on hit per equipped one handed sword, and additional critical strike multiplier with a two handed sword.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 12,
+    "nodeName": "Longsword Slash",
+    "description": "Bladestorm has increased area and increased attack speed.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Area",
+        "value": "+15%"
+      },
+      {
+        "statName": "Attack Speed",
+        "value": "+8%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 13,
+    "nodeName": "Steelshaper's Grit",
+    "description": "Bladestorm has additional critical strike chance.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Critical Chance",
+        "value": "+2%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 14,
+    "nodeName": "Heavy Weapon",
+    "description": "Bladestorm deals more damage (multiplicative with other modifiers).",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 15,
+    "nodeName": "Tempered Steel",
+    "description": "Bladestorm deals more hit damage (multiplicative with other modifiers) and has a lower mana cost.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 16,
+    "nodeName": "Nightblade",
+    "description": "Bladestorm has a chance on hit to inflict {Shadow Daggers}. This chance is doubled if the enemy is inside a {Smoke Bomb}.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 17,
+    "nodeName": "Lingering Fragments",
+    "description": "{Blade Detonations} create {Caltrops} in the area. This effect can occur a limited number of times per 2 seconds.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 18,
+    "nodeName": "Armed Response",
+    "description": "You and allies hit by {Blade Detonation} gain Haste for a duration.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 19,
+    "nodeName": "Recovered Fragments",
+    "description": "You gain mana each time you are hit by one of your own {Blade Detonations}.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Mana Gain When Hit By Blade Shatter",
+        "value": "2"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 20,
+    "nodeName": "Sawtooth Blade",
+    "description": "Bladestorm has a chance to inflict bleed on hit.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 21,
+    "nodeName": "Low Slash",
+    "description": "Bladestorm has a chance to slow enemies on hit.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Slow Chance",
+        "value": "+34%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 22,
+    "nodeName": "Magnetic Grip",
+    "description": "Bladestorm slowly seeks out enemies.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 23,
+    "nodeName": "Alloy Animation",
+    "description": "Bladestorms have more movement speed (multiplicative with other modifiers), and multiple Bladestorms can now hit the same target simultaneously.\n\nBladestorm has increased mana cost and duration. Your maximum number of Bladestorms is reduced.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 24,
+    "nodeName": "Shuriken Storm",
+    "description": "Bladestorms repeatedly cast {Shurikens} at enemies within 10 meters of them, consuming 4 mana or Shurikens's mana cost, whichever is higher. This effect is only active while you are above half mana.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 25,
+    "nodeName": "Shadowstorm",
+    "description": "Bladestorms hit by {Shadow Cascade} will instantly hit enemies in their area.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 26,
+    "nodeName": "Blade Detonation",
+    "description": "When your Bladestorms collide, they are destroyed and each cause a {Blade Detonation}.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Blade Detonation when Bladestorms Collide",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 27,
+    "nodeName": "Toxin Dipped",
+    "description": "Bleed chance from all sources is converted to poison chance for Bladestorm.\n\nThis node has no effect if {Frostblade} is allocated.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Bleed -> Poison Conversion",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "bl5st",
+    "treeName": "Bladestorm",
+    "nodeID": 28,
+    "nodeName": "Frostblade",
+    "description": "Bladestorm's base physical damage is converted to cold. Consequently this damage scales with increases to cold, but not increases to physical damage.\n\nBleed chance and poison chance from all sources is converted to frostbite chance.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Physical -> Cold Conversion",
+        "value": ""
+      },
+      {
+        "statName": "Bleed and Poison -> Frostbite Conversion",
+        "value": ""
+      },
+      {
+        "statName": "Freeze Rate",
+        "value": "60"
+      }
+    ],
+    "icon": null
   },
   {
     "treeID": "bc53",
@@ -5279,7 +5671,476 @@
         "value": ""
       }
     ],
-    "icon": "369608.webp"
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 0,
+    "nodeName": "Chthonic Fissure",
+    "description": "",
+    "maxPoints": 0,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 2,
+    "nodeName": "Fragile Crust",
+    "description": "Chthonic Fissure costs less mana and it refunds some of its mana cost if there is a cursed player, rare enemy or boss within 20 meters when you cast it.\n\nThis effect also works if you are Cursed.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 3,
+    "nodeName": "Fell Fire",
+    "description": "{Tormenting} an ignited enemy spreads all of your ignite stacks from it to a number of other enemies around it.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 4,
+    "nodeName": "Stygian Current",
+    "description": "The Fissure releases {Spirits} more frequently.",
+    "maxPoints": 5,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 5,
+    "nodeName": "Of Gloom and Flames",
+    "description": "Chthonic Fissure now creates a secondary Fissure in the opposite direction that casts its own {Spirits}. Enemies can take damage from both Fissures if they stand on both, but Chthonic Fissure costs significantly more mana.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Secondary Fissure",
+        "value": ""
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+80%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 6,
+    "nodeName": "Chaotic Rupture",
+    "description": "{Spirits} now have a chance to be replaced by a cast of {Chaos Bolts} that consumes a portion of its mana cost and scales with your {Chaos Bolts} tree.\n\n{Chaos Bolts} cast this way have a chance to have no additional projectiles.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Chance to replace Spirits with Chaos Bolts",
+        "value": "13%"
+      },
+      {
+        "statName": "Chaos Bolts Mana Consumption",
+        "value": "60%"
+      },
+      {
+        "statName": "Chance for no Extra Projectiles",
+        "value": "60%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 7,
+    "nodeName": "Spirit Gale",
+    "description": "When {Tormented} enemies die they have a chance to release the {Spirit} to inflict and {Torment} another enemy within 8 meters.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 8,
+    "nodeName": "Severed Wards",
+    "description": "The {Spirits'} hits shred enemy necrotic resistance.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Necrotic Res Stacks",
+        "value": "+1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 9,
+    "nodeName": "Singed by Terror",
+    "description": "The {Spirits'} hits shred enemy fire resistance.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Fire Res Shred Stacks",
+        "value": "+1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 10,
+    "nodeName": "Return Below",
+    "description": "When {Spirits} {Torment} an enemy afflicted by an {Infernal Shade} they consume the Shade, causing it to instantly deal its remaining damage and increases all existing Chthonic Fissures' frequency of releasing {Spirits} up to a maximum.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Infernal Shade deals its Remaining Damage",
+        "value": ""
+      },
+      {
+        "statName": "Increased Spirit Frequency",
+        "value": "+15%"
+      },
+      {
+        "statName": "Maximum Spirit Frequency Bonus",
+        "value": "60%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 11,
+    "nodeName": "Damned Waters",
+    "description": "The {Spirits'} hits inflict enemies with {Damned}.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Damned Stacks",
+        "value": "+1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 12,
+    "nodeName": "Grim Tide",
+    "description": "Chthonic Fissure and ailments it inflicts deal more necrotic damage (multiplicative with other modifiers) per 1% Added Critical Strike Multiplier.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Necrotic Damage per 1% Added Crit Multi",
+        "value": "+1%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 13,
+    "nodeName": "Twisted Waves",
+    "description": "{Torment} deals more damage (multiplicative with other modifiers) based on your uncapped necrotic resistance.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Damage per 3% Necrotic Res",
+        "value": "+1%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 14,
+    "nodeName": "Eradication",
+    "description": "Chthonic Fissure deals more damage (multiplicative with other modifiers) to rare enemies and bosses.\n\nThis effect is doubled if the enemy or you are cursed.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 15,
+    "nodeName": "Beacon of Torment",
+    "description": "{Spirits} now target you instead of enemies, and whenever you are {Tormented} or {Torment's} duration on you is refreshed, you gain additional spell damage and Endurance Threshold.\n\nThis buff can stack and has the same duration as {Torment}, but persists if {Torment} is cleansed.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Spell Damage Buff",
+        "value": "+3"
+      },
+      {
+        "statName": "Endurance Threshold Buff",
+        "value": "+15"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 16,
+    "nodeName": "Grasp of the Undying",
+    "description": "The Fissure deals more direct damage for each second it is active (multiplicative with other modifiers) and you leech a portion of the damage it does.",
+    "maxPoints": 4,
+    "stats": [
+      {
+        "statName": "Fissure Direct Damage bonus per Second",
+        "value": "+2%"
+      },
+      {
+        "statName": "Fissure Health Leech",
+        "value": "+0.5%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 17,
+    "nodeName": "The Sunderer's Domain",
+    "description": "You can now have additional Fissures active at a time, but {Spirits} are released less frequently.\n\nIf a Fissure is placed over an existing one, the new Fissure closes after 1 second.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 18,
+    "nodeName": "Deepest Ravine",
+    "description": "Chthonic Fissure deals more damage (multiplicative with other modifiers), but it no longer releases {Spirits}.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Damage",
+        "value": "+25%"
+      },
+      {
+        "statName": "Removes Spirits",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 19,
+    "nodeName": "Rekindled Graves",
+    "description": "Fissures now cast {Volatile Zombies} every 2 seconds, but consumes mana equal to a portion of {Volatile Zombies} mana cost.\n\n{Volatile Zombie} cast this way has a chance to not create multiple {Zombies} if it would otherwise.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Volatile Zombies Mana Consuption",
+        "value": "70%"
+      },
+      {
+        "statName": "Chance for no additional Zombies",
+        "value": "70%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 20,
+    "nodeName": "Death from Below",
+    "description": "Chthonic Fissure deals more damage (multiplicative with other modifiers).\n\nThis effect is doubled if you are cursed.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 21,
+    "nodeName": "Pyrochasm",
+    "description": "The Fissure's initial impact now hits enemies dealing spell fire damage, with added damage applying at 300% effectiveness for this hit.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 22,
+    "nodeName": "Fissure of Wrath",
+    "description": "The Fissure's initial hit now deals additional spell damage with a higher chance to stun per 2% ignite chance.\n\nThis effects scales with bleed or poison if the Fissure is converted to physical or poison respectively.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Fissure Spell Damage per 2% Ignite Chance",
+        "value": "+1"
+      },
+      {
+        "statName": "Fissure Increased Stun Chance per 2% Ignite Chance",
+        "value": "5%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 23,
+    "nodeName": "Forbidden Chasm",
+    "description": "The Fissure's initial hit now Curse enemies with {Acid Skin}, which causes them to take poison damage over time and a chance to be critically struck by any hit.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Acid Skin on Fissure hit",
+        "value": ""
+      },
+      {
+        "statName": "Crit Chance from Acid Skin",
+        "value": "+20%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 24,
+    "nodeName": "Acidbane",
+    "description": "Your hits against enemies cursed by {Acid Skin} have additional base critical strike chance per 10% of your global increased poison damage.\n\nThis bonus critical strike chance is not affected by other critical strike chance modifiers.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Bonus Crit Chance per 10% Inc Poison Damage",
+        "value": "+1%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 25,
+    "nodeName": "Ash Cloud",
+    "description": "The Fissure's initial impact now spreads all of your ignite stacks from the target to nearby enemies up to a maximum.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Fissure Spreads Ignite Stacks",
+        "value": ""
+      },
+      {
+        "statName": "Maximum Targets",
+        "value": "2"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 26,
+    "nodeName": "Chthonic Passage",
+    "description": "When directly casting Chthonic Fissure you now travel along the Fissure as it opens, but this adds a cooldown to Chthonic Fissure.\n\nChthonic Fissure gains the {Traversal} tag.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Travel along Fissure",
+        "value": ""
+      },
+      {
+        "statName": "Counts as Traversal Skill",
+        "value": ""
+      },
+      {
+        "statName": "Cooldown (seconds)",
+        "value": "+3.5"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 27,
+    "nodeName": "Mantle of Flames",
+    "description": "The Fissure gains a percentage of your global chance to ignite on hit as ignite chance per second. \n\nAdditionally, the Fissure has a base chance to ignite enemies each second.",
+    "maxPoints": 4,
+    "stats": [
+      {
+        "statName": "Your Ignite Chance -> Ignite Chance per Second",
+        "value": "100%"
+      },
+      {
+        "statName": "Ignite Chance per Second",
+        "value": "+50%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 28,
+    "nodeName": "Blood Gulch",
+    "description": "Chthonic Fissure's base fire damage is converted to physical. Consequently this damage scales with increases to physical damage, but not increases to fire damage.\n\nIgnite chance from all sources are converted to bleed chance per second for the Fissure.\n\nSwaps Chthonic Fissures' {Fire} tag for a {Physical} tag.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Fire -> Physical Conversion",
+        "value": ""
+      },
+      {
+        "statName": "Ignite -> Bleed Chance",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 29,
+    "nodeName": "Chronicles of Ruin",
+    "description": "{Torment} lasts longer and any ignite, poison and bleed inflicted by Chthonic Fissure also last longer.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 30,
+    "nodeName": "Tombgorger",
+    "description": "{Torment} deals more damage (multiplicative with other modifiers) to ignited, poisoned or bleeding enemies.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ch0fs",
+    "treeName": "Chthonic Fissure",
+    "nodeID": 31,
+    "nodeName": "Valley of Defilement",
+    "description": "Chthonic Fissure's base fire damage over time is converted to poison. Consequently this damage scales with increases to poison damage, but not increases to fire damage.\n\nIgnite chance from all sources is converted to poison chance per second for the Fissure.\n\nSwaps Chthonic Fissures' {Fire} tag for a {Poison} tag.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "cstri",
@@ -12794,7 +13655,517 @@
         "value": "+25%"
       }
     ],
-    "icon": "244582.webp"
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 0,
+    "nodeName": "Explosive Trap",
+    "description": "",
+    "maxPoints": 0,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 2,
+    "nodeName": "Ash Compartment",
+    "description": "Explosive Trap deals more damage (multiplicative with other modifiers) and its hits shred enemy fire resistance.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 3,
+    "nodeName": "Hold This",
+    "description": "Whenever you hit an enemy with any melee attack, you attach an Explosive Trap to that enemy.\n\nThis effect has a 1.5 second cooldown and attached traps explode after 1 second ignoring arming time or when the enemy it's attached to dies. Enemies cannot have more than 1 trap attached.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Trap Attaches On Hit",
+        "value": ""
+      },
+      {
+        "statName": "Attached Trap Arming Time (seconds)",
+        "value": "1"
+      },
+      {
+        "statName": "Explodes On Enemy Death",
+        "value": ""
+      },
+      {
+        "statName": "Attach Cooldown (seconds)",
+        "value": "1.5"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 4,
+    "nodeName": "Aspect of the Rabbit",
+    "description": "Attached traps deal more damage (multiplicative with other modifiers).\n\nIf the enemy that the Explosive Trap is attached to hits you, it now attaches to you instead (but will still only damage enemies). Hitting an enemy then attaches it back to them without changing the delay before exploding.\n\nAdditionally, when it explodes, the trap deals 30% more damage for each time it has been passed.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Attached Damage",
+        "value": "+35%"
+      },
+      {
+        "statName": "Attached Traps Passed On Hit",
+        "value": ""
+      },
+      {
+        "statName": "Trap Damage Per Pass",
+        "value": "+60%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 5,
+    "nodeName": "Arrow Traps",
+    "description": "When an Explosive Trap detonates, all other Explosive Traps now also detonate in quick succession and fire {Detonating Arrows} at the original target trap's location. The Detonating Arrows can occur a limited number of times per 2 seconds.\n\nThis effect consumes mana equal to a portion of your {Detonating Arrow's} mana cost.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Detonating Arrow On Trap Detonation",
+        "value": ""
+      },
+      {
+        "statName": "Detonating Arrow Mana Consumption",
+        "value": "125%"
+      },
+      {
+        "statName": "Detonating Arrow Limit Per 2 Seconds",
+        "value": "10"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 6,
+    "nodeName": "Blasting Device",
+    "description": "{Detonating Arrows} fired this way deal additional bow damage per 3 Dexterity.",
+    "maxPoints": 2,
+    "stats": [
+      {
+        "statName": "Bow Damage Per 3 Dex",
+        "value": "+1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 7,
+    "nodeName": "Static Mines",
+    "description": "Explosive Trap's base fire damage is converted to lightning. Consequently this damage scales with increases to lightning damage, but not increases to fire damage.\n\nFire resistance shred chance from all sources is converted to lightning resistance shred.\n\nSwaps Explosive Trap's {Fire} tag for a {Lightning} tag.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 8,
+    "nodeName": "Lightning Bomb",
+    "description": "Explosive Trap's hits have a chance to shock enemies and inflict them with a {Spark Charge}.",
+    "maxPoints": 5,
+    "stats": [
+      {
+        "statName": "Shock Chance",
+        "value": "+25%"
+      },
+      {
+        "statName": "Spark Charge Chance",
+        "value": "+20%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 9,
+    "nodeName": "Trapas",
+    "description": "When directly using Explosive Trap, an unconverted Explosive Trap and a trap corresponding to each conversion node you have taken are thrown at the same time. Traps thrown this way are thrown in a small area.\n\nAdditionally, Explosive Trap deals less damage in a smaller area (both multiplicative with other modifiers) and cost additional mana.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Default And Converted Trap Thrown",
+        "value": ""
+      },
+      {
+        "statName": "Damage",
+        "value": "-30%"
+      },
+      {
+        "statName": "Less Area",
+        "value": "-30%"
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+3"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 10,
+    "nodeName": "Coldsnap Mines",
+    "description": "Explosive Trap's base fire damage is converted to cold. Consequently this damage scales with increases to cold damage, but not increases to fire damage.\n\nFire resistance shred chance from all sources is converted to cold resistance shred.\n\nSwaps Explosive Trap's {Fire} tag for a {Cold} tag.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 11,
+    "nodeName": "Flash Frozen",
+    "description": "Explosive Trap's hits have a chance to chill enemies.\n\nAdditionally, Explosive Trap has additional freeze rate per Intelligence.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Chill Stacks",
+        "value": "1"
+      },
+      {
+        "statName": "Freeze Rate Per Int",
+        "value": "+1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 12,
+    "nodeName": "Freezing Trap",
+    "description": "When you directly throw Explosive Trap, its hits always freeze enemies, but it now has a cooldown.\n\nWhenever you freeze an enemy with any skill, a portion of Explosive Trap's remaining cooldown is recovered.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Always Freezes On Hit",
+        "value": ""
+      },
+      {
+        "statName": "Cooldown (seconds)",
+        "value": "15"
+      },
+      {
+        "statName": "Remaining Cooldown Recovered On Freeze",
+        "value": "10%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 13,
+    "nodeName": "Tinkerer's Design",
+    "description": "Explosive Trap is now triggered from farther away and deals damage in a larger area.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 14,
+    "nodeName": "Adaptive Fuse",
+    "description": "Particularly fast enemies (with a movement speed above 6 meters per second) trigger Explosive Traps instantly, even if they haven't armed.\n\nAdditionally, Explosive Trap's hits deal more damage (multiplicative with other modifiers) to moving enemies.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Instant Detonation On Fast Enemies",
+        "value": ""
+      },
+      {
+        "statName": "Hit Damage To Moving Enemies",
+        "value": "+15%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 15,
+    "nodeName": "Prepared Demolition",
+    "description": "Explosive Trap deals more damage (multiplicative with other modifiers) in a larger area for each second it has existed before detonating up to a maximum.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 16,
+    "nodeName": "Gadgeteer",
+    "description": "Explosive Trap deals more damage (multiplicative with other modifiers) if the arming time is not ignored, but it takes longer for it to arm before it can detonate.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 17,
+    "nodeName": "Smoke Traps",
+    "description": "When an Explosive Trap detonates, if it hit at least one enemy, it has a chance to grant you a stack of {Dusk Shroud}. This chance increases for each second it spends arming.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 18,
+    "nodeName": "Umbral Saboteur",
+    "description": "Explosive Trap deals additional throwing damage per stack of {Dusk Shroud} you have.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Damage Per Dusk Shroud",
+        "value": "+1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 19,
+    "nodeName": "Jelkhor's Blueprint",
+    "description": "Explosive Trap costs less mana and it has increased throwing attack speed.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Mana Efficiency",
+        "value": "+8%"
+      },
+      {
+        "statName": "Throwing Attack Speed",
+        "value": "+4%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 20,
+    "nodeName": "Sky Signal",
+    "description": "Whenever one of your Explosive Traps detonate, your {Falcon} gains physical and elemental penetration for a short duration.\n\nThis effect can trigger up to a maximum of 15 times within 3 seconds.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 21,
+    "nodeName": "Free Lofting Bird",
+    "description": "Whenever one of your Explosive Traps detonate, your {Falcon's} skills recover a portion of their remaining cooldowns.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Falcon Skills Cooldown Recovered",
+        "value": "3%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 22,
+    "nodeName": "Strike the Quarry",
+    "description": "Whenever your {Falcon} hits one of your Explosive Traps with {Dive Bomb} it causes the trap to detonate after a short delay dealing more damage (multiplicative with other modifiers) in a larger area.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Dive Bomb Detonates Traps",
+        "value": ""
+      },
+      {
+        "statName": "Area",
+        "value": "+50%"
+      },
+      {
+        "statName": "Damage",
+        "value": "+25%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 23,
+    "nodeName": "Minefield",
+    "description": "You can now have more active Explosive Traps.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 24,
+    "nodeName": "Clustered Explosives",
+    "description": "When you directly use Explosive Trap you throw additional traps, but Explosive Trap costs more mana.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 25,
+    "nodeName": "Subtle Sabotage",
+    "description": "Explosive Trap costs less mana, but deals less damage (multiplicative with other modifiers) in a smaller area.",
+    "maxPoints": 2,
+    "stats": [
+      {
+        "statName": "Mana Cost",
+        "value": "-12%"
+      },
+      {
+        "statName": "Damage",
+        "value": "-8%"
+      },
+      {
+        "statName": "Area",
+        "value": "-8%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 26,
+    "nodeName": "Blast Rain",
+    "description": "You now shoot arrows attached with Explosive Traps up into the air that then drop down around the target location.\n\nExplosive Trap now scales with your bow damage instead of throwing damage and your bow attack speed instead of throwing attack speed.\n\nThis requires wielding a bow.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 27,
+    "nodeName": "Impact Trigger",
+    "description": "Explosive Traps now instantly detonate when the arrows hit the ground via the {Blast Rain} node, ignoring the arming time.\n\nAdditionally, Explosive Trap has a higher chance to stun enemies.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Traps Explode Immediately When Hit",
+        "value": ""
+      },
+      {
+        "statName": "Increased Stun Chance",
+        "value": "75%"
+      },
+      {
+        "statName": "Arming Time Is Ignored",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 28,
+    "nodeName": "Trap Sprinkler",
+    "description": "Whenever an Explosive Trap detonates, it has a chance to drop a fresh Explosive Trap at its location as long as there is an enemy within 6 meters, but Explosive Trap costs more mana.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 29,
+    "nodeName": "Automated Bombardment",
+    "description": "Explosive Trap has an additional chance to drop a fresh Explosive Trap via the {Trap Sprinkler} node, but Explosive Trap costs more mana.\n\nTraps dropped this way cannot drop more additional traps.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Trap Drop Chance",
+        "value": "+70%"
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+11"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 30,
+    "nodeName": "Siege Engineering",
+    "description": "Whenever an Explosive Trap detonates, it now has a chance to create a {Ballista} for you.\n\nThis consumes mana equal to a portion of {Ballista's} mana cost.",
+    "maxPoints": 2,
+    "stats": [
+      {
+        "statName": "Summon Ballista Chance",
+        "value": "10%"
+      },
+      {
+        "statName": "Ballista Mana Consumption",
+        "value": "50%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 31,
+    "nodeName": "Trapuchet",
+    "description": "Explosive Traps dropped by the {Trap Sprinkler} node are now flung at a nearby enemy within 12 meters instead of being dropped.\n\nExplosive Traps dropped by the {Trap Sprinkler} node can now drop Explosive Traps when there's an enemy within 12 meters even if there is not an enemy within 6 meters.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "ex4tp",
+    "treeName": "Explosive Trap",
+    "nodeID": 32,
+    "nodeName": "Instrument of the Alchemist",
+    "description": "When an Explosive Trap drops a trap by the {Trap Sprinkler} node, it also flings an {Acid Flask} for you towards the target location.\n\nThis consumes mana equal to a portion of Acid Flask's mana cost.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Traps Throw Acid Flasks Chance",
+        "value": "10%"
+      },
+      {
+        "statName": "Acid Flask Mana Consumption",
+        "value": "70%"
+      }
+    ],
+    "icon": null
   },
   {
     "treeID": "falc0",
@@ -18734,7 +20105,451 @@
         "value": "+30%"
       }
     ],
-    "icon": "227562.webp"
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 0,
+    "nodeName": "Frost Claw",
+    "description": "",
+    "maxPoints": 0,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 1,
+    "nodeName": "Rending Cascade",
+    "description": "Frost Claw has a higher chance to freeze enemies and a higher chance to critically strike.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 2,
+    "nodeName": "Glamdring",
+    "description": "Frost Claw deals additional spell damage based on your added melee damage.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 3,
+    "nodeName": "Cold Star",
+    "description": "Frost Claw deals more damage (multiplicative with other modifiers) and its explosion deals damage in a larger area. These bonuses are doubled if you have at least 1200 ward.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 4,
+    "nodeName": "Gift of Winter",
+    "description": "Directly casting Frost Claw costs less mana and you have a chance to regain mana when you cast it.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Mana Cost",
+        "value": "-2"
+      },
+      {
+        "statName": "Chance to gain 12 mana on Direct Cast",
+        "value": "12%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 5,
+    "nodeName": "Lava Talon",
+    "description": "Frost Claw's base cold damage is converted to fire. Consequently this damage scales with increases to fire damage, but not increases to cold damage. \n\nChill chance from all sources is converted to ignite chance.\n\nSwaps Frost Claw's {Cold} tag for a {Fire} tag.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Cold -> Fire Damage",
+        "value": ""
+      },
+      {
+        "statName": "Chill -> Ignite Chance",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 6,
+    "nodeName": "Spark Artillery",
+    "description": "Frost Claw's base cold damage is converted to lightning, unless it has already been converted to fire. Consequently this damage scales with increases to lightning damage, but not increases to cold damage. \n\nFrostbite chance from all sources is converted to shock chance.\n\nSwaps Frost Claw's {Cold} tag for a {Lightning} tag.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 7,
+    "nodeName": "Fen of the Frozen",
+    "description": "Frost Claw hits have a chance to {Slow} and {Chill}.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 8,
+    "nodeName": "Brightfrost",
+    "description": "You have increased cast speed with Frost Claw.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Cast Speed",
+        "value": "+4%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 9,
+    "nodeName": "Artor's Sceptre",
+    "description": "Frost Claw deals more damage (multiplicative with other modifiers), and its hits have a chance to inflict {Frostbite}.",
+    "maxPoints": 5,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 10,
+    "nodeName": "Frost Beyond Time",
+    "description": "Frostbite, chill, slow, ignite, and shock inflicted by Frost Claw last longer.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Increased Ailment Duration",
+        "value": "25%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 11,
+    "nodeName": "Celestial Conflux",
+    "description": "You have a chance to cast {Elemental Nova} when Frost Claw's projectiles reach the target.\n\nThis consumes mana equal to Elemental Nova's mana cost and cannot trigger if you are out of mana.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Elemental Nova Chance",
+        "value": "14%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 12,
+    "nodeName": "Cold and Calculating",
+    "description": "Frost Claw has a higher chance to freeze based on its critical strike chance.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Freeze Rate Multiplier per 1% Crit Chance",
+        "value": "+5%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 13,
+    "nodeName": "Kolheim Ballista",
+    "description": "If you have an active {Ice Barrage} when you hit an enemy with Frost Claw, that Ice Barrage fires faster for the rest of its duration, up to a maximum.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Ice Barrage Rate of Fire on Hit",
+        "value": "+4%"
+      },
+      {
+        "statName": "Maximum Rate of Fire Increase",
+        "value": "60%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 14,
+    "nodeName": "Power Word: Hail",
+    "description": "You have a chance to cast {Ice Barrage} in the target direction when you cast Frost Claw.\n\nThis consumes mana equal to Ice Barrage's mana cost and cannot trigger if you are out of mana.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Ice Barrage Chance",
+        "value": "5%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 16,
+    "nodeName": "Shiver Shell",
+    "description": "When you are hit by an enemy you have a chance to retaliate with Frost Claw.\n\nWhen you cast Frost Claw by any method you gain Ward.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 17,
+    "nodeName": "Reowyn's Veil",
+    "description": "When you cast Frost Claw you gain ward based on its Freeze Rate Multiplier.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Ward per 60% Freeze Rate Multiplier",
+        "value": "1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 18,
+    "nodeName": "Macuahuitl",
+    "description": "When you use a melee attack and hit at least one enemy you have a chance to cast Frost Claw towards it, or at another nearby enemy if the hit killed the original target.\n\nThis effect consumes mana equal to a portion of Frost Claw's mana cost.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Chance To Cast On Melee Hit",
+        "value": "10%"
+      },
+      {
+        "statName": "Mana Consumption",
+        "value": "80%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 20,
+    "nodeName": "Frozen Sleeper",
+    "description": "Gain a stack of Frozen Sleeper every second up to a maximum. When you cast Frost Claw it consumes all stacks to gain cold penetration per stack and release an {Ice Spiral} for each stack.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 21,
+    "nodeName": "Chaos Whirl",
+    "description": "When you cast {Ice Spirals} there is a chance that the number of projectiles will be doubled and they'll all deal double damage.",
+    "maxPoints": 4,
+    "stats": [
+      {
+        "statName": "Chance for Double Ice Spirals",
+        "value": "25%"
+      },
+      {
+        "statName": "Ice Spiral Damage when Doubled",
+        "value": "+100%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 22,
+    "nodeName": "Immutable Order",
+    "description": "Frost Claw's base cold damage is converted to lightning, unless it has already been converted to fire. Consequently this damage scales with increases to lightning damage, but not increases to cold damage. \n\nFrostbite chance from all sources is converted to shock chance and chill chance from all sources is converted to lightning resistance shred chance.\n\nSwaps Frost Claw's {Cold} tag for a {Lightning} tag.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Cold -> Lightning Damage",
+        "value": ""
+      },
+      {
+        "statName": "Frostbite -> Shock Chance",
+        "value": ""
+      },
+      {
+        "statName": "Chill -> Lightning Shred Chance",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 24,
+    "nodeName": "On Through The Snow",
+    "description": "Directly casting Frost Claw causes it to recast from the target location to a location 4 meters behind it. The second can hit the same enemies as the first cast.\n\nFrost Claw costs additional mana.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 25,
+    "nodeName": "Ever Onward",
+    "description": "The second cast from {On Through The Snow} causes a third cast. The third cast can hit the same enemies as the first and second casts.\n\nFrost Claw costs additional mana.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Third Cast Behind Target",
+        "value": ""
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+4"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 26,
+    "nodeName": "Frozen Malice",
+    "description": "The second cast from {On Through The Snow} targets a random enemy that is 3 to 9 meters away from the original target location.\n\nFrost Claw costs additional mana.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Second Cast Aimed",
+        "value": ""
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+2"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 27,
+    "nodeName": "A Crack in the Ice",
+    "description": "When the second cast from {On Through The Snow} is released, Frost Claw is also cast back towards you.\n\nFrost Claw's mana cost is increased.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Return Cast",
+        "value": ""
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+30%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 28,
+    "nodeName": "Hand of Morditas",
+    "description": "Frost Claw has 2 additional projectiles allowing it to hit enemies in a wider area on the way to the target.\n\nFrost Claw costs additional mana.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Extra Projectiles",
+        "value": "+2"
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+4"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 29,
+    "nodeName": "Volley of Glass",
+    "description": "Frost Claw no longer creates a burst of damage at the target, but its projectiles are now staggered and they can all hit the same target.\n\nFrost Claw's mana cost is increased, it no longer has the {Area} tag and it has a lowered base freeze rate.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "No Burst",
+        "value": ""
+      },
+      {
+        "statName": "All Projectiles Hit Same Target",
+        "value": ""
+      },
+      {
+        "statName": "Mana Cost",
+        "value": "+100%"
+      },
+      {
+        "statName": "Base Freeze Rate",
+        "value": "-20"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 30,
+    "nodeName": "Frozen Reign",
+    "description": "Frost Claw has a lower mana cost and it deals more hit damage (multiplicative with other modifiers) to frozen enemies, but its projectiles are slower.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Mana Cost",
+        "value": "-3"
+      },
+      {
+        "statName": "Damage vs Frozen",
+        "value": "+30%"
+      },
+      {
+        "statName": "Projectile Speed",
+        "value": "-30%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "frc87w",
+    "treeName": "Frost Claw",
+    "nodeID": 32,
+    "nodeName": "Spark of Celerity",
+    "description": "Frost Claw's projectiles are faster and it costs less mana.",
+    "maxPoints": 5,
+    "stats": [],
+    "icon": null
   },
   {
     "treeID": "fr4wl",
@@ -38071,7 +39886,456 @@
         "value": "30"
       }
     ],
-    "icon": "241850.webp"
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 0,
+    "nodeName": "Shadow Rend",
+    "description": "",
+    "maxPoints": 0,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 2,
+    "nodeName": "Intensity",
+    "description": "Shadow Rend deals more damage (multiplicative with other modifiers).",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 3,
+    "nodeName": "Heavy Shadows",
+    "description": "Shadow Rend deals more damage, but has less attack speed (both multiplicative with other modifiers).",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Damage",
+        "value": "+12%"
+      },
+      {
+        "statName": "Attack Speed",
+        "value": "-3%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 4,
+    "nodeName": "Unending Twilight",
+    "description": "Shadows consumed by {Shadow Massacre} have a chance to manifest a new shadow afterwards, based on their distance from you. Maximum effect is reached for shadows that are at least 6 meters away.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Max Shadow Resummon Chance",
+        "value": "20%"
+      },
+      {
+        "statName": "Distance For Max Chance (meters)",
+        "value": "6"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 5,
+    "nodeName": "Reconstitution",
+    "description": "Each shadow consumed by {Shadow Massacre} or {Hidden Strength} restores health based on your dexterity.",
+    "maxPoints": 2,
+    "stats": [
+      {
+        "statName": "Health Gain per 2 Dexterity",
+        "value": "1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 6,
+    "nodeName": "Dark Cloak",
+    "description": "You have a chance to gain a stack of {Dusk Shroud} when you directly use Shadow Rend and hit at least one enemy with the shadow's attack.",
+    "maxPoints": 2,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 7,
+    "nodeName": "Betrayal of Flesh",
+    "description": "The manifested shadow chooses a random enemy to dash toward, ignoring your targeted direction. It can target enemies that are further away.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Shadows Choose Random Targets",
+        "value": ""
+      },
+      {
+        "statName": "Shadow Target Acquisition Distance",
+        "value": "+40%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 8,
+    "nodeName": "Gathered Shadows",
+    "description": "For every {Dusk Shroud} on you up to 20, the shadow's attack deals more damage (multiplicative with other modifiers) and grants ward if it hits at least one enemy.",
+    "maxPoints": 2,
+    "stats": [
+      {
+        "statName": "Damage per Dusk Shroud",
+        "value": "+1%"
+      },
+      {
+        "statName": "Ward Gain per Dusk Shroud",
+        "value": "+2"
+      },
+      {
+        "statName": "Max Dusk Shrouds Considered",
+        "value": "20"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 9,
+    "nodeName": "Jagged Shadows",
+    "description": "Shadow Rend has additional chance to inflict bleed on hit, doubled for the shadow's attack.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 10,
+    "nodeName": "Precision",
+    "description": "Shadow Rend has additional critical strike chance.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 11,
+    "nodeName": "Illumination",
+    "description": "Shadow Rend has additional chance to shock enemies on hit, and it has additional critical strike multiplier per shock on the enemy.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Shock Chance",
+        "value": "+50%"
+      },
+      {
+        "statName": "Critical Multiplier per Shock",
+        "value": "+2%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 12,
+    "nodeName": "Eternal Darkness",
+    "description": "Shadow Rend has additional critical strike multiplier, and additional chance to blind enemies on hit.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Critical Multiplier",
+        "value": "+15%"
+      },
+      {
+        "statName": "Blind Chance",
+        "value": "+34#"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 13,
+    "nodeName": "Hidden Blades",
+    "description": "The shadow's attack has a chance to inflict Shadow Daggers on hit.",
+    "maxPoints": 4,
+    "stats": [
+      {
+        "statName": "Shadow Daggers Chance for Shadow Attack",
+        "value": "+50%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 14,
+    "nodeName": "Shadow Sequence",
+    "description": "Traversal skills consume all stacks of {Ghost Blades} over the course of their duration.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "All Ghost Blades Stacks Consumed on Traversal",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 15,
+    "nodeName": "Ghastly Wounds",
+    "description": "Shadow Rend has a chance to inflict frailty and slow on hit.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 16,
+    "nodeName": "Exposed Weakness",
+    "description": "Shadow Rend has additional physical penetration per unique negative ailment on the enemy, up to 5.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Physical Penetration per Unique Negative Ailment",
+        "value": "+3%"
+      },
+      {
+        "statName": "Max Unique Negative Ailments Considered",
+        "value": "5"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 17,
+    "nodeName": "Moon Frenzy",
+    "description": "Directly using Shadow Rend grants Frenzy for a duration, and Shadow Rend deals more damage (multiplicative with other modifiers) while you have frenzy.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 18,
+    "nodeName": "Sinister Plan",
+    "description": "While you are inside your {Smoke Bomb}, Shadow Rend has increased attack speed and a lower mana cost.",
+    "maxPoints": 2,
+    "stats": [
+      {
+        "statName": "Attack Speed in Smoke Bomb",
+        "value": "+5%"
+      },
+      {
+        "statName": "Mana Cost in Smoke Bomb",
+        "value": "-5"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 19,
+    "nodeName": "Energy Flow",
+    "description": "Shadow Rend has increased attack speed and a lower mana cost.",
+    "maxPoints": 4,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 20,
+    "nodeName": "Breaking Force",
+    "description": "Shadow Rend has increased melee area for the shadow's attack.\n\nThe shadow's attack has a chance to shred armor on hit, doubled with a bow.",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 21,
+    "nodeName": "Shadow Massacre",
+    "description": "Directly using Shadow Rend consumes existing shadows to make them imitate Multishot or Shadow Cascade, depending on your equipped weapon type. Each Shadow Cascade or Multishot imitated consumes mana.\n\nThis node has no effect if {Hidden Strength} is allocated.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 22,
+    "nodeName": "Night's Approach",
+    "description": "Shadow Rend no longer moves you. The manifested shadow dashes forward 5 meters in the targeted direction before attacking, and will choose a target within range upon arriving.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Shadows Dash Forwards",
+        "value": ""
+      },
+      {
+        "statName": "Shadow Rend Movement Removed",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 23,
+    "nodeName": "Hidden Strength",
+    "description": "Directly using Shadow Rend consumes all shadows. It restores mana if you consume at least 1 shadow.\n\nFor each shadow consumed after the first, it gains more damage and more melee area (both multiplicative with other modifiers).",
+    "maxPoints": 3,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 24,
+    "nodeName": "Shadow Rush",
+    "description": "Shadow Rend is now a traversal skill. You dash up to 7 meters forward after manifesting the shadow.\n\nShadow Rend deals more damage (multiplicative with other modifiers) and has a cooldown.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 25,
+    "nodeName": "Dusklight",
+    "description": "Shadow Rend's base physical damage is converted to lightning damage. Consequently this damage scales with increases to lightning damage, but not increases to physical damage.",
+    "maxPoints": 1,
+    "stats": [],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 26,
+    "nodeName": "Ghost Blades",
+    "description": "Directly using Shadow Rend and hitting at least one enemy with the shadow's attack grants stacks of {Ghost Blades}, up to 9. Stacks of Ghost Blades are consumed 3 times per second while moving to throw a Ghost Blade at a nearby enemy.",
+    "maxPoints": 3,
+    "stats": [
+      {
+        "statName": "Ghost Blades Stacks Gained",
+        "value": "1"
+      },
+      {
+        "statName": "Max Ghost Blades Stacks",
+        "value": "9"
+      },
+      {
+        "statName": "Ghost Blade Stacks Consumed per Second While Moving",
+        "value": "3"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 27,
+    "nodeName": "Darkened Blood",
+    "description": "Bleed chance from all sources is converted to poison chance for Shadow Rend.\n\nShadow Rend deals more hit damage (multiplicative with other modifiers) per poison on the enemy, up to 30.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Bleed Chance -> Poison Chance",
+        "value": ""
+      },
+      {
+        "statName": "Hit Damage per Poison, up to 30",
+        "value": "+1%"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 28,
+    "nodeName": "Pursuit",
+    "description": "Shadow Rend deals more bow damage to damaged enemies. When used with a bow, Shadow Rend moves you forwards instead of backwards.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Bow Damage to Damaged Enemies",
+        "value": "+6%"
+      },
+      {
+        "statName": "Moves Forward with a Bow",
+        "value": ""
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 29,
+    "nodeName": "Flourish",
+    "description": "Shadow Rend has an additional charge.",
+    "maxPoints": 1,
+    "stats": [
+      {
+        "statName": "Additional Charges",
+        "value": "+1"
+      }
+    ],
+    "icon": null
+  },
+  {
+    "treeID": "sh4re",
+    "treeName": "Shadow Rend",
+    "nodeID": 30,
+    "nodeName": "Loose Pockets",
+    "description": "You have a chance to throw {Shurikens} or {Umbral Blades} at a nearby enemy when you jump and when you land, consuming 70% of the skill's mana cost each time.\n\nThe skill chosen is your most recently directly used skill among them, or else random.",
+    "maxPoints": 2,
+    "stats": [
+      {
+        "statName": "Chance to Throw Shurikens or Umbral Blades on Leap",
+        "value": "50%"
+      },
+      {
+        "statName": "Chance to Throw Shurikens or Umbral Blades on Land",
+        "value": "50%"
+      },
+      {
+        "statName": "Mana Cost Consumption Percentage",
+        "value": "70%"
+      }
+    ],
+    "icon": null
   },
   {
     "treeID": "ss3tre",
@@ -59773,3 +62037,4 @@
     "icon": "168584.webp"
   }
 ]
+

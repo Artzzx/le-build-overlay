@@ -125,6 +125,30 @@ describe('buildView', () => {
   });
 });
 
+describe('per-phase mastery (real Rogue exports)', () => {
+  const { parseLoadout } = require('../parser/maxroll');
+  // The user's two phases: plain Rogue while leveling (mastery 0), then Bladedancer (mastery 1).
+  const LEVELING = '{"class":4,"mastery":0,"passives":{"history":[6,6,6,6,6,6,6,6,1,7,8,8,8,8,8],"position":15},"weaverItems":[],"weaver":{"history":[],"position":0},"skillTrees":{"sh4re":{"history":[2,3,3,3,2,2],"position":6},"shiif":{"history":[27,27,9,9,9],"position":5}}}';
+  const ENDGAME = '{"class":4,"mastery":1,"passives":{"history":[6,6,6,6,6,1,7,6,6,6,8,8,8,8,8,14,14,14,14,10,49,49,49,49,49,52,52,52,52,52,50,56,56,56,56,58,58,58,58,58,56,56,56,56,52,62,62,62,62,62,65,65,65,65,65,69,69,69,65,65,65,72,72,72,72,74,74,74,68,68,68,73,73,73,73,73,49,49,49,52,52,69,69],"position":83},"weaverItems":[],"weaver":{"history":[],"position":0},"skillTrees":{"bl5st":{"history":[14,15,16,16,16,16,1,1,1,1,22,23,8,10,10,25,15,15,21,21],"position":20},"ub5d9":{"history":[1,2,6,27,7,8,28,28,28,28,10,10,10,10,21,24,25,25,7,7],"position":20},"smbmb":{"history":[10,10,12,14,14,14,14,17,19,20,17,18,16,20,21,10,10,10,12,12],"position":20},"sh4re":{"history":[19,17,18,18,2,6,22,21,4,4,4,15,13,26,14,13,13,13,6,8],"position":20},"dagg3":{"history":[17,17,16,15,15,20,21,21,21,21,24,26,3,4,17,17,17,4,4,4],"position":20}}}';
+  const loadout = parseLoadout([{ name: 'Leveling', json: LEVELING }, { name: 'Endgame', json: ENDGAME }], DB.skills, DB.classes, 'BD');
+
+  test('loads, and each phase shows its own mastery', () => {
+    const lev = buildView(loadout, DB);
+    assert.equal(lev.classLabel, 'Rogue');
+    assert.equal(lev.lanes[0].title, 'Rogue');
+    const end = buildView({ ...loadout, currentPhase: 1 }, DB);
+    assert.equal(end.classLabel, 'Rogue · Bladedancer');
+    assert.equal(end.lanes[0].title, 'Bladedancer');
+    assert.deepEqual(end.phases.map(p => p.masteryName), [null, 'Bladedancer']);
+  });
+
+  test('skill lanes carry the real skill names (no copied "Flay" roots)', () => {
+    const end = buildView({ ...loadout, currentPhase: 1 }, DB);
+    assert.deepEqual(end.lanes.slice(1).map(l => l.title), ['Bladestorm', 'Umbral Blades', 'Smoke Bomb', 'Shadow Rend', 'Shadow Cascade']);
+    assert.ok(end.lanes.every(l => !l.unresolved));
+  });
+});
+
 describe('stepStartProgress', () => {
   test('returns the flat index where a step starts', () => {
     const t = skill('fl44', [14, 14, 4, 14]);

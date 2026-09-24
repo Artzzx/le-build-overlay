@@ -175,3 +175,43 @@ describe('extract.py — real export layout (iconFile + committed icons)', { ski
     assert.match(stdout, /icon-like fields that are not read: \['spriteName'\]/);
   });
 });
+
+describe('extract.py — copied root rows', { skip: !PYTHON && 'python3 not installed' }, () => {
+  let dir;
+  before(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'le-extract-roots-'));
+    touch(dir, 'flay.png');
+  });
+  after(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  const tree = (id, rootName, skill, n = 6) => [
+    row(id, 0, rootName, { description: '', icon: 'flay.png' }),
+    ...Array.from({ length: n }, (_, i) => row(id, i + 1, `${skill} Node ${i + 1}`, { description: `${skill} deals more damage. ${skill} has a chance ${i}.` })),
+  ];
+
+  test('a root shared with the tree that owns the name is renamed from its own nodes, and loses the copied icon', () => {
+    const { status, skills, stdout, stderr } = run(dir, [...PASSIVES, ...tree('flx1', 'Flay', 'Flay'), ...tree('zz9st', 'Flay', 'Bladestorm')]);
+    assert.equal(status, 0, stderr + stdout);
+    const root = (t) => skills.find(r => r.treeID === t && r.nodeID === 0);
+    assert.equal(root('flx1').treeName, 'Flay');
+    assert.equal(root('flx1').icon, 'flay.png');
+    assert.equal(root('zz9st').treeName, 'Bladestorm');
+    assert.equal(root('zz9st').nodeName, 'Bladestorm');
+    assert.equal(root('zz9st').icon, null);
+    assert.match(stdout, /tree zz9st: root "Flay" is copied/);
+  });
+
+  test('a root its nodes never mention is only reported, not renamed', () => {
+    const { status, skills, stdout } = run(dir, [...PASSIVES, ...tree('fal1', 'Falconry', 'Falcon')]);
+    assert.equal(status, 0);
+    assert.equal(skills.find(r => r.treeID === 'fal1').treeName, 'Falconry');
+    assert.match(stdout, /fal1: "Falconry" \(nodes mostly mention "Falcon"\)/);
+  });
+
+  test('two trees sharing a name break the contract when nothing can tell them apart', () => {
+    const same = (id) => [row(id, 0, 'Twin', { description: '' }), row(id, 1, 'Twin Node', { description: 'Twin deals damage.' })];
+    const { status, stderr } = run(dir, [...PASSIVES, ...same('tw1'), ...same('tw2')]);
+    assert.equal(status, 1);
+    assert.match(stderr, /share the name "Twin"/);
+  });
+});

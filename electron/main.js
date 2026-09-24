@@ -251,6 +251,9 @@ function registerIpc() {
     const [passive, ...skills] = build.tracks;
     return {
       summary: {
+        classId: build.classId,
+        className: db.classes.classes?.[build.classId] ?? `Class ${build.classId}`,
+        masteryId: build.masteryId,
         classLabel: passive.label.replace(/ Passives$/, ''),
         passivePoints: passive.history.length,
         skills: skills.map(t => ({
