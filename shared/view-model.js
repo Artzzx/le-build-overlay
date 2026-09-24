@@ -12,7 +12,7 @@
  * {
  *   index, hotkey,            // 0-based position, 1-based key label
  *   colorSlot,                // buildView only: 0 passive, 1–5 skills (stable across phases)
- *   type, treeId, title, subtitle,
+ *   type, treeId, treeIcon, title, subtitle,
  *   unresolved,               // no tree data → cannot be advanced
  *   done, total, pct, complete,
  *   steps: Step[],            // one per history group, in allocation order
@@ -24,7 +24,8 @@
  *   pointsDone,               // points of THIS step already allocated
  *   nodeTotalAfter,           // points in this node once this step is done
  *   name, description, maxPoints, stats, known,
- *   iconKey,                  // "<treeId>/<nodeId>" — see app/js/icons.js
+ *   icon,                     // art path relative to db/data/icons/, or null
+ *   iconKey,                  // "<treeId>/<nodeId>" — stable seed for the placeholder glyph
  * }
  */
 
@@ -59,12 +60,13 @@
       const mastery = masteryName(db, classId, masteryId);
       return {
         treeId: passiveTreeId(db, classId),
+        treeIcon: null, // class passive trees have no root node / emblem in the data
         title: mastery ?? cls ?? track.label,
         subtitle: cls ? `${cls} passives` : 'Passive tree',
       };
     }
     const tree = db?.skills?.[track.skillKey];
-    return { treeId: track.skillKey, title: tree?.name || track.label || track.skillKey, subtitle: 'Skill tree' };
+    return { treeId: track.skillKey, treeIcon: tree?.icon ?? null, title: tree?.name || track.label || track.skillKey, subtitle: 'Skill tree' };
   }
 
   /**
@@ -75,7 +77,7 @@
    */
   function buildLane(track, index, ctx) {
     const { db, classId } = ctx;
-    const { treeId, title, subtitle } = laneTitles(track, ctx);
+    const { treeId, treeIcon, title, subtitle } = laneTitles(track, ctx);
     const unresolved = isTrackUnresolved(db, classId, track);
     const total = track.history.length;
     const done = Math.max(0, Math.min(total, track.currentStep));
@@ -100,6 +102,7 @@
         maxPoints: node?.maxPoints ?? null,
         stats: node?.stats ?? [],
         known: !!node,
+        icon: node?.icon ?? null,
         iconKey: `${treeId ?? 'unknown'}/${g.nodeId}`,
       };
     });
@@ -110,6 +113,7 @@
       hotkey: index + 1,
       type: track.type,
       treeId,
+      treeIcon,
       title,
       subtitle,
       unresolved,

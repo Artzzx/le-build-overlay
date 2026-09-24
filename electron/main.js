@@ -12,7 +12,7 @@
  *  - All renderer access goes through electron/preload.js (window.api).
  *
  * IPC (renderer → main, invoke):
- *   app:init                 → { db, build, settings, defaultSettings, icons, failedHotkeys, dataSource, version }
+ *   app:init                 → { db, build, settings, defaultSettings, failedHotkeys, missingData, version }
  *   build:save    (build)    → { ok }
  *   build:preview ({ json }) → { ok, summary } | { ok:false, error }
  *   build:load    ({ phases, loadoutName }) → { ok, build } | { ok:false, error }
@@ -35,7 +35,6 @@ const { createStore, DEFAULT_SETTINGS } = require('./store');
 const { createHotkeys } = require('./hotkeys');
 
 const ROOT = path.join(__dirname, '..');
-const ICON_MANIFEST = path.join(ROOT, 'assets', 'icons', 'manifest.json');
 const EXAMPLE_BUILD = path.join(ROOT, 'config', 'build.example.json');
 const IS_DEV = process.argv.includes('--dev');
 
@@ -64,17 +63,9 @@ function loadGameData({ fresh = false } = {}) {
   if (!gameData || fresh) {
     const buildDb = require('../db/build-db');
     buildDb.load(true);
-    gameData = { db: buildDb.all(), source: buildDb.source() };
+    gameData = { db: buildDb.all(), missing: buildDb.missingFiles() };
   }
   return gameData;
-}
-
-function readIconManifest() {
-  try {
-    return JSON.parse(fs.readFileSync(ICON_MANIFEST, 'utf-8'));
-  } catch {
-    return null; // no icons yet — renderer draws glyph placeholders
-  }
 }
 
 // ─── Window ───────────────────────────────────────────────────────────────────
@@ -179,15 +170,14 @@ function handle(channel, fn) {
 
 function registerIpc() {
   handle('app:init', () => {
-    const { db, source } = loadGameData({ fresh: true });
+    const { db, missing } = loadGameData({ fresh: true });
     return {
       db: { trees: db.skills, classes: db.classes },
-      dataSource: source,
+      missingData: missing,
       build: store.loadBuild(),
       settings,
       defaultSettings: DEFAULT_SETTINGS,
       failedHotkeys: hotkeys.getFailures(),
-      icons: readIconManifest(),
       version: app.getVersion(),
     };
   });

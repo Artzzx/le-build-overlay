@@ -13,7 +13,7 @@
  */
 
 import { h, mount } from './dom.js';
-import { setIconManifest, ui } from './icons.js';
+import { ui } from './icons.js';
 import { renderLane, revealCurrent, keycap } from './lanes.js';
 import { renderInspector } from './inspector.js';
 import { openLoadout } from './loadout-dialog.js';
@@ -24,7 +24,6 @@ const { normalizeBuild, stepTrack, setTrackProgress, computeTransition, applyCar
 const { buildView, stepStartProgress } = window.ViewModel;
 const api = window.api;
 
-const SAMPLE_SOURCE = 'skill_tree_reconciled.sample.json';
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
@@ -34,7 +33,7 @@ const state = {
   view: null,          // ViewModel.buildView(build, db)
   settings: null,
   defaults: null,
-  dataSource: null,
+  missingData: [],     // required game-data files not found
   failedHotkeys: [],
   focusLane: 0,        // keyboard / inspector focus
   pinned: null,        // { lane, step } — clicked node
@@ -64,9 +63,8 @@ async function boot() {
   state.build = normalizeBuild(res.build);
   state.settings = res.settings;
   state.defaults = res.defaultSettings;
-  state.dataSource = res.dataSource;
+  state.missingData = res.missingData ?? [];
   state.failedHotkeys = res.failedHotkeys ?? [];
-  setIconManifest(res.icons);
 
   api.onHotkey(onGlobalHotkey);
   document.addEventListener('keydown', onKeyDown);
@@ -580,11 +578,9 @@ function renderStatusbar() {
     notes.push(h('button.note.note-warn', { type: 'button', onclick: showSettings, title: 'Open settings' },
       ui('alert', { size: 13 }), `Hotkey unavailable: ${state.failedHotkeys.map(prettyAccelerator).join(', ')}`));
   }
-  if (state.dataSource === SAMPLE_SOURCE) {
-    notes.push(h('span.note.note-warn', { title: 'db/data/skill_tree_reconciled.json not found — using the small committed sample. Run python extractor/extract.py.' },
-      ui('info', { size: 13 }), 'Sample game data'));
-  } else if (!state.dataSource) {
-    notes.push(h('span.note.note-error', ui('alert', { size: 13 }), 'No game data found'));
+  if (state.missingData.length) {
+    notes.push(h('span.note.note-error', { title: `Missing in db/data/: ${state.missingData.join(', ')} — run python extractor/extract.py` },
+      ui('alert', { size: 13 }), 'Game data missing'));
   }
 
   mount(els.statusbar,

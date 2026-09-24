@@ -26,8 +26,8 @@ export function keycap(label, extra = '') {
 /** Node tile: artwork + state ring + count badge. Used by the strip, NOW card and inspector. */
 export function nodeTile(step, { size = 'md', badge = true } = {}) {
   const progress = step.count ? step.pointsDone / step.count : 0;
-  return h(`span.tile.tile-${size}.is-${step.state}`, { style: { '--p': progress.toFixed(3) } },
-    h('span.tile-art', nodeArt(step.iconKey, step.name)),
+  return h(`span.tile.tile-${size}.is-${step.state}`, { class: step.icon ? 'has-art' : '', style: { '--p': progress.toFixed(3) } },
+    h('span.tile-art', nodeArt(step)),
     step.state === 'done' ? h('span.tile-check', ui('check', { size: 12, stroke: 3 })) : null,
     badge && step.count > 1 ? h('span.tile-badge', `×${step.count}`) : null,
   );
@@ -43,7 +43,7 @@ function identity(lane, hotkeyLabel) {
   return h('div.lane-id',
     h('div.lane-id-top',
       keycap(hotkeyLabel, 'key-lane'),
-      h('span.tree-art', treeArt(lane.treeId ?? `lane-${lane.index}`, lane.title)),
+      h('span.tree-art', treeArt(lane)),
       h('div.lane-titles',
         h('div.lane-title', { title: lane.title }, lane.title),
         h('div.lane-sub', lane.subtitle),

@@ -11,7 +11,7 @@ Built to be read at a glance while you play:
 - **Tick points off without leaving the game.** Global hotkeys work while the game has focus. They're released when the app window is focused, so typing in the app always works.
 - **Phases.** Leveling → Endgame (up to 5). Switching phases keeps your progress where the trees overlap, and tells you exactly what to respec in game.
 - **Node details.** Description, per-point stats, and the route around any node. *Start from here* catches the app up to a character you've already levelled.
-- **Ready for node icons.** Drop images into `assets/icons/` (see [Node icons](#node-icons)); until then each node shows a generated glyph.
+- **Node icons.** Every node shows its in-game icon (see [Node icons](#node-icons)). Nodes without art get a generated glyph.
 
 ### Controls
 
@@ -41,7 +41,7 @@ Click **Load build**, paste your export codes, and you're set. Or click **Try th
 
 Your build, progress, settings and saved templates live in the per-user app data folder (`%APPDATA%/le-build-overlay` on Windows), not in the repo. Files from the old overlay's `config/` folder are migrated automatically on first launch.
 
-The app reads the game data from `db/data/`. Without the full extraction it falls back to `db/data/skill_tree_reconciled.sample.json`, a small committed subset (all 5 passive trees + a handful of skills), and the status bar says **Sample game data**. Skills outside the sample show **No tree data** until you run the extractor (below).
+The game data the app needs (all trees, nodes and icons) is committed in `db/data/`. You only run the extractor after a game patch (below).
 
 ---
 
@@ -57,8 +57,7 @@ Game files ──AssetStudio──► MonoBehaviour export (*Tree.json + SkillTr
                   extractor/extract.py  (cleanup)
                                     │
                                     ▼
-   db/data/skill_tree_reconciled.json + db/data/passives.json   ← gitignored
-                                    │   (falls back to skill_tree_reconciled.sample.json)
+   db/data/skill_tree_reconciled.json + db/data/passives.json + db/data/icons/   ← committed
                                     ▼
           db/build-db.js (main process, indexed by shared/tree-utils.js)
                                     │   IPC
@@ -76,7 +75,8 @@ Game files ──AssetStudio──► MonoBehaviour export (*Tree.json + SkillTr
   "nodeName":    "Scent of Death",
   "description": "Enemies hit by Flay are inflicted with Marked for Death…",
   "maxPoints":   4,
-  "stats":       [{ "statName": "Kill Threshold", "value": "3%" }]
+  "stats":       [{ "statName": "Kill Threshold", "value": "3%" }],
+  "icon":        "fl44/4.png"
 }
 ```
 
@@ -114,10 +114,9 @@ le-build-overlay/
 │   ├── tree-utils.js         ← indexing, grouping, stepping, phase carry-over
 │   └── view-model.js         ← what each lane shows (now / next / steps / colours)
 ├── parser/                   ← Maxroll paste → normalized multi-phase loadout
-├── db/                       ← game data loader + db/data/
-├── extractor/                ← nodes_flat.json → db/data/ (run per patch)
-├── assets/icons/             ← optional node / tree artwork + manifest.json
-├── scripts/                  ← dev launcher, icon manifest builder
+├── db/                       ← game data loader + db/data/ (node data, classes, icons/)
+├── extractor/                ← nodes_flat.json → db/data/ (convert_icons.py + extract.py, run per patch)
+├── scripts/                  ← dev launcher
 ├── config/                   ← build.example.json, maxroll-paste.example.txt
 └── tests/                    ← node:test (npm test)
 ```
@@ -126,18 +125,23 @@ le-build-overlay/
 
 ## Node icons
 
-Every tile has an artwork slot. Add images and regenerate the manifest:
-
-```
-assets/icons/nodes/<treeID>/<nodeID>.png    ← one per node, e.g. nodes/es6ai/12.png
-assets/icons/trees/<treeID>.png             ← tree emblem / class crest (e.g. trees/kn-1.png)
-```
+Icons live in `db/data/icons/` (any folder layout, square, 128 px) and are committed **as WebP**. Drop the exported PNGs in, then convert:
 
 ```bash
-npm run icons     # writes assets/icons/manifest.json
+pip install -r extractor/requirements.txt   # once (Pillow)
+python extractor/convert_icons.py           # PNG/JPG → WebP, originals deleted (--keep-originals, --dry-run)
 ```
 
-`.webp`, `.png` and `.jpg` are supported (square, 64–128 px). Only files listed in the manifest are loaded; anything missing or unreadable falls back to the glyph, so partial icon sets are fine.
+WebP at quality 85 is about 6× smaller (e.g. 31 KB → 5 KB per icon, about 140 MB → 24 MB for a full set) with no visible difference in the app. Git keeps every committed version, so convert before the first commit and after every re-export. The script is idempotent (already-converted files are skipped) and keeps transparency. Each node row in the export carries an `icon` value, and `extract.py` resolves it to a file in that folder:
+
+| `icon` value in `nodes_flat.json` | resolves to |
+|---|---|
+| `es6ai/12.png` (relative path, any extension) | `es6ai/12.webp` |
+| `C:\Export\Icons\es6ai\12.png` (absolute path) | the longest matching tail, `es6ai/12.webp` |
+| `VoidLens.png` or `VoidLens` (file name / stem) | the single file with that name |
+| *(no value)* | `<treeID>/<nodeID>.<ext>` if it exists |
+
+The cleaned rows then carry `"icon": "<path relative to db/data/icons>"` or `null`. A skill's own icon is its tree's root node (nodeID 0). Nodes without art show a generated glyph, so partial icon sets work. Run `python extractor/extract.py --verbose` to list icon values that match no file and files no node uses; add `--strict` to fail on them.
 
 ---
 
@@ -215,14 +219,17 @@ Build `extractor/nodes_flat.json` from the Step 3 export — a flat array of nod
 (`nodeID, nodeName, description, maxPoints, treeID, stats, …`). Then:
 
 ```bash
+python extractor/convert_icons.py      # new/changed icons → WebP (see Node icons)
 python extractor/extract.py            # add --verbose to list (treeID, nodeID) collisions
 ```
+
+Commit `extractor/nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together.
 
 Writes to `db/data/`:
 - `skill_tree_reconciled.json` — every skill tree (+ weaver tree)
 - `passives.json` — the 5 class passive trees (`ac-1 mg-1 kn-1 rg-1 pr-1`)
 
-Trees without a root node get their name from `TREE_NAME_OVERRIDES` in `extract.py`.
+Trees without a root node get their name from `TREE_NAME_OVERRIDES` in `extract.py`. Icons are resolved against `db/data/icons/` (see [Node icons](#node-icons)). If the output would break the app's data contract (fields, types, duplicate ids, missing passive trees, missing icon files), nothing is written.
 
 ---
 
@@ -239,10 +246,13 @@ Trees without a root node get their name from `TREE_NAME_OVERRIDES` in `extract.
 ## Troubleshooting
 
 **A tree shows "No tree data"**
-That skill (or passive tree) isn't in the loaded data. You're probably running on the committed sample — generate the full `db/data/skill_tree_reconciled.json` (Steps 3–4).
+That skill (or passive tree) isn't in `db/data/`. It may be new in a game patch — re-run the extraction (Steps 3–4).
 
 **A node shows the wrong name**
 Likely a `(treeID, nodeID)` collision in `nodes_flat.json` — the stale node won. Run `python extractor/extract.py --verbose` to list them; the fix belongs in the exporter that produces `nodes_flat.json`.
+
+**A node shows a letter glyph instead of its icon**
+It has no `icon` value, or the value matches no file in `db/data/icons/`. `python extractor/extract.py --verbose` lists both cases.
 
 **A skill shows its treeID instead of a name**
 Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `extract.py`.
