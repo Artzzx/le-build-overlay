@@ -21,3 +21,4 @@ desktop.ini
 # Only config/*.example.* belongs in the repo; anything else there is local.
 config/*
 !config/*.example.*
+Global Tree Data.json
