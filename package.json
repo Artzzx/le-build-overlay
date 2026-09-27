@@ -1,6 +1,6 @@
 {
   "name": "le-build-overlay",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Desktop companion for Last Epoch: follow your build’s passive and skill tree progression step by step",
   "main": "electron/main.js",
   "engines": {
