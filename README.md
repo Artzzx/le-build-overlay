@@ -17,16 +17,21 @@ A desktop companion for **Last Epoch**. Load your build from a [Maxroll planner]
 
 ### Install
 
-There's no installer yet. Until there is, you need [Node.js](https://nodejs.org) 22.12 or newer:
+Download the latest version from the [Releases page](https://github.com/Artzzx/le-build-overlay/releases/latest) (Windows 10/11, 64-bit):
 
-```bash
-git clone https://github.com/Artzzx/le-build-overlay.git
-cd le-build-overlay
-npm install
-npm start
-```
+- **`LE-Build-Planner-Setup-x.y.z.exe`** (recommended) installs the app and **keeps it up to date by itself**.
+- **`LE-Build-Planner-Portable-x.y.z.exe`** runs without installing. It tells you when a new version is out, but you download it yourself.
 
-The first `npm start` downloads Electron (about 100 MB) once. To update later: `git pull`, then `npm install`.
+The app isn't code-signed yet, so Windows SmartScreen may warn the first time: click **More info → Run anyway**.
+
+### Updates
+
+New versions (fixes, and new game data after each patch or season) download **in the background**. The status bar then shows **Update ready — restart**:
+
+- Click it to restart into the new version now.
+- Or keep playing: it installs the next time you close the app.
+
+The app never restarts on its own. You can turn automatic updates off, or check right now, in **Settings › Updates**.
 
 ### First start
 
@@ -106,7 +111,7 @@ Click **Save as template** to reuse a set of codes later.
 
 Big patches rework trees, move nodes and add skills. The first time you play after one:
 
-1. **Update the app first** (`git pull`, then `npm install`). New game data (trees, node names, icons) comes with app updates. Until then, a reworked skill can show **No tree data**, and changed nodes can show their old names.
+1. **Get the app update.** New game data (trees, node names, icons) comes with an app update, usually shortly after the patch; it downloads by itself (see [Updates](#updates)). Until you have it, a reworked skill can show **No tree data**, and changed nodes can show their old names. The first time the app starts with the new data, it shows a short **Game data updated** card with these steps.
 2. **Your characters and progress are kept.** Nothing is reset by an update.
 3. **Check your guide.** Open the characters menu and choose **Check the guide for updates**. Authors usually update their planners within days of a patch. Review the changes, then apply them. The banner lists what to respec in game.
 4. **If the patch refunded your points in game**, set each tree back to where you really are: click the node you're at, then **Start from here**. To start a tree over, undo it back to 0.
@@ -174,4 +179,4 @@ Your characters, settings and templates are stored on your computer, in `%APPDAT
 
 ## For developers
 
-`npm run dev` starts the app with DevTools, and `npm test` runs the test suite. The architecture, data formats and conventions are in [CLAUDE.md](CLAUDE.md).
+Running from source needs [Node.js](https://nodejs.org) 22.12+: `npm install`, then `npm start` (`npm run dev` opens DevTools). `npm test` runs the test suite. The architecture, data formats, the data pipeline and the release process are in [CLAUDE.md](CLAUDE.md).

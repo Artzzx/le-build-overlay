@@ -86,6 +86,19 @@ describe('extract.py', { skip: !PYTHON && 'python3 not installed' }, () => {
     assert.ok(!text.includes('\n  '), 'no indentation');
   });
 
+  test('version.json: a content hash — same data same version, new data new version; label kept', () => {
+    const readV = () => JSON.parse(fs.readFileSync(path.join(dir, 'out', 'version.json'), 'utf8'));
+    run(dir, ROWS, ['--label', 'Season 4']);
+    const v1 = readV();
+    assert.match(v1.version, /^[0-9a-f]{12}$/);
+    assert.equal(v1.label, 'Season 4');
+    assert.equal(v1.nodes, JSON.parse(fs.readFileSync(path.join(dir, 'out', 'skill_tree_reconciled.json'), 'utf8')).length + 5);
+    run(dir, ROWS);
+    assert.deepEqual(readV(), v1, 're-running on the same export changes nothing (label kept)');
+    run(dir, [...ROWS, row('zz9', 1, 'Brand New Node')]);
+    assert.notEqual(readV().version, v1.version);
+  });
+
   test('resolves icons by path, path tail, name, stem and convention', () => {
     const { status, skills, stdout, stderr } = run(dir, ROWS);
     assert.equal(status, 0, stderr);

@@ -50,7 +50,9 @@ const DEFAULT_SETTINGS = Object.freeze({
   },
   updates: {
     checkMaxroll: true,       // on start (max once a day): has the build's Maxroll guide changed?
+    checkApp: true,           // new app versions (GitHub Releases): downloaded in the background, installed on quit
   },
+  lastDataVersion: null,      // owned by main: the game-data version the player last saw (db/data/version.json)
   activeProfile: null,        // owned by main (profiles:switch) — see createStore().profiles
 });
 
@@ -61,6 +63,14 @@ const LANE_KEYS = ['fkeys', 'digits', 'numpad'];
 const OPACITY_MIN = 0.35;
 const FULL_MIN = { width: 420, height: 480 };    // smallest full window
 const COMPACT_MIN = { width: 260, height: 180 }; // smallest mini window
+
+/**
+ * The per-user data folder, pinned to the name the app has always used. Electron
+ * derives its default from productName ("LE Build Planner" since packaging); letting
+ * it change would silently hide every existing character, setting and template.
+ */
+const USER_DATA_DIRNAME = 'le-build-overlay';
+const userDataDir = (appDataPath) => path.join(appDataPath, USER_DATA_DIRNAME);
 
 const PROFILE_ID_RE = /^p-[a-z0-9]{4,32}$/;
 
@@ -115,7 +125,9 @@ function mergeSettings(raw) {
     },
     updates: {
       checkMaxroll: raw?.updates?.checkMaxroll !== false,
+      checkApp: raw?.updates?.checkApp !== false,
     },
+    lastDataVersion: typeof raw?.lastDataVersion === 'string' && raw.lastDataVersion.length < 100 ? raw.lastDataVersion : null,
     activeProfile: PROFILE_ID_RE.test(raw?.activeProfile ?? '') ? raw.activeProfile : null,
   };
 }
@@ -315,4 +327,4 @@ function createStore({ dir, log = console }) {
   };
 }
 
-module.exports = { createStore, mergeSettings, DEFAULT_SETTINGS, FULL_MIN, COMPACT_MIN };
+module.exports = { createStore, mergeSettings, userDataDir, DEFAULT_SETTINGS, FULL_MIN, COMPACT_MIN };

@@ -45,9 +45,10 @@ const { app, BrowserWindow, globalShortcut, ipcMain, screen, Menu, shell, net, c
 const path = require('path');
 const fs = require('fs');
 
-const { createStore, DEFAULT_SETTINGS, FULL_MIN, COMPACT_MIN } = require('./store');
+const { createStore, userDataDir, DEFAULT_SETTINGS, FULL_MIN, COMPACT_MIN } = require('./store');
 const { createHotkeys } = require('./hotkeys');
 const { createMaxrollClient, hiddenWindowLoader } = require('./maxroll');
+const { createUpdater } = require('./updater');
 const MaxrollImport = require('../shared/maxroll-import');
 const TreeUtils = require('../shared/tree-utils');
 
@@ -55,8 +56,9 @@ const ROOT = path.join(__dirname, '..');
 const EXAMPLE_BUILD = path.join(ROOT, 'config', 'build.example.json');
 const IS_DEV = process.argv.includes('--dev');
 
-// Allows an isolated profile (tests, screenshots) without touching real data.
-if (process.env.LE_USER_DATA) app.setPath('userData', path.resolve(process.env.LE_USER_DATA));
+// Per-user data: always %APPDATA%/le-build-overlay, whatever productName says (see
+// store.js userDataDir). LE_USER_DATA gives an isolated profile (tests, screenshots).
+app.setPath('userData', process.env.LE_USER_DATA ? path.resolve(process.env.LE_USER_DATA) : userDataDir(app.getPath('appData')));
 
 // Single instance: a second launch focuses the existing window.
 const IS_PRIMARY = app.requestSingleInstanceLock();
@@ -67,6 +69,7 @@ let store = null;
 let hotkeys = null;
 let settings = null;
 let profileId = null; // the active character profile (store.js profiles)
+let updater = null;   // app updates (updater.js)
 
 // ─── Game data ────────────────────────────────────────────────────────────────
 
@@ -270,6 +273,35 @@ function summarizeBuild(json) {
   };
 }
 
+// ─── Game data version ────────────────────────────────────────────────────────
+
+/**
+ * The first start with new game data (an app update after a game patch) returns
+ * its version.json so the renderer can show the one-time "Game data updated"
+ * card. A brand-new install just records the version: nothing to compare with.
+ */
+function seenDataVersion() {
+  const { dataVersion } = require('../db/build-db');
+  const v = dataVersion();
+  if (!v || v.version === settings.lastDataVersion) return null;
+  const isUpdate = settings.lastDataVersion != null;
+  settings = store.saveSettings({ ...settings, lastDataVersion: v.version });
+  return isUpdate ? v : null;
+}
+
+// ─── App updates ──────────────────────────────────────────────────────────────
+
+/**
+ * installer = the NSIS install (electron-updater replaces it); portable = the portable
+ * exe (can't replace itself: offer the release page); off = not a packaged build, or a
+ * test profile (LE_USER_DATA), so dev runs and CI never touch GitHub.
+ */
+function updateMode() {
+  if (!app.isPackaged || process.env.LE_USER_DATA) return 'off';
+  if (process.env.PORTABLE_EXECUTABLE_DIR || process.platform !== 'win32') return 'portable';
+  return 'installer';
+}
+
 // ─── Profiles ─────────────────────────────────────────────────────────────────
 
 /** Default name for a character: its class ("Rogue"); the player renames it to their character's name. */
@@ -389,6 +421,7 @@ function handle(channel, fn) {
 function registerIpc() {
   handle('app:init', () => {
     const { db, missing } = loadGameData({ fresh: true });
+    const dataUpdate = seenDataVersion();
     return {
       db: { trees: db.skills, classes: db.classes },
       missingData: missing,
@@ -397,6 +430,8 @@ function registerIpc() {
       defaultSettings: DEFAULT_SETTINGS,
       failedHotkeys: hotkeys.getFailures(),
       version: app.getVersion(),
+      appUpdate: updater.getState(),
+      dataUpdate,
     };
   });
 
@@ -470,11 +505,21 @@ function registerIpc() {
     return { build };
   });
 
+  handle('appUpdate:check', () => updater.check(true).then(() => ({ appUpdate: updater.getState() })));
+  handle('appUpdate:install', () => {
+    const s = updater.getState();
+    if (s.state === 'available' && s.url) shell.openExternal(s.url); // portable: the release page
+    else updater.install();                                          // installer: restart into it
+    return {};
+  });
+
   handle('settings:save', (next) => {
     // Bounds and the window mode are owned by main (persistBounds / window:setMode).
+    const wasChecking = settings.updates.checkApp;
     settings = store.saveSettings({
       ...next,
       activeProfile: profileId,
+      lastDataVersion: settings.lastDataVersion,
       window: settings.window,
       compactWindow: settings.compactWindow,
       display: { ...next?.display, mode: settings.display.mode },
@@ -483,6 +528,8 @@ function registerIpc() {
       applyWindowMode();
       win.webContents.setZoomFactor(settings.display.uiScale);
     }
+    if (settings.updates.checkApp && !wasChecking) updater.start();
+    if (!settings.updates.checkApp && wasChecking) updater.stop();
     const failedHotkeys = hotkeys.apply(settings.hotkeys);
     // Settings are saved from inside the focused window — keep track keys released.
     if (win?.isFocused()) hotkeys.setSuspended(true);
@@ -538,11 +585,20 @@ app.whenReady().then(() => {
   setActiveProfile(store.resolveProfile(migratedProfile ?? settings.activeProfile).id);
 
   hotkeys = createHotkeys({ globalShortcut, emit: emitHotkey, toggleWindow });
+
+  updater = createUpdater({
+    mode: updateMode(),
+    currentVersion: app.getVersion(),
+    emit: (state) => { if (win && !win.isDestroyed()) win.webContents.send('app-update', state); },
+    autoUpdater: updateMode() === 'installer' ? require('electron-updater').autoUpdater : null,
+    fetch: (url, init) => net.fetch(url, init),
+  });
+  if (settings.updates.checkApp) updater.start();
   hotkeys.apply(settings.hotkeys);
 
   registerIpc();
   createWindow();
 });
 
-app.on('will-quit', () => hotkeys?.dispose());
+app.on('will-quit', () => { hotkeys?.dispose(); updater?.stop(); });
 app.on('window-all-closed', () => app.quit());

@@ -9,10 +9,14 @@
   "scripts": {
     "start": "electron .",
     "dev": "node scripts/dev.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "data": "node scripts/update-data.js",
+    "dist": "electron-builder --win --publish never",
+    "dist:dir": "electron-builder --dir --publish never",
+    "release": "electron-builder --win --publish always"
   },
   "dependencies": {
-    "electron": "^44.4.5"
+    "electron-updater": "^6.8.9"
   },
   "keywords": [
     "last-epoch",
@@ -20,6 +24,82 @@
     "electron",
     "desktop"
   ],
-  "author": "",
-  "license": "MIT"
+  "author": "Artzzx",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3"
+  },
+  "productName": "LE Build Planner",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Artzzx/le-build-overlay.git"
+  },
+  "build": {
+    "appId": "gg.artzzx.le-build-planner",
+    "productName": "LE Build Planner",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**",
+      "app/**",
+      "shared/**",
+      "parser/**",
+      "db/build-db.js",
+      "db/data/**",
+      "config/build.example.json",
+      "package.json"
+    ],
+    "asar": true,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "artifactName": "LE-Build-Planner-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "LE-Build-Planner-Portable-${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "icon": "build/icon.png"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Artzzx",
+        "repo": "le-build-overlay",
+        "releaseType": "release"
+      }
+    ]
+  }
 }

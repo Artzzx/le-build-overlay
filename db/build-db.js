@@ -237,6 +237,20 @@ function dataStamp(dir = DATA_DIR) {
   }).join('|');
 }
 
+/**
+ * db/data/version.json (written by extract.py): { version, label, generated, nodes, trees },
+ * or null when absent/unreadable. `version` is a content hash — it changes exactly when
+ * the game data does, which is when the app shows its "Game data updated" card.
+ */
+function dataVersion(dir = DATA_DIR) {
+  try {
+    const v = JSON.parse(fs.readFileSync(path.join(dir, 'version.json'), 'utf8'));
+    return typeof v?.version === 'string' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 module.exports = {
@@ -251,4 +265,5 @@ module.exports = {
   isPopulated,
   missingFiles,
   dataStamp,
+  dataVersion,
 };

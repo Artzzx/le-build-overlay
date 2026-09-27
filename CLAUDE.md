@@ -21,7 +21,8 @@ The app used to be a transparent click-through overlay (`overlay/`). That code i
 ```
 le-build-overlay/
 ├── electron/
-│   ├── main.js        ← window, IPC handlers, lifecycle, game-data cache
+│   ├── main.js        ← window, IPC handlers, lifecycle, game-data cache, game-data version check
+│   ├── updater.js     ← app updates: installer (electron-updater) / portable (GitHub API) / off
 │   ├── store.js       ← <userData>/profiles/<id>.json, settings.json, saves/ (atomic writes, build.json → profile migration)
 │   ├── hotkeys.js     ← global shortcuts: direct / latch ("arm first"), suspend while focused, pause
 │   ├── maxroll.js     ← fetch a Maxroll planner by id (net.fetch → hidden-window fallback; LE_MAXROLL_FIXTURES for tests)
@@ -55,7 +56,9 @@ le-build-overlay/
 │   └── data/                     ← skill_tree_reconciled.json + passives.json (generated, committed), classes.json,
 │                                    icons/ (node art as WebP, committed, referenced by each row's `icon`)
 ├── extractor/                    ← nodes_flat.json (input) → convert_icons.py + extract.py → db/data/; requirements.txt (Pillow)
-├── scripts/                      ← dev.js (npm run dev)
+├── scripts/                      ← dev.js (npm run dev), update-data.js (npm run data: convert → extract → test)
+├── build/                        ← icon.png (app icon, electron-builder buildResources)
+├── .github/workflows/            ← test.yml (every push), release.yml (tag v* → Windows build → GitHub Release)
 ├── config/                       ← build.example.json ("Try the example build"); anything else in config/ is git-ignored
 ├── docs/                         ← screenshot.webp (README), ROADMAP.md (planned work, not built yet)
 └── tests/                        ← node:test — db, parser, tree-utils, view-model, main-process (store/hotkeys),
@@ -195,7 +198,7 @@ One JSON object per line (passives/class/mastery line + one line per skill); `me
 Also stored: `held` / `mastery` (the character state, see *Phases*), optional `phase.level`, and `track.guide` (the guide's order when entering the phase reordered `history`). Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`, which also backfills a missing `phase.masteryId` from `loadout.masteryId` and derives the character state. `label` is baked at import time; the UI prefers live DB names (view-model titles).
 
 ### <userData>/settings.json
-`{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey}, updates:{checkMaxroll}, activeProfile }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
+`{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey}, updates:{checkMaxroll,checkApp}, activeProfile, lastDataVersion }`. `activeProfile` and `lastDataVersion` are owned by main. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
 - `display.mode` is `'full'` or `'compact'` (mini mode). Only main changes it, via `window:setMode`.
 - `opacity` applies to mini mode only.
 - `laneKeys` is `'fkeys'`, `'digits'` or `'numpad'`. A saved `hotkeys` block without `laneKeys` predates the setting and becomes `'digits'` (its old `F1` toggle would clash with lane 1). Fresh installs get `'fkeys'`.
@@ -214,6 +217,12 @@ trees = { [treeID]: { name, icon, nodes: { [String(nodeID)]: { id, nodeName, des
 ```
 Both files are committed (regenerate + commit after each patch). They're written as **one compact row per line**, which is 23 % smaller than indented JSON, and git diffs still show exactly which nodes changed. There is no fallback: if either is missing, `build-db.missingFiles()` reports it and the status bar shows **Game data missing**.
 
+### version.json (written by extract.py)
+`{ version, label, generated, nodes, trees }`. `version` is a 12-char hash of the extracted content: it changes exactly when the data does, and a re-run on the same export changes nothing. `label` is set with `--label "Season 4"` and kept on later runs.
+- Main compares it with `settings.lastDataVersion` on `app:init`. The first start with a new version returns `dataUpdate`, and the renderer shows the one-time **Game data updated** card: the README's after-a-patch steps, plus "Check my guide now".
+- A fresh install only records the version, so no card is shown.
+- `tests/data-contract.test.js` fails when `version.json` doesn't match the committed rows.
+
 ### classes.json (hand-maintained)
 `{ classes:{"2":"Sentinel"}, masteriesByClass:{"2":{"1":"Void Knight","2":"Forge Guard","3":"Paladin"}}, passiveTreeByClass:{"2":"kn-1"}, unverifiedMasteries:["2:1",…] }`
 
@@ -223,13 +232,13 @@ Both files are committed (regenerate + commit after each patch). They're written
 - **Fallback**: `icon: null`, or an image that fails to load, draws a glyph (initials, hue from a hash that skips the green band). Partial icon sets are fine.
 - **Rendering**: tiles get `.has-art` (thin rim + bottom shade over the image). Visual weight follows the reading order: current (green ring) and next are full brightness, later upcoming steps are dimmed, done steps are desaturated.
 
-### Data pipeline (per game patch)
+### Data pipeline (per game patch or season): maintainer only, never players
+Your exporter writes `extractor/nodes_flat.json` and the node images into `db/data/icons/`. Then:
 ```bash
 pip install -r extractor/requirements.txt       # once (Pillow)
-python extractor/convert_icons.py               # db/data/icons: PNG/JPG → 128 px WebP (~6× smaller), idempotent
-python extractor/extract.py [--verbose] [--strict]
+npm run data -- --label "Season 4 (1.4)"        # convert_icons.py → extract.py (args passed on) → npm test
 ```
-Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together. `extract.py` warns if non-WebP icons are present; **never commit PNG icons** (git keeps every version forever).
+`scripts/update-data.js` runs `convert_icons.py` (PNG/JPG → 128 px WebP, idempotent), then `extract.py` (validates, writes `db/data/*.json` + `version.json`), then the whole test suite, and prints the commit + release commands. Any failure stops it with nothing to release. Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together, then release (see *Packaging and releases*). `extract.py` warns if non-WebP icons are present; **never commit PNG icons** (git keeps every version forever).
 
 ### `extract.py`
 Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `passives.json`. It drops orphan and placeholder rows, merges duplicates (keeping an icon from either copy), and derives `treeName` from the root node (or from `TREE_NAME_OVERRIDES`).
@@ -252,6 +261,24 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - **~86 `(treeID, nodeID)` collisions** in `nodes_flat.json`: stale nodes from older tree versions exported next to live ones (e.g. `es6ai` 12 = "Rythm of the Void" *and* "Void Lens"). `extract.py` keeps the first named row, **which may be the stale one**. The fix is upstream: export only nodes referenced by the live tree. Don't write tests that assert names of collided nodes.
 
 ---
+
+## Packaging and releases
+
+- **electron-builder** config lives in `package.json` → `build`:
+  - Windows NSIS installer (one-click, per user) and portable exe, x64.
+  - `files` includes only `electron/`, `app/`, `shared/`, `parser/`, `db/build-db.js`, `db/data/**`, `config/build.example.json`.
+  - **Fuses**: RunAsNode off, NODE_OPTIONS and `--inspect` off, cookie encryption on, `onlyLoadAppFromAsar`, and **embedded ASAR integrity** (electron-builder writes the hash into the Windows exe).
+  - `npm run dist` builds locally (Windows); `npm run dist:dir` gives an unpacked smoke test on any OS.
+- **userData is pinned** to `%APPDATA%/le-build-overlay` (`store.userDataDir`). `productName` "LE Build Planner" would otherwise move it and hide every existing character; a test guards it.
+- **Updates** (`electron/updater.js`, injected like `hotkeys.js`):
+  - **installer**: `electron-updater` from GitHub Releases. It checks 10 s after start and then every 6 h, downloads in the background, and installs on quit (`autoInstallOnAppQuit`). *Restart now* is only ever the player's click.
+  - **portable** (`PORTABLE_EXECUTABLE_DIR`, or not Windows): the GitHub API latest release is compared with `compareVersions`, and the app offers its download page.
+  - **off**: `!app.isPackaged` or `LE_USER_DATA`, so dev runs and tests never touch GitHub.
+  - The Settings toggle is `updates.checkApp`.
+  - State reaches the renderer through the `app-update` event. The renderer shows a status bar chip and a toast.
+  - Background errors are silent; a manual *Check now* reports them.
+- **Release flow**: `npm run data` (when there's new game data) → commit → `npm version minor` (bumps and tags `vX.Y.0`) → `git push --follow-tags`. `.github/workflows/release.yml` (windows-latest) checks that the tag matches `package.json`, runs `npm ci --ignore-scripts` and `npm test`, then `electron-builder --win --publish always`. It publishes the installer, the portable exe and `latest.yml` (what installed apps read).
+- **Unsigned**: SmartScreen warns on first run until there's a code-signing certificate.
 
 ## Electron Architecture
 
@@ -281,7 +308,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - The Settings dialog refuses to save when `hotkeyConflicts()` finds a clash.
 
 ### IPC (`window.api` → main, all `invoke`)
-`init`, `saveBuild` (active profile), `previewPhase(json)`, `loadLoadout(phases, name, source?, target?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `checkGuideUpdate(manual)`, `dismissGuideUpdate(date)`, `createProfile(name?)`, `switchProfile(id)`, `renameProfile(id, name)`, `deleteProfile(id)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`. Main → renderer: `hotkey` events via `onHotkey(cb)`.
+`init` (also returns `appUpdate`, `dataUpdate`, `version`), `saveBuild` (active profile), `previewPhase(json)`, `loadLoadout(phases, name, source?, target?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `checkGuideUpdate(manual)`, `dismissGuideUpdate(date)`, `createProfile(name?)`, `switchProfile(id)`, `renameProfile(id, name)`, `deleteProfile(id)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`, `checkAppUpdate`, `installAppUpdate` (installer: restart into the update; portable: open the release page). Main → renderer: `hotkey` events via `onHotkey(cb)`, `app-update` via `onAppUpdate(cb)`.
 
 ### In-app keyboard (renderer, ignored while typing or a dialog is open)
 - Lanes: `1`–`6` and the configured lane keys (`F1`–`F6` / numpad), `Shift` = undo. `Ctrl`+`1`–`6` / `Ctrl+Enter` fill the step.
@@ -317,5 +344,5 @@ python extractor/convert_icons.py && python extractor/extract.py   # regenerate 
 ## Known Open Issues / Decisions
 1. **Duplicate nodes in data**: see above; needs an upstream exporter fix.
 2. **Global keys swallow the key for every app** (Windows `RegisterHotKey`). The lane keys therefore default to `F1`–`F6`. Users migrated from older settings stay on digits until they switch. The repeat guard and the sounds are defensive against Windows behaviour that can't be exercised in Linux CI: check them by hand on Windows after changes to `hotkeys.js`.
-3. **No installer/packaging yet**. Paths are already packaging-safe (userData for state, read-only app dir). The plan (packaging, auto-update, game-data notice, releases, what Electron 44 enables) is in `docs/ROADMAP.md`.
+3. **Packaging is set up but only verified on Linux here** (unpacked build: data and icons load from the asar, userData stays `le-build-overlay`). The first Windows release, and the install → update → restart cycle, must be checked by hand on Windows (release 0.1.x, then 0.2.0 to see the update land). Remaining ideas are in `docs/ROADMAP.md`.
 4. **Committed `nodes_flat.json` predates `iconFile`**: the 1,027 icons are committed, but the committed export doesn't have `iconFile` yet, so the committed outputs have `icon: null`. Commit the new `nodes_flat.json` together with the regenerated `db/data/*.json`.

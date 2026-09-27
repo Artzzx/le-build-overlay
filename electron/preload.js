@@ -30,6 +30,15 @@ contextBridge.exposeInMainWorld('api', {
   renameProfile: (id, name) => invoke('profiles:rename', { id, name }),
   deleteProfile: (id) => invoke('profiles:delete', { id }),
 
+  checkAppUpdate: () => invoke('appUpdate:check'),
+  installAppUpdate: () => invoke('appUpdate:install'),
+  /** App update state: { state: 'off'|'idle'|'checking'|'downloading'|'ready'|'available'|'error', version?, progress?, current } */
+  onAppUpdate: (callback) => {
+    const listener = (_e, payload) => callback(payload);
+    ipcRenderer.on('app-update', listener);
+    return () => ipcRenderer.removeListener('app-update', listener);
+  },
+
   saveSettings: (settings) => invoke('settings:save', settings),
   pauseHotkeys: (paused) => invoke('hotkeys:pause', { paused }),
   setWindowMode: (mode) => invoke('window:setMode', { mode }),

@@ -44,6 +44,8 @@ const state = {
   db: null,            // { passives, skills, classes } — same shape TreeUtils expects
   build: null,         // multi-phase loadout (the active profile's)
   profiles: [],        // [{ id, name, buildName, classId, masteryId }] — every character
+  appUpdate: null,     // { state, version?, progress?, url?, current } — electron/updater.js
+  version: '',
   activeProfile: null, // id of the character whose build is shown
   view: null,          // ViewModel.buildView(build, db)
   settings: null,
@@ -66,7 +68,7 @@ const els = {};
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 async function boot() {
-  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help', 'dlg-update']) {
+  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help', 'dlg-update', 'dlg-notice']) {
     els[id] = $(id);
   }
   toast = createToaster(els.toasts);
@@ -81,6 +83,8 @@ async function boot() {
   state.db = { passives: trees, skills: trees, classes: res.db.classes };
   state.build = normalizeBuild(res.build);
   state.profiles = res.profiles ?? [];
+  state.appUpdate = res.appUpdate ?? null;
+  state.version = res.version ?? '';
   state.activeProfile = res.activeProfile ?? null;
   state.settings = res.settings;
   state.defaults = res.defaultSettings;
@@ -88,6 +92,7 @@ async function boot() {
   state.failedHotkeys = res.failedHotkeys ?? [];
 
   api.onHotkey(onGlobalHotkey);
+  api.onAppUpdate(onAppUpdate);
   document.addEventListener('keydown', onKeyDown);
   // One reveal per frame while resizing, not one per resize event.
   let revealQueued = false;
@@ -100,8 +105,10 @@ async function boot() {
   renderAll();
   requestAnimationFrame(() => revealAll(false));
   document.body.classList.add('is-ready');
+  // First start with new game data (an app update after a patch): say what that means, once.
+  if (res.dataUpdate) showDataNotice(res.dataUpdate);
   // Has the guide changed since it was loaded? (Maxroll builds only; main limits it to once a day.)
-  setTimeout(() => checkGuideUpdate(), 1500);
+  else setTimeout(() => checkGuideUpdate(), 1500);
 }
 
 // ─── Derived ──────────────────────────────────────────────────────────────────
@@ -511,6 +518,70 @@ function showProfileMenu(anchor) {
   });
 }
 
+// ─── Game data updated (first start after a patch) ────────────────────────────
+
+/** The README's "After a major game patch", short, once per new game data. */
+function showDataNotice(v) {
+  const dialog = els['dlg-notice'];
+  if (dialog.open) return;
+  const fromMaxroll = !!state.build?.source?.maxroll;
+  const close = () => dialog.close();
+  mount(dialog,
+    h('div.dialog-card.dialog-notice',
+      h('header.dialog-head',
+        h('div',
+          h('h2', v.label ? `Game data updated — ${v.label}` : 'Game data updated'),
+          h('div.muted', `${v.trees} trees · ${v.nodes} nodes${v.generated ? ` · ${v.generated}` : ''}`)),
+        h('button.btn-icon', { type: 'button', 'aria-label': 'Close', onclick: close }, ui('x', { size: 18 }))),
+      h('div.dialog-body',
+        h('p', 'This version of the app comes with new game data for the latest patch. Before you play:'),
+        h('ol.notice-steps',
+          h('li', h('b', 'Your characters and progress are kept'), ' — nothing was reset.'),
+          h('li', h('b', 'Check your guide.'), ' Authors update their Maxroll planners after a patch; the app shows what changed and keeps your points.'),
+          h('li', h('b', 'Points refunded in game?'), ' Click the node you’re actually at, then ', h('i', 'Start from here'), '.'),
+          h('li', h('b', '“No tree data” on a skill'), ' means the guide or the game data doesn’t know it yet — check again later.'),
+          h('li', h('b', 'New season?'), ' Load the build into a ', h('i', 'new character'), ' — the old one keeps its progress.'))),
+      h('footer.dialog-foot',
+        h('div.dialog-foot-actions',
+          h('button.btn.btn-ghost', { type: 'button', onclick: close }, 'Got it'),
+          fromMaxroll ? h('button.btn.btn-primary', { type: 'button', onclick: () => { close(); checkGuideUpdate({ manual: true }); } }, ui('refresh', { size: 15 }), 'Check my guide now') : null))));
+  dialog.showModal();
+}
+
+// ─── App updates ──────────────────────────────────────────────────────────────
+
+/** Updater state from main. Toasts only on changes; never restarts the app by itself. */
+function onAppUpdate(next) {
+  const was = state.appUpdate?.state;
+  state.appUpdate = next;
+  renderStatusbar();
+  if (next.state === 'ready' && was !== 'ready') {
+    toast(`Version ${next.version} is ready — it installs when you close the app.`, {
+      kind: 'success', duration: 15000, action: { label: 'Restart now', run: () => api.installAppUpdate() },
+    });
+  } else if (next.state === 'available' && was !== 'available') {
+    toast(`Version ${next.version} is available.`, { duration: 15000, action: { label: 'Download', run: () => api.installAppUpdate() } });
+  } else if (next.state === 'error') {
+    toast(next.error, { kind: 'warn' });
+  } else if (next.state === 'idle' && next.upToDate) {
+    toast(`You have the latest version (${next.current}).`, { duration: 2500 });
+  }
+}
+
+/** Status bar chip for an update in progress / ready / available. */
+function appUpdateNote() {
+  const u = state.appUpdate;
+  if (u?.state === 'ready') {
+    return h('button.note.note-update', { type: 'button', onclick: () => api.installAppUpdate(), title: `Restart into version ${u.version} now (otherwise it installs when you close the app)` },
+      ui('refresh', { size: 13 }), `Update ${u.version} ready — restart`);
+  }
+  if (u?.state === 'available') {
+    return h('button.note.note-update', { type: 'button', onclick: () => api.installAppUpdate(), title: 'Open the download page' }, ui('refresh', { size: 13 }), `Version ${u.version} available`);
+  }
+  if (u?.state === 'downloading') return h('span.note', { title: `Downloading version ${u.version}` }, `Updating… ${u.progress ?? 0}%`);
+  return null;
+}
+
 // ─── Guide updates ────────────────────────────────────────────────────────────
 
 /**
@@ -596,6 +667,11 @@ function showSettings() {
     defaults: state.defaults,
     save: saveSettings,
     pauseHotkeys: (paused) => api.pauseHotkeys(paused),
+    app: {
+      version: state.version,
+      canCheck: state.appUpdate?.state !== 'off',
+      check: () => { toast('Checking for updates…', { duration: 1500 }); api.checkAppUpdate(); },
+    },
   });
 }
 
@@ -1025,6 +1101,8 @@ function renderStatusbar() {
     notes.push(h('span.note.note-error', { title: `Missing in db/data/: ${state.missingData.join(', ')} — run python extractor/extract.py` },
       ui('alert', { size: 13 }), 'Game data missing'));
   }
+  const upd = appUpdateNote();
+  if (upd) notes.push(upd);
   notes.push(h('button.note.note-help', { type: 'button', onclick: showHelp, title: 'Keyboard shortcuts (?)', 'aria-label': 'Keyboard shortcuts' }, ui('keyboard', { size: 14 }), h('span.note-help-text', 'Shortcuts')));
 
   mount(els.statusbar,
