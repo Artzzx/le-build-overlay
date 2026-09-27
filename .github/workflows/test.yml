@@ -1,0 +1,23 @@
+# Tests on every push and pull request (Linux is enough: the suite is pure Node + Python).
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r extractor/requirements.txt
+      # No install scripts needed: Electron (42+) downloads itself on first run, and tests don't run it.
+      - run: npm ci --ignore-scripts
+      - run: npm test

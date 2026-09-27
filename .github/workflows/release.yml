@@ -1,0 +1,36 @@
+# Release: push a version tag (`npm version minor && git push --follow-tags`).
+# Builds the Windows installer + portable exe and publishes them as a GitHub Release;
+# installed apps pick it up through electron-updater (latest.yml in the release).
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # create the release and upload the files
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r extractor/requirements.txt
+      - name: Tag matches package.json version
+        shell: bash
+        run: |
+          v="v$(node -p "require('./package.json').version")"
+          [ "$v" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} != package.json $v — use npm version"; exit 1; }
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - name: Build and publish
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

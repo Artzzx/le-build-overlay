@@ -370,6 +370,8 @@ b { font-weight: 600; }
 .notes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .note { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--line-2); background: transparent; font-size: var(--fs-xs); color: var(--text-3); }
 .note-warn { color: var(--warn); border-color: rgba(255, 198, 92, 0.35); }
+.note-update { color: var(--now); border-color: var(--now-line); cursor: pointer; }
+.note-update:hover { background: var(--now-soft); }
 .note-error { color: var(--danger); border-color: rgba(255, 107, 107, 0.4); }
 button.note:hover { background: var(--surface-2); }
 .note-help { color: var(--text-3); }

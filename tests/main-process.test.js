@@ -12,7 +12,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const { createStore, mergeSettings, DEFAULT_SETTINGS } = require('../electron/store');
+const { createStore, mergeSettings, userDataDir, DEFAULT_SETTINGS } = require('../electron/store');
 const { createHotkeys, LATCH_TIMEOUT_MS, REPEAT_GUARD_MS } = require('../electron/hotkeys');
 
 const quiet = { log() {}, warn() {}, error() {} };
@@ -63,6 +63,16 @@ describe('mergeSettings', () => {
     assert.equal(s.hotkeys.laneKeys, 'digits');
     assert.equal(s.hotkeys.toggle, 'F1');
     assert.equal(mergeSettings({ ...old, hotkeys: { ...old.hotkeys, laneKeys: 'numpad' } }).hotkeys.laneKeys, 'numpad');
+  });
+});
+
+// ─── user data folder ─────────────────────────────────────────────────────────
+
+describe('userDataDir', () => {
+  test('stays le-build-overlay even though the packaged app has another name', () => {
+    const pkg = require('../package.json');
+    assert.notEqual(pkg.build.productName, pkg.name, 'productName differs: Electron\'s default folder would move');
+    assert.equal(userDataDir(path.join('C:', 'Users', 'me', 'AppData', 'Roaming')), path.join('C:', 'Users', 'me', 'AppData', 'Roaming', 'le-build-overlay'));
   });
 });
 

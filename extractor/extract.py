@@ -72,6 +72,8 @@ Both outputs are flat arrays with the same row shape:
 """
 
 import argparse
+import datetime
+import hashlib
 import json
 import re
 import sys
@@ -118,6 +120,33 @@ ICON_EXTENSIONS = ('.webp', '.png', '.jpg', '.jpeg')  # earlier wins when a stem
 def load_json(path):
     with open(path, encoding='utf-8-sig') as f:
         return json.load(f)
+
+
+def write_version(out_dir, skills, passives, label=None):
+    """db/data/version.json — lets the app tell players the game data changed.
+
+    `version` is a hash of the extracted content: it changes exactly when the data
+    does (re-running on the same export gives the same version). `label` is kept
+    from the previous run unless a new one is given.
+    """
+    path = Path(out_dir) / 'version.json'
+    previous = {}
+    if path.exists():
+        try:
+            previous = json.loads(path.read_text(encoding='utf-8'))
+        except (ValueError, OSError):
+            previous = {}
+    digest = hashlib.sha256(json.dumps([skills, passives], sort_keys=True, ensure_ascii=False).encode('utf-8')).hexdigest()[:12]
+    version = {
+        'version': digest,
+        'label': label if label is not None else previous.get('label'),
+        # Same content = same date, so a re-run doesn't make a spurious git diff.
+        'generated': previous.get('generated') if previous.get('version') == digest else datetime.date.today().isoformat(),
+        'nodes': len(skills) + len(passives),
+        'trees': len({r['treeID'] for r in skills} | {r['treeID'] for r in passives}),
+    }
+    path.write_text(json.dumps(version, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    return version
 
 
 def write_json(path, rows):
@@ -470,6 +499,7 @@ def main():
     ap.add_argument('--icons-dir', type=Path, default=DEFAULT_ICONS_DIR, help='folder holding node icon images')
     ap.add_argument('--verbose', action='store_true', help='list every unresolved collision / icon')
     ap.add_argument('--strict', action='store_true', help='fail when any icon value cannot be resolved')
+    ap.add_argument('--label', default=None, help='name shown to players for this data, e.g. "Season 4 (1.4)"; kept from the last run if omitted')
     args = ap.parse_args()
 
     raw = load_json(args.input)
@@ -504,6 +534,7 @@ def main():
     args.out_dir.mkdir(parents=True, exist_ok=True)
     write_json(args.out_dir / 'skill_tree_reconciled.json', skills)
     write_json(args.out_dir / 'passives.json', passives)
+    version = write_version(args.out_dir, skills, passives, args.label)
 
     # ─── Report ───────────────────────────────────────────────────────────────
     print(f'Input rows: {len(raw)}')
@@ -513,6 +544,7 @@ def main():
     skill_trees = sorted({r['treeID'] for r in skills})
     print(f'skill_tree_reconciled.json: {len(skills)} nodes, {len(skill_trees)} trees')
     print(f'passives.json: {len(passives)} nodes')
+    print(f'version.json: {version["version"]}' + (f' ({version["label"]})' if version.get('label') else ''))
     for t in PASSIVE_TREE_IDS:
         n = sum(1 for r in passives if r['treeID'] == t)
         print(f'  {t} ({names[t]}): {n} nodes')

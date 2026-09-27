@@ -57,8 +57,9 @@ function select(options, value, onChange, label) {
  * @param {object} o.settings, o.defaults
  * @param {(settings) => Promise<{ok, settings?, failedHotkeys?, error?}>} o.save
  * @param {(paused: boolean) => void} o.pauseHotkeys
+ * @param {{ version: string, canCheck: boolean, check: () => void }} [o.app] — app version + "Check now"
  */
-export function openSettings({ dialog, settings, defaults, save, pauseHotkeys }) {
+export function openSettings({ dialog, settings, defaults, save, pauseHotkeys, app = null }) {
   let draft = structuredClone(settings);
   const recorders = [];
 
@@ -123,7 +124,13 @@ export function openSettings({ dialog, settings, defaults, save, pauseHotkeys })
       ),
 
       h('section.dialog-section',
-        h('h3', 'Guide updates'),
+        h('h3', 'Updates'),
+        app ? field(`App version ${app.version}`, app.canCheck
+          ? 'New versions (new game data after a patch, fixes) download in the background and install when you close the app.'
+          : 'Updates are off in this build (development run).',
+        h('div.range-wrap',
+          toggle(draft.updates.checkApp, (v) => { draft.updates.checkApp = v; }, 'Check for app updates'),
+          app.canCheck ? h('button.btn.btn-secondary.btn-sm', { type: 'button', onclick: app.check }, 'Check now') : null)) : null,
         field('Check Maxroll for guide updates', 'At start, once a day, for builds loaded from a Maxroll link. You review every change before anything is applied.',
           toggle(draft.updates.checkMaxroll, (v) => { draft.updates.checkMaxroll = v; }, 'Check Maxroll for guide updates')),
       ),

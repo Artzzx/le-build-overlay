@@ -129,3 +129,13 @@ describe(`data contract (${files.join(' + ')})`, () => {
     assert.deepEqual(missing.slice(0, 10), []);
   });
 });
+
+describe('version.json (the "Game data updated" card)', () => {
+  test('exists, and matches the committed data (re-run extract.py after changing it)', () => {
+    const v = read('version.json');
+    assert.match(v.version, /^[0-9a-f]{12}$/);
+    assert.equal(v.nodes, rows.length, 'version.json is stale: run `npm run data`');
+    assert.equal(v.trees, new Set(rows.map(r => r.treeID)).size);
+    assert.equal(require('../db/build-db').dataVersion().version, v.version);
+  });
+});
