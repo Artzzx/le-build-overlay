@@ -385,6 +385,23 @@ describe('switchPhase', () => {
     assert.equal(switchPhase(back.build, 1).build.phases[1].tracks[0].currentStep, 4);
   });
 
+  test('moving on without pressing Done: the last phase\'s instructions count as done', () => {
+    // Phase 1 uses x; phase 2 (level 8 = 2 slots, both taken) has no room for it → despecialize;
+    // phase 3 uses x again, from 0. Skipping Done must not bring x's old points back.
+    const l = done(loadout([
+      { name: 'P1', masteryId: 0, level: 8, tracks: [passive([1]), skill('x', [3, 4])] },
+      { name: 'P2', masteryId: 0, level: 8, tracks: [passive([1]), skill('y', [5]), skill('z', [6])] },
+      { name: 'P3', masteryId: 0, level: 20, tracks: [passive([1]), skill('x', [7, 3])] },
+    ]));
+    const to2 = switchPhase(l, 1);
+    assert.deepEqual(to2.transition.unspecNeeded.map(u => [u.skillKey, u.isRemove]), [['x', true]]);
+    const to3 = switchPhase(done(to2.build), 2); // no Done pressed on P2's banner
+    assert.deepEqual(to3.transition.unspecNeeded.filter(u => u.skillKey === 'x'), [], 'no "unspec 2 points" for a skill that was despecialized');
+    assert.deepEqual(to3.transition.unspecNeeded.map(u => [u.skillKey, u.isRemove]), [['y', true], ['z', true]], 'only P2\'s own skills, which P3 drops');
+    assert.equal(to3.build.phases[2].tracks[1].currentStep, 0);
+    assert.equal('x' in to3.build.held, false);
+  });
+
   test('misclick forward then back: the instructions stay, and nothing is lost', () => {
     const l = done(loadout([
       { name: 'A', masteryId: 0, tracks: [passive([1, 1, 2])] },

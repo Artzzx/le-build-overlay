@@ -376,14 +376,17 @@
 
   /**
    * Switch the build to phase `to` (see enterPhase). Forward: the new instructions
-   * replace any pending ones (they're recomputed from the same character state, so
-   * nothing still to do is lost). Backward: pending instructions are kept — a
+   * replace any pending ones — applied first when they were for the phase being left. Backward: pending instructions are kept — a
    * misclick back and forth never hides them.
    */
   function switchPhase(build, to) {
-    const b = ensureHeld(build);
+    let b = ensureHeld(build);
     const from = b.currentPhase ?? 0;
     const forward = to > from;
+    // Moving on from the phase the pending instructions were for = the player played it,
+    // so they did them (e.g. despecialized a skill) even if Done wasn't pressed. Instructions
+    // for another phase (a misclick forward, then back) are never assumed done.
+    if (forward && b.pending && b.pending.toPhase === from) b = applyPending(b);
     const r = enterPhase(b, b.phases, to, { forward, fromName: b.phases[from]?.name ?? null, takenFrom: b.phases[from] });
     const pending = forward ? r.transition : (b.pending ?? null);
     return { build: { ...r.build, pending }, transition: pending };
