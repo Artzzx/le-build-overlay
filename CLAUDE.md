@@ -58,7 +58,7 @@ le-build-overlay/
 ├── extractor/                    ← nodes_flat.json (input) → convert_icons.py + extract.py → db/data/; requirements.txt (Pillow)
 ├── scripts/                      ← dev.js (npm run dev), update-data.js (npm run data: convert → extract → test)
 ├── build/                        ← icon.png (app icon, electron-builder buildResources)
-├── .github/workflows/            ← test.yml (every push), release.yml (tag v* → Windows build → GitHub Release)
+├── .github/workflows/            ← test.yml (every push, Linux + Windows), release.yml (tag v* → Windows build → GitHub Release)
 ├── config/                       ← build.example.json ("Try the example build"); anything else in config/ is git-ignored
 ├── docs/                         ← screenshot.webp (README), ROADMAP.md (planned work, not built yet)
 └── tests/                        ← node:test — db, parser, tree-utils, view-model, main-process (store/hotkeys),
@@ -337,6 +337,7 @@ python extractor/convert_icons.py && python extractor/extract.py   # regenerate 
 ```
 
 - Tests run against the committed game data. The Python-backed tests skip themselves when python3 / Pillow are missing.
+- The Python scripts force UTF-8 output (`stream.reconfigure`): Windows pipes default to cp1252, which crashes on `→ ≈ — ×`. Reproduce Windows failures locally with `PYTHONIOENCODING=cp1252 npm test`.
 - UI changes must be checked in the real app at several window sizes (e.g. 1920, 1440, 1100, 760, 460 px wide). Run it under `xvfb-run` with `LE_USER_DATA` pointing at a temp dir, and drive it via `webContents.executeJavaScript` / `sendInputEvent` + `capturePage`.
 - **Docs split**: `README.md` is the player's guide (install, using the app, after a patch, troubleshooting). No data-extraction or code internals there: those live in this file.
 - `.gitignore` policy: game data we produce is committed (`nodes_flat.json`, `db/data/**`); raw game dumps, runtime state, build output and tooling noise are ignored.

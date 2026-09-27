@@ -1,4 +1,5 @@
-# Tests on every push and pull request (Linux is enough: the suite is pure Node + Python).
+# Tests on every push and pull request, on Linux and Windows: the release is built on Windows,
+# and Windows-only breakage (console encoding, paths) must show up here, not at release time.
 name: Tests
 
 on:
@@ -7,14 +8,18 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - run: pip install -r extractor/requirements.txt

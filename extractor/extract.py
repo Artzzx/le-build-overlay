@@ -493,6 +493,10 @@ def validate_output(skills, passives, icons_dir):
 
 
 def main():
+    # Windows pipes default to the ANSI code page (cp1252), which can't print → ≈ — ×:
+    # a report line would crash the run. Always write UTF-8 (npm run data and the tests read it as such).
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding='utf-8', errors='replace')
     ap = argparse.ArgumentParser(description='Clean nodes_flat.json into db/data runtime files.')
     ap.add_argument('--input', type=Path, default=DEFAULT_INPUT)
     ap.add_argument('--out-dir', type=Path, default=DATA_DIR)
