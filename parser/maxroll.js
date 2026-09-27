@@ -192,6 +192,8 @@ function parseBuild(rawInput, skillsDb, classesDb, buildName = 'Imported Build')
     name: buildName,
     classId: raw.class,
     masteryId: raw.mastery,
+    // Character level the phase is planned for (Maxroll variants carry it): how many skill slots are open.
+    ...(Number.isInteger(raw.level) && raw.level > 0 ? { level: raw.level } : {}),
     tracks: [passiveTrack, ...skillTracks],
   };
 
@@ -275,7 +277,7 @@ function parseLoadout(phaseInputs, skillsDb, classesDb, loadoutName = 'Imported 
       );
     }
 
-    return { name: phaseName || `Phase ${idx + 1}`, masteryId: build.masteryId, tracks: build.tracks };
+    return { name: phaseName || `Phase ${idx + 1}`, masteryId: build.masteryId, ...(build.level ? { level: build.level } : {}), tracks: build.tracks };
   });
 
   const loadout = {

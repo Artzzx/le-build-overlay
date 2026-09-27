@@ -32,7 +32,7 @@ import { openUpdate } from './update-dialog.js';
 const { laneKeyLabel, laneKey, laneFromCode, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
 let toast = () => {}; // set in boot() once the container exists
 
-const { normalizeBuild, stepTrack, setTrackProgress, computeTransition, applyCarryOver, mergeProgress } = window.TreeUtils;
+const { normalizeBuild, stepTrack, setTrackProgress, switchPhase, mergeProgress } = window.TreeUtils;
 const { buildView, stepStartProgress } = window.ViewModel;
 const api = window.api;
 
@@ -313,32 +313,29 @@ function gotoPhase(to) {
   const total = b.phases.length;
   to = ((to % total) + total) % total;
   if (to === b.currentPhase) return;
-  const from = b.currentPhase;
-  const targetBefore = b.phases[to];
-  const transition = computeTransition(b.phases, from, to);
+  // Entering a phase starts from what the character holds (shared/tree-utils.js enterPhase):
+  // only points the new routes don't want are to be unspecced, in any order.
+  const { build: next, transition } = switchPhase(b, to);
   state.pinned = null;
   state.hover = null;
   state.focusLane = 0;
   state.lastAction = null;
-  // Carry-over rewrites the target phase's progress: its old undo entries no longer apply.
+  // Entering rewrites the target phase's progress: its old undo entries no longer apply.
   state.undoStack = state.undoStack.filter(u => u.phase !== to);
-  commit({ ...b, currentPhase: to, phases: applyCarryOver(b.phases, from, to) });
-  if (transition.unspecNeeded.length || transition.masteryChange) {
-    state.transition = transition;
-    renderBanner();
-  } else {
-    dismissTransition();
-  }
-  toast(`Switched to ${transition.toName}.`, {
+  commit(next);
+  state.transition = transition;
+  renderBanner();
+  toast(`Switched to ${b.phases[to].name}.`, {
     action: {
       label: 'Undo',
-      // Go back and restore the target phase's pre-switch progress; ignored if the user has moved on.
+      // Back to the build exactly as it was (phase, progress and what the character holds).
       run: () => {
-        if (state.build.currentPhase !== to) return;
+        // Only while nothing changed since this switch: an older toast must never restore a stale build.
+        if (state.build !== next) return toast('Can’t undo that switch any more — the build changed since.', { duration: 2500 });
         dismissTransition();
         state.undoStack = state.undoStack.filter(u => u.phase !== to);
         state.lastAction = null;
-        commit({ ...state.build, currentPhase: from, phases: state.build.phases.map((p, i) => (i === to ? targetBefore : p)) });
+        commit(b);
       },
     },
   });
@@ -817,22 +814,27 @@ function renderBanner() {
   if (!t) { els.banner.hidden = true; mount(els.banner); return; }
   els.banner.hidden = false;
   const mc = t.masteryChange;
-  const mName = (id) => window.ViewModel.masteryName(state.db, state.build.classId, id);
-  const masteryLine = !mc ? null
-    : !mc.from ? h('li', 'Choose the ', h('b', mName(mc.to) ?? `mastery ${mc.to}`), ' mastery')
-      : h('li', 'Mastery: ', h('b', mName(mc.from) ?? `mastery ${mc.from}`), ' → ', h('b', mName(mc.to) ?? (mc.to ? `mastery ${mc.to}` : 'none')));
+  const mName = (id) => window.ViewModel.masteryName(state.db, state.build.classId, id) ?? `mastery ${id}`;
+  const pts = (n) => `${n} point${n === 1 ? '' : 's'}`;
+  const unspec = t.unspecNeeded.filter(u => !u.isRemove);
+  const despec = t.unspecNeeded.filter(u => u.isRemove);
+  const group = (title, items) => (items.length ? h('div.banner-group', h('div.banner-group-title', title), h('ul.banner-list', items)) : null);
+  const needsRespec = unspec.length || despec.length;
   mount(els.banner,
-    h('div.banner.banner-warn', { role: 'alert' },
-      ui('alert', { size: 20 }),
+    h('div.banner', { role: 'alert', class: needsRespec ? 'banner-warn' : 'banner-info' },
+      ui(needsRespec ? 'alert' : 'info', { size: 20 }),
       h('div.banner-body',
-        h('div.banner-title', t.unspecNeeded.length ? `Before continuing in ${t.toName}, respec in game:` : `Before continuing in ${t.toName}:`),
-        h('ul.banner-list',
-          masteryLine,
-          t.unspecNeeded.map((u) => {
-            const pts = `${u.amount} point${u.amount > 1 ? 's' : ''}`;
-            return h('li', h('b', transitionLabel(u)),
-              u.isRemove ? ` — remove from your skill bar (${pts} allocated)` : ` — unspec ${pts}`);
-          }))),
+        h('div.banner-title', t.reason === 'update' ? `Guide updated — in ${t.toName}` : `Switching to ${t.toName}`),
+        group('Respec', unspec.map(u => h('li', h('b', transitionLabel(u)), ` — unspec ${pts(u.amount)} the new route doesn’t use`))),
+        group('Skills', [
+          ...despec.map(u => h('li', h('b', transitionLabel(u)), u.backIn
+            ? ` — despecialize to free the slot (${pts(u.amount)} lost; back in ${u.backIn} from 0)`
+            : ` — not used any more: despecialize it (${pts(u.amount)})`)),
+          ...(t.keptSkills ?? []).map(k => h('li.is-keep', h('b', transitionLabel(k)), ` — not used here: keep it specialized, it comes back in ${k.backIn} with your ${pts(k.points)}`)),
+        ]),
+        group('Mastery', mc ? [h('li', mc.from
+          ? ['Change your mastery: ', h('b', mName(mc.from)), ' → ', h('b', mName(mc.to))]
+          : ['Choose the ', h('b', mName(mc.to)), ' mastery when it unlocks'])] : [])),
       h('button.btn.btn-secondary.btn-sm', { type: 'button', onclick: () => dismissTransition() }, 'Done'),
     ),
   );
