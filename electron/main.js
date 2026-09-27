@@ -424,8 +424,8 @@ function registerIpc() {
     return { planner: { ...planner, variants, pick, link: `https://maxroll.gg/last-epoch/planner/${parsed.id}` } };
   });
 
-  handle('maxroll:clipboardLink', () => {
-    const text = clipboard.readText().trim();
+  handle('maxroll:clipboardLink', async () => {
+    const text = String(await clipboard.readText()).trim(); // a Promise since Electron 44 (W3C-style clipboard)
     return { link: text.length < 300 && /maxroll\.gg\/last-epoch\/planner\//i.test(text) && MaxrollImport.parseMaxrollLink(text) ? text : null };
   });
 
@@ -531,9 +531,7 @@ app.whenReady().then(() => {
   if (!IS_PRIMARY) return;
   Menu.setApplicationMenu(null);
 
-  store = createStore({ dir: app.getPath('userData'), legacyDir: path.join(ROOT, 'config') });
-  const migrated = store.migrateLegacy();
-  if (migrated.length) console.log(`[main] Migrated from config/: ${migrated.join(', ')}`);
+  store = createStore({ dir: app.getPath('userData') });
   settings = store.loadSettings();
   const migratedProfile = store.migrateProfiles(characterName);
   if (migratedProfile) console.log('[main] build.json → first character profile');

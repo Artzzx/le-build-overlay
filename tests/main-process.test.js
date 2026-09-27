@@ -163,26 +163,6 @@ describe('createStore', () => {
     store.deleteTemplate(a);
     assert.equal(store.listTemplates().length, 1);
   });
-
-  test('migrateLegacy copies build, hotkeys (not overlay bounds) and saves — once', () => {
-    const legacy = tmpDir();
-    fs.writeFileSync(path.join(legacy, 'build.json'), JSON.stringify({ phases: ['x'] }));
-    fs.writeFileSync(path.join(legacy, 'settings.json'), JSON.stringify({
-      window: { width: 265, height: 466 }, hotkeys: { hotkeyMode: 'latch', toggle: 'F9' },
-    }));
-    fs.mkdirSync(path.join(legacy, 'saves'));
-    fs.writeFileSync(path.join(legacy, 'saves', 't.json'), '{}');
-
-    const store = createStore({ dir, legacyDir: legacy, log: quiet });
-    const migrated = store.migrateLegacy();
-    assert.deepEqual(migrated.sort(), ['build.json', 'saves/t.json', 'settings.json (hotkeys)']);
-    const s = store.loadSettings();
-    assert.equal(s.hotkeys.hotkeyMode, 'latch');
-    assert.equal(s.hotkeys.toggle, 'F9');
-    assert.equal(s.window.width, DEFAULT_SETTINGS.window.width);
-    assert.deepEqual(store.migrateLegacy(), []); // idempotent
-    fs.rmSync(legacy, { recursive: true, force: true });
-  });
 });
 
 // ─── hotkeys ──────────────────────────────────────────────────────────────────

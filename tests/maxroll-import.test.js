@@ -172,3 +172,66 @@ describe('guide updates: planner date + mapPhasesToVariants', () => {
     assert.deepEqual(M.mapPhasesToVariants(undefined, [{ name: 'endgame' }, { name: 'Custom' }], variants), [2, null]);
   });
 });
+
+describe('phase switching on the real planners (character state)', () => {
+  const TU = require('../shared/tree-utils');
+  const load = (file) => {
+    const planner = M.decodePlanner(fs.readFileSync(path.join(__dirname, 'fixtures', file), 'utf8'), DB.skills);
+    const vs = planner.variants.filter(v => !v.hidden);
+    return TU.normalizeBuild(parseLoadout(vs.map(v => ({ name: v.name, json: JSON.stringify(v.build) })), DB.skills, DB.classes, planner.name));
+  };
+  // Confirm what the last switch asked (Done), allocate every point of the phase, then switch to the next one.
+  const finishAndNext = (b) => {
+    const full = b.phases[b.currentPhase].tracks.reduce((x, t, i) => TU.setTrackProgress(x, i, t.history.length), TU.applyPending(b));
+    return TU.switchPhase(full, b.currentPhase + 1);
+  };
+  const lane = (b, key) => b.phases[b.currentPhase].tracks.find(t => (key === 'passive' ? t.type === 'passive' : t.skillKey === key));
+
+  test('phases carry their planned level (skill slots)', () => {
+    assert.deepEqual(load('maxroll-profile-le.json').phases.map(p => p.level), [9, 15, 49, 70]);
+  });
+
+  test('Rogue: reordered passives are never unspecced; slots decide whether a skill is kept', () => {
+    let b = load('maxroll-profile-le.json');
+    let s = finishAndNext(b); // Starting → Early (level 15 = 2 slots, both used by Bladestorm + Shift)
+    assert.deepEqual(s.transition.masteryChange, { from: 0, to: 1 });
+    assert.deepEqual(s.transition.unspecNeeded.map(u => [u.skillKey, u.isRemove, u.amount, u.backIn]),
+      [['sh4re', true, 6, 'Intermediate Setup (lvl 16 - 49)']], 'no free slot: despecialize, back later from 0');
+    // With a free slot the same skill would be kept with its points:
+    const roomy = { ...b, phases: b.phases.map((p, i) => (i === 1 ? { ...p, level: 20 } : p)) };
+    const k = finishAndNext(roomy);
+    assert.deepEqual(k.transition.keptSkills.map(x => [x.skillKey, x.points]), [['sh4re', 6]]);
+    // Kept → back in Intermediate. That guide rebuilds Shadow Rend: of the 6 early points
+    // (Intensity ×3, Heavy Shadows ×3) only 1 Intensity is in the new route.
+    const back = finishAndNext(k.build);
+    assert.equal(lane(back.build, 'sh4re').currentStep, 1);
+    assert.deepEqual(back.transition.unspecNeeded.filter(u => u.skillKey === 'sh4re').map(u => [u.amount, u.isRemove]), [[5, false]]);
+    s = finishAndNext(s.build); // Early → Intermediate: the old prefix rule said "unspec 15 passives"
+    assert.deepEqual(s.transition?.unspecNeeded.filter(u => !u.isRemove) ?? [], []);
+    assert.equal(lane(s.build, 'passive').currentStep, 20);
+    assert.equal(lane(s.build, 'sh4re').currentStep, 0, 'despecialized in Early → starts over');
+    assert.deepEqual(s.transition.unspecNeeded.map(u => [u.skillKey, u.isRemove]), [['shiif', true]], 'Shift is never used again');
+    s = finishAndNext(s.build); // Intermediate → Final: the old rule said "unspec 3 Shadow Rend"
+    assert.equal(s.transition, null);
+    assert.equal(lane(s.build, 'sh4re').currentStep, 16);
+  });
+
+  test('Mage: only the one real unspec is left (Mana Strike), never a mastery "respec"', () => {
+    let b = load('mage_leveling.json');
+    let s = finishAndNext(b);
+    s = finishAndNext(s.build);
+    assert.deepEqual(s.transition.unspecNeeded.filter(u => !u.isRemove).map(u => [u.skillKey, u.amount]), [['ms26', 1]]);
+    assert.equal(s.transition.masteryChange, null, 'Spellblade was already chosen in the previous switch');
+  });
+
+  test('Sentinel: every switch keeps all points; going back asks for nothing', () => {
+    let b = load('sentinel_leveling.json');
+    const s1 = finishAndNext(b);
+    const s2 = finishAndNext(s1.build);
+    const s3 = finishAndNext(s2.build);
+    for (const s of [s1, s2, s3]) assert.deepEqual(s.transition?.unspecNeeded.filter(u => !u.isRemove) ?? [], []);
+    const back = TU.switchPhase(TU.applyPending(s3.build), 1);
+    assert.equal(back.transition, null);
+    assert.equal(TU.switchPhase(back.build, 3).build.phases[3].tracks[0].currentStep, 50, 'nothing forgotten going back and forth');
+  });
+});

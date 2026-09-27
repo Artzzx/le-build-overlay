@@ -16,17 +16,9 @@ desktop.ini
 .vscode/
 .idea/
 
-# ─── Legacy runtime state (overlay era) ──────────────────────────────────────
-# The app now keeps build/settings/templates in the per-user data folder; these
-# only protect old local files from being committed by accident.
-config/build.json
-config/settings.json
-config/saves/
-
-# ─── Raw game dumps (large, game-owned) ──────────────────────────────────────
-# Committed game data = extractor/nodes_flat.json (input) + db/data/ (outputs,
-# incl. icons/ as WebP — run extractor/convert_icons.py before committing).
+# ─── Local state ─────────────────────────────────────────────────────────────
+# The app keeps characters, settings and templates in the per-user data folder.
+# Only config/*.example.* belongs in the repo; anything else there is local.
+config/*
+!config/*.example.*
 Global Tree Data.json
-EXTRACTION_GUIDE.md
-extractor/raw/
-extractor/skillkey-map.json

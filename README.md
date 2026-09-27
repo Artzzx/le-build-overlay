@@ -1,312 +1,177 @@
 # LE Build Planner
 
-A desktop companion for **Last Epoch**. Load your build from the [Maxroll planner](https://maxroll.gg/last-epoch/planner) (or the in-game export) and follow it point by point: every tree — the passive tree and all five skills — in one view, with the node to allocate **next** in each tree shown big and green.
+A desktop companion for **Last Epoch**. Load your build from a [Maxroll planner](https://maxroll.gg/last-epoch/planner) link and follow it point by point while you play. Every tree (the class passive tree and all five skills) is in one view, and the node to allocate **next** in each tree is shown big and green.
 
-![LE Build Planner](docs/screenshot.png)
+![LE Build Planner](docs/screenshot.webp)
 
-Built to be read at a glance while you play:
+- **Read it at a glance.** One lane per tree: its progress, the node to take next (and what comes after), and the whole route as a strip of nodes. Green always means "allocate this next".
+- **Never leave the game.** Press `F1`–`F6` in game to tick a point off in trees 1–6 (`Shift` undoes). A short sound confirms each press, so you don't have to look.
+- **Mini mode.** A small, always-on-top window for a corner of the screen: one line per tree with the next node and its key.
+- **Leveling → Endgame.** A build can have up to 6 phases. When you switch phase, the app keeps your progress where the routes overlap and tells you exactly what to respec, and which mastery to pick.
+- **Every character.** Your main, your alts and your next-season character each keep their own build and progress.
+- **Guides that change.** When the author edits the Maxroll guide, the app shows you what changed and applies it only if you agree, keeping your progress.
 
-- **One lane per tree.** Each lane has three parts: the tree and its progress, the node to allocate next (with what comes after it), and the full path as a strip of nodes, like the game's own allocation history bar.
-- **Green always means "allocate this next".** Done nodes fade, and each tree keeps its colour in every phase.
-- **Tick points off without leaving the game.** `F1`–`F6` allocate in lanes 1–6 while the game has focus, and `Shift` undoes. The game keeps its number keys, and a held key can't burn through points. The keys are released while the app window is focused, so typing in the app always works.
-- **Know it worked without looking.** A short sound confirms each global key press (a tick per point, a chime when a step or tree is done, a buzz when nothing happened). The status bar shows the last change with an **Undo** button.
-- **Mini mode** (`Ctrl`+`M`). A small, always-on-top, see-through window for a corner of the screen, with one line per tree showing the next node and its key. It keeps its own size and position. Finished trees shrink to a single line.
-- **Less clicking.** **Fill ×N** puts every remaining point of a multi-point step in at once. `Ctrl`+`Z` undoes the last change in any tree. When every tree in a phase is done, the app offers to move to the next phase.
-- **Phases.** Leveling → Endgame (up to 5). Every phase must be the same class, but the mastery can change: level as a plain Rogue (mastery 0), then switch to Bladedancer. Switching phases keeps your progress where the trees overlap, and tells you exactly what to respec (and which mastery to pick) in game.
-- **One app, every character.** Each character (main, alts, a new season) keeps its own build and progress. Switch them from the name at the top left. Loading a build of another class adds a new character instead of wiping the one you're levelling.
-- **Guide updates.** For builds loaded from a Maxroll link, the app checks once a day whether the guide was edited. It shows what changed per phase and applies it only if you agree, keeping every point on the unchanged part of each route and telling you what to respec. It can be turned off in Settings.
-- **Node details.** Description, per-point stats, and the route around any node. *Start from here* catches the app up to a character you've already levelled.
-- **Node icons.** Every node shows its in-game icon (see [Node icons](#node-icons)). Nodes without art get a generated glyph.
+---
 
-### Controls
+## Getting started
 
-| | In game (global) | In the app |
+### Install
+
+There's no installer yet. Until there is, you need [Node.js](https://nodejs.org) 22.12 or newer:
+
+```bash
+git clone https://github.com/Artzzx/le-build-overlay.git
+cd le-build-overlay
+npm install
+npm start
+```
+
+The first `npm start` downloads Electron (about 100 MB) once. To update later: `git pull`, then `npm install`.
+
+### First start
+
+1. **Copy your build's Maxroll link**, e.g. `https://maxroll.gg/last-epoch/planner/sb62zd0e`.
+2. In the app, click **Load build** (`Ctrl`+`O`), choose **From a Maxroll link**, paste the link and press **Fetch**. If the link is already on your clipboard, the app offers **Fetch this build** straight away.
+3. **Tick the variants you want.** Each one (*Starting Setup*, *Early Setup*, … *Final Setup*) becomes a phase. Then click **Load**.
+
+The game needs to run in **Windowed** or **Borderless** mode for the app to stay visible on top of it. Put the app on a second monitor, or use mini mode (`Ctrl`+`M`) in a corner of the screen.
+
+Just curious? **Try the example build** on the start screen.
+
+---
+
+## Using it while you play
+
+### Allocating points
+
+Put a point in the game, then press that tree's key: `F1` for the first lane, `F2` for the second, and so on (the key is shown on each lane). You don't need to switch windows; the keys work while the game has focus.
+
+- **Undo** with `Shift`+ the same key, or `Ctrl`+`Z` in the app.
+- **Sounds**: a tick per point, a chime when a step or a tree is done, and a low buzz when nothing happened (the tree is finished, say).
+- **The status bar** shows your last change (`+1 Shadow Rend · Intensity 2/3`) with an **Undo** button.
+- **Fill ×N** puts every remaining point of a multi-point node in at once.
+- **Holding a key down** never burns through points.
+
+### Already levelled? Catch the app up
+
+Click the node you're actually at in a tree, then **Start from here**. The app marks everything before it as done.
+
+### Phases
+
+The phase tabs at the top switch between *Leveling*, *Endgame*, and so on (also `F9` / `Shift`+`F9` in game, or `PgDn` / `PgUp` in the app).
+
+When you switch, the app compares what your character already has with the new phase:
+
+- **Every point you already hold is kept** when the new route still wants it, even if the guide takes it in a different order.
+- **Respec** lists only the points the new route doesn't use at all, **node by node**, numbered in the order to take them off (the last one you took comes off first, so the game never blocks you).
+- **Skills** the phase doesn't use stay specialized if you have a free slot (slots open at levels 4, 8, 20, 35 and 50) and the skill comes back later, with its points. Otherwise the banner tells you to despecialize it.
+- **Mastery**: when to choose it, or change it.
+
+The banner stays until you close it: **Done** when you've done it in game, or **×** if you switched by mistake (nothing changes then). It stays when you allocate points, change phase or restart the app. Going back to an earlier phase asks for nothing and forgets nothing. When every tree in a phase is done, the app offers to move to the next one.
+
+### Mini mode
+
+`Ctrl`+`M` switches to a small window that stays on top. It has one line per tree with the next node and its key. Click a line to allocate, right-click to undo. `Ctrl`+`M` again goes back. It remembers its own size and position, and `Esc` never kicks you out of it.
+
+### Characters
+
+The name above the build (top left) opens your **characters**. Each keeps its own build and progress.
+
+- **Switch**: click a character.
+- **New character**: starts empty and opens *Load build*.
+- **Rename**: give it your in-game character's name.
+- **Delete**: removes a character and its progress (the last one can't be deleted).
+
+When you load a build, **Load into** (at the bottom of the window) picks *this character* or a *new character*. It chooses *new character* by itself when the build is a different class, so loading an alt never wipes your main.
+
+### Guide updates
+
+For builds loaded from a Maxroll link, the app checks once a day, when it starts, whether the author edited the guide. If they did, you get a **Review** button:
+
+- It lists, phase by phase, what changed: points added, a route changed after point 8, a skill swapped, a new mastery.
+- **Apply update** keeps every point you've allocated on the unchanged part of each route. If something you already took changed, a banner tells you what to respec. There's an **Undo**.
+- **Keep my version** leaves your build as it is and stops offering that version.
+
+To check right now, open the characters menu and choose **Check the guide for updates**. To turn the daily check off, go to **Settings › Guide updates**.
+
+### Without a Maxroll link
+
+In **Load build**, choose **Paste export codes**. You can paste codes from Maxroll's *Export* dialog, or the in-game export: the passives code, then one line per skill. Add a phase per stage of the guide.
+
+Click **Save as template** to reuse a set of codes later.
+
+---
+
+## After a major game patch
+
+Big patches rework trees, move nodes and add skills. The first time you play after one:
+
+1. **Update the app first** (`git pull`, then `npm install`). New game data (trees, node names, icons) comes with app updates. Until then, a reworked skill can show **No tree data**, and changed nodes can show their old names.
+2. **Your characters and progress are kept.** Nothing is reset by an update.
+3. **Check your guide.** Open the characters menu and choose **Check the guide for updates**. Authors usually update their planners within days of a patch. Review the changes, then apply them. The banner lists what to respec in game.
+4. **If the patch refunded your points in game**, set each tree back to where you really are: click the node you're at, then **Start from here**. To start a tree over, undo it back to 0.
+5. **A skill still shows "No tree data", or Load build warns that points "don't fit the tree"?** Either the guide hasn't been updated for the patch yet, or your app is older than the patch. Check again later.
+6. **New season or cycle?** Make a **new character** for it (**Load into › New character**). Your old character keeps its own build and progress.
+
+---
+
+## Controls
+
+| | In game | In the app |
 |---|---|---|
-| Allocate a point | `F1`–`F6` | `1`–`6` or `F1`–`F6`, the **Allocate** button, or `Enter` on the focused tree |
-| Undo a point | `Shift`+`F1`–`F6` | `Shift`+`1`–`6` / `F1`–`F6`, the undo button, or `Backspace` |
-| Fill the whole step | — | `Ctrl`+`1`–`6`, `Ctrl`+`Enter`, or **Fill ×N** |
+| Allocate a point | `F1`–`F6` | `1`–`6` or `F1`–`F6`, **Allocate**, or `Enter` on the focused tree |
+| Undo a point | `Shift`+`F1`–`F6` | `Shift`+`1`–`6`, the undo button, or `Backspace` |
+| Fill the whole node | — | `Ctrl`+`1`–`6`, `Ctrl`+`Enter`, or **Fill ×N** |
 | Undo the last change (any tree) | — | `Ctrl`+`Z` or **Undo** in the status bar |
-| Next / previous phase | `F9` / `Shift`+`F9` | click the phase, or `PgDn` / `PgUp` |
+| Clear all progress (every phase) | — | `Ctrl`+`Shift`+`Delete`, or **Clear all progress** in the characters menu. It asks first, then offers Undo |
+| Next / previous phase | `F9` / `Shift`+`F9` | the phase tabs, or `PgDn` / `PgUp` |
 | Show / hide the window | `F8` | — |
 | Mini mode ↔ full window | — | `Ctrl`+`M` |
-| Move between trees / nodes | — | `↑` `↓` / `←` `→`, `Esc` to go back to Next up |
-| Load build · Settings · Shortcuts | — | `Ctrl`+`O` · `Ctrl`+`,` · `?` |
+| Move between trees / nodes | — | `↑` `↓` / `←` `→`, `Esc` to go back |
+| Load build · Settings · all shortcuts | — | `Ctrl`+`O` · `Ctrl`+`,` · `?` |
 | Interface size | — | `Ctrl`+`=` / `Ctrl`+`-` / `Ctrl`+`0` |
 
-All global keys can be changed in Settings:
+Every in-game key can be changed in **Settings**:
+
 - **Lane keys** can be `F1`–`F6` (the default), `1`–`6`, or numpad `1`–`6`.
-- Settings won't save a key assigned to two actions.
-- Laptops may need **Fn Lock** for the F-keys.
-- If your settings predate lane keys, you stay on `1`–`6` until you switch in Settings. Bare digits are taken away from the game and its chat while the planner runs; **Arm first** mode avoids that: press `` ` ``, then the lane keys work for 5 s.
+- **Arm first** mode: press `` ` `` first, and the lane keys work for 5 seconds. The game keeps those keys the rest of the time.
+- Settings refuses to save a key assigned to two actions.
 
-The window can only stay on top of the game when the game runs in **Windowed** or **Borderless** mode, not exclusive fullscreen.
+## Settings
 
----
+`Ctrl`+`,`, or the gear icon:
 
-## Quick Start
+- **Display**: interface size, keep on top, mini mode opacity.
+- **Sound**: hotkey sounds and their volume.
+- **Guide updates**: the daily Maxroll check.
+- **Global hotkeys**: turn them on or off, choose the lane keys, direct or arm-first mode, the modifiers, and the show/hide and phase keys.
 
-```bash
-npm install
-npm start          # or: npm run dev (opens DevTools)
-npm test
-```
+## Your data
 
-Click **Load build**, paste a **Maxroll planner link** (`https://maxroll.gg/last-epoch/planner/…`), press **Fetch**, and pick the variants you want. Each variant (e.g. *Starting Setup → Early → Intermediate → Final*) becomes a phase, with its own mastery. A link ending in `#2` pre-selects only the second variant. You can also paste export codes by hand, or click **Try the example build**.
-
-The Maxroll import uses the same public endpoint the planner page uses. It isn't an official API: if Maxroll changes or blocks it, the dialog says so, and pasting export codes still works.
-
-Your characters (build + progress each), settings and saved templates live in the per-user app data folder (`%APPDATA%/le-build-overlay` on Windows), not in the repo. Files from the old overlay's `config/` folder are migrated automatically on first launch.
-
-The game data the app needs (all trees, nodes and icons) is committed in `db/data/`. You only run the extractor after a game patch (below).
-
----
-
-## Data Pipeline
-
-```
-Game files ──AssetStudio──► MonoBehaviour export (*Tree.json + SkillTreeNode #*.json)
-                                    │
-                                    ▼
-                  extractor/nodes_flat.json  (flat node rows tagged with treeID)
-                                    │
-                                    ▼
-                  extractor/extract.py  (cleanup)
-                                    │
-                                    ▼
-   db/data/skill_tree_reconciled.json + db/data/passives.json + db/data/icons/   ← committed
-                                    ▼
-          db/build-db.js (main process, indexed by shared/tree-utils.js)
-                                    │   IPC
-                                    ▼
-                               app window
-```
-
-**`skill_tree_reconciled.json`** (all skill trees) and **`passives.json`** (the 5 class passive trees) are flat arrays of nodes with the same row shape, each tagged with its `treeID`:
-
-```json
-{
-  "treeID":      "fl44",
-  "treeName":    "Flay",
-  "nodeID":      4,
-  "nodeName":    "Scent of Death",
-  "description": "Enemies hit by Flay are inflicted with Marked for Death…",
-  "maxPoints":   4,
-  "stats":       [{ "statName": "Kill Threshold", "value": "3%" }],
-  "icon":        "fl44/4.png"
-}
-```
-
-**Known data issues:** some `(treeID, nodeID)` pairs appear twice (a stale node asset exported next to the live one), and ~94 nodes have a blank or placeholder name. The app picks one deterministically (a real name beats a placeholder, otherwise the first row wins) and logs the count — but the pick can be the stale node. See CLAUDE.md → Known data-quality issues.
-
----
-
-## Reconciliation — Active Work
-
-The core challenge: node files from the AssetStudio export need to be matched to the correct `treeID`. The matching works by grouping `SkillTreeNode #*.json` files by their `tree.m_PathID` value, then identifying each group using the root node's display name. This works for most skills but fails for ~20 trees whose root node has a placeholder name (`"Name"`) instead of the real skill name.
-
-**The reconciliation problem in brief:**
-
-- `UmbralBladesTree.json` → `{ treeID: "ub5d9", nodeList: [...] }` — knows the treeID but references nodes by Unity pathID
-- `SkillTreeNode #346591.json` → `{ id: 5, nodeName: "Hidden Blades", tree.m_PathID: 387412 }` — has the real data but pathIDs don't match across asset bundles
-
-The goal is to find a strategy that reliably matches every node group to the correct treeID, including the ~20 placeholder-named trees.
-
----
-
-## Project Structure
-
-```
-le-build-overlay/
-├── electron/
-│   ├── main.js               ← main process: window, IPC, lifecycle
-│   ├── store.js              ← character profiles / settings / templates in the user-data folder
-│   ├── hotkeys.js            ← global shortcuts (direct / arm-first, released while focused)
-│   └── preload.js            ← the only renderer bridge (window.api)
-├── app/                      ← the UI (vanilla JS modules, no framework, no bundler)
-│   ├── index.html
-│   ├── js/                   ← main, lanes, mini, inspector, dialogs, feedback (sounds), icons, keys, dom
-│   └── styles/               ← tokens, app shell, lanes, mini, dialogs
-├── shared/                   ← pure logic, used by main, the UI and the tests
-│   ├── tree-utils.js         ← indexing, grouping, stepping, phase carry-over
-│   ├── view-model.js         ← what each lane shows (now / next / steps / colours)
-│   └── hotkey-scheme.js      ← lane keys, labels and conflict checks (main + UI)
-├── parser/                   ← Maxroll paste → normalized multi-phase loadout
-├── db/                       ← game data loader + db/data/ (node data, classes, icons/)
-├── extractor/                ← nodes_flat.json → db/data/ (convert_icons.py + extract.py, run per patch)
-├── scripts/                  ← dev launcher
-├── config/                   ← build.example.json, maxroll-paste.example.txt
-└── tests/                    ← node:test (npm test)
-```
-
----
-
-## Node icons
-
-Icons live in `db/data/icons/` (any folder layout, square, 128 px) and are committed **as WebP**. Drop the exported PNGs in, then convert:
-
-```bash
-pip install -r extractor/requirements.txt   # once (Pillow)
-python extractor/convert_icons.py           # PNG/JPG → WebP, originals deleted (--keep-originals, --dry-run)
-```
-
-WebP at quality 85 is about 6× smaller (31 KB → 5 KB per icon; the current set is 1,027 shared icons, 6.5 MB) with no visible difference in the app. Git keeps every committed version, so convert before committing and after every re-export. The script is idempotent (already-converted files are skipped) and keeps transparency.
-
-Each node row in the export carries an `iconFile` value (e.g. `"265676.png"`; `icon` is accepted too), and `extract.py` resolves it to a file in that folder. Several nodes can share one icon:
-
-| `iconFile` value in `nodes_flat.json` | resolves to |
-|---|---|
-| `265676.png` (file name, any extension) | `265676.webp` |
-| `es6ai/12.png` (relative path, any extension) | `es6ai/12.webp` |
-| `C:\Export\Icons\es6ai\12.png` (absolute path) | the longest matching tail, `es6ai/12.webp` |
-| `VoidLens.png` or `VoidLens` (file name / stem) | the single file with that name |
-| *(no value)* | `<treeID>/<nodeID>.<ext>` if it exists |
-
-The cleaned rows then carry `"icon": "<path relative to db/data/icons>"` or `null`. A skill's own icon is its tree's root node (nodeID 0). Nodes without art show a generated glyph, so partial icon sets work. Run `python extractor/extract.py --verbose` to list icon values that match no file and files no node uses; add `--strict` to fail on them.
-
----
-
-## Game Data Extraction
-
-Run this once after setup, then again after any game patch that changes skill or passive trees.
-
-### Tools Required
-
-| Tool | Version | Download |
-|------|---------|----------|
-| **Il2CppDumper** | v6.7.46+ | [github.com/Perfare/Il2CppDumper](https://github.com/Perfare/Il2CppDumper/releases) |
-| **AssetStudioMod CLI** | v0.19.0+ | [github.com/aelurum/AssetStudio](https://github.com/aelurum/AssetStudio/releases) |
-| **Python** | 3.10+ | [python.org](https://www.python.org/downloads/) |
-
----
-
-### Step 1 — Il2CppDumper
-
-Generates type definitions AssetStudio needs to deserialize MonoBehaviour assets.
-
-```
-"C:\Tools\Il2CppDumper\Il2CppDumper.exe" ^
-  "C:\...\Last Epoch\GameAssembly.dll" ^
-  "C:\...\Last Epoch\Last Epoch_Data\il2cpp_data\Metadata\global-metadata.dat" ^
-  "C:\Tools\le_dump"
-```
-
-Output: `C:\Tools\le_dump\DummyDll\` — only needed once per major engine update.
-
----
-
-### Step 2 — Export "Global Tree Data" (optional)
-
-> Not used by the current pipeline. Kept for reference / cross-checking node ids.
-
-This one file contains every skill and passive tree: node IDs, maxPoints, requirements.
-
-```
-"C:\Tools\AssetStudioMod\AssetStudioModCLI.exe" ^
-  "C:\...\Last Epoch\Last Epoch_Data" ^
-  -t monobehaviour ^
-  --filter-by-name "Global Tree Data" ^
-  --assembly-folder "C:\Tools\le_dump\DummyDll" ^
-  -o "C:\Tools\le_export" ^
-  --log-output both
-```
-
-Output: `C:\Tools\le_export\MonoBehaviour\Global Tree Data.json` — takes 1–2 minutes.
-
----
-
-### Step 3 — Export SkillTreeNode files (real names and descriptions)
-
-Exports all MonoBehaviour assets including `SkillTreeNode #*.json` files which contain real in-game display names and descriptions.
-
-```
-"C:\Tools\AssetStudioMod\AssetStudioModCLI.exe" ^
-  "C:\...\Last Epoch\Last Epoch_Data" ^
-  -t monobehaviour ^
-  --assembly-folder "C:\Tools\le_dump\DummyDll" ^
-  -o "C:\Tools\le_export" ^
-  --log-output both
-```
-
-Takes 10–15 minutes. Without it the app has no display names or descriptions.
-
-> Move the `SkillTreeNode #*.json` files into a dedicated subfolder (e.g. `MonoBehaviour\Node\`) to keep them separate from tree definition files. The extractor scans recursively.
-
----
-
-### Step 4 — Clean the flat node export
-
-Build `extractor/nodes_flat.json` from the Step 3 export — a flat array of node rows
-(`nodeID, nodeName, description, maxPoints, treeID, stats, …`). Then:
-
-```bash
-python extractor/convert_icons.py      # new/changed icons → WebP (see Node icons)
-python extractor/extract.py            # add --verbose to list (treeID, nodeID) collisions
-```
-
-Commit `extractor/nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together.
-
-Writes to `db/data/`:
-- `skill_tree_reconciled.json` — every skill tree (+ weaver tree)
-- `passives.json` — the 5 class passive trees (`ac-1 mg-1 kn-1 rg-1 pr-1`)
-
-Trees without a root node get their name from `TREE_NAME_OVERRIDES` in `extract.py`. Icons are resolved against `db/data/icons/` (see [Node icons](#node-icons)). If the output would break the app's data contract (fields, types, duplicate ids, missing passive trees, missing icon files), nothing is written.
-
----
-
-### After a Patch
-
-| What changed | Steps to redo |
-|---|---|
-| Skills or passives rebalanced | Steps 3 → 4 |
-| New skills added | Steps 3 → 4 |
-| Engine update | Steps 1 → 3 → 4 |
+Your characters, settings and templates are stored on your computer, in `%APPDATA%\le-build-overlay` on Windows. Nothing is uploaded. The app only contacts Maxroll to fetch a build you asked for, and for the daily guide check, which you can turn off.
 
 ---
 
 ## Troubleshooting
 
-**A tree shows "No tree data"**
-That skill (or passive tree) isn't in `db/data/`. It may be new in a game patch — re-run the extraction (Steps 3–4).
+**A key does nothing in game.** Another program may already use it. The status bar shows *Hotkey unavailable* with the key; open **Settings** and pick another one.
 
-**A node shows the wrong name**
-Likely a `(treeID, nodeID)` collision in `nodes_flat.json` — the stale node won. Run `python extractor/extract.py --verbose` to list them; the fix belongs in the exporter that produces `nodes_flat.json`.
+**The F-keys don't work on my laptop.** Your keyboard sends media keys by default. Turn on **Fn Lock** (often `Fn`+`Esc`), or switch the lane keys to numpad or `1`–`6` in Settings.
 
-**A node shows a letter glyph instead of its icon**
-It has no `iconFile` value, or the value matches no file in `db/data/icons/`. `python extractor/extract.py --verbose` lists both cases. If the report says **0 icons** across the board, look for a `WARNING: input has icon-like fields that are not read`: your export uses a different field name, so add it to `ICON_INPUT_FIELDS` in `extract.py`.
+**My number keys stopped working in game or in chat.** Your lane keys are set to `1`–`6`, so the app takes those keys. Switch to `F1`–`F6` in Settings, or use **Arm first**.
 
-**A skill shows its treeID instead of a name**
-Its tree has no root node in the export. Add it to `TREE_NAME_OVERRIDES` in `extract.py`.
+**The app window disappears behind the game.** Run the game in **Windowed** or **Borderless** mode, and turn on **Keep on top** (the pin icon), or use mini mode. `F8` shows or hides the window.
 
-**A skill shows another skill's name or icon (e.g. two lanes called "Flay")**
-The export gave that tree another tree's root name (the icon is usually still its own). `extract.py` detects this and renames the tree. It keeps the icon unless it's the very same file as the other tree's. Its report lists each fix (`tree bl5st: root "Flay" is copied …`) and any root name its own nodes never mention. Add a `TREE_NAME_OVERRIDES` entry to pin a name. The real fix belongs in the exporter.
+**No sounds.** Open **Settings › Sound** and press **Test**. Sounds only play for keys pressed *in game*; clicks and keys in the app are silent on purpose.
 
-**The passive lane shows the wrong class or mastery**
-Class ids follow the game (0 Primalist, 1 Mage, 2 Sentinel, 3 Acolyte, 4 Rogue). Masteries follow the in-game order, and not every pair has been checked against a real planner yet (`db/data/classes.json`, `unverifiedMasteries`). If the Load build dialog warns that *passive points don't fit the tree*, or a mastery name is wrong, save that planner's JSON into `tests/fixtures/` so the mapping can be checked. Mastery `0` is the plain class, before choosing a mastery.
+**Mini mode isn't see-through.** Opacity only works on Windows and macOS.
 
-**A hotkey doesn't work**
-The status bar and Settings report any key that couldn't be registered (already taken by another app). Record a different one in Settings.
+**"Couldn't import this planner".** Check that the link opens in your browser. If Maxroll is down or blocks the request, use **Paste export codes** instead.
 
-**Number keys don't reach the game or its chat**
-Your lane keys are `1`–`6` in *Direct* mode, so the planner takes those keys. In Settings, switch **Lane keys** to `F1`–`F6` (or numpad), or use *Arm first*.
-
-**F-keys don't do anything (laptop)**
-Your keyboard sends media keys by default. Turn on **Fn Lock** (often `Fn`+`Esc`), or pick numpad or `1`–`6` + *Arm first* in Settings.
-
-**No sound on hotkeys**
-Check **Settings › Sound** (the **Test** button plays a cue). Sounds play only for global hotkeys, which are pressed while the game has focus; clicks and in-app keys are silent.
-
-**Mini mode isn't see-through**
-Window opacity works on Windows and macOS only, and the game must be Windowed or Borderless.
+**A tree says "No tree data".** That skill isn't in the app's game data yet. It's usually new in a patch: see [After a major game patch](#after-a-major-game-patch).
 
 ---
 
-## No skillKey Mapping Needed
+## For developers
 
-The `treeID` in `Global Tree Data.json` is the exact same key Maxroll uses in build exports. No lookup table required.
-
-| Maxroll export key | treeID | Skill |
-|--------------------|--------|-------|
-| `es6ai` | es6ai | Erasing Strike |
-| `v01cv` | v01cv | Void Cleave |
-| `an0my` | an0my | Anomaly |
-| `sr31hu` | sr31hu | Shield Rush |
+`npm run dev` starts the app with DevTools, and `npm test` runs the test suite. The architecture, data formats and conventions are in [CLAUDE.md](CLAUDE.md).

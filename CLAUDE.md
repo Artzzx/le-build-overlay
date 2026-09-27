@@ -22,7 +22,7 @@ The app used to be a transparent click-through overlay (`overlay/`). That code i
 le-build-overlay/
 ├── electron/
 │   ├── main.js        ← window, IPC handlers, lifecycle, game-data cache
-│   ├── store.js       ← <userData>/profiles/<id>.json, settings.json, saves/ (atomic writes, migration)
+│   ├── store.js       ← <userData>/profiles/<id>.json, settings.json, saves/ (atomic writes, build.json → profile migration)
 │   ├── hotkeys.js     ← global shortcuts: direct / latch ("arm first"), suspend while focused, pause
 │   ├── maxroll.js     ← fetch a Maxroll planner by id (net.fetch → hidden-window fallback; LE_MAXROLL_FIXTURES for tests)
 │   └── preload.js     ← window.api — the ONLY renderer bridge (contextIsolation + sandbox)
@@ -44,8 +44,8 @@ le-build-overlay/
 │   ├── js/dom.js                 ← h(), mount(), svg(), richText()
 │   └── styles/                   ← tokens.css, app.css (shell), lanes.css, mini.css, dialogs.css
 ├── shared/                       ← PURE logic, UMD: require() in Node, window.* in the renderer
-│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over, passiveFit,
-│   │                               diffLoadout/mergeProgress (guide updates)
+│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, passiveFit,
+│   │                               character state + switchPhase/rebaseTrack/slotsAt, diffLoadout/mergeProgress (guide updates)
 │   ├── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
 │   ├── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
 │   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree, mapPhasesToVariants
@@ -56,7 +56,8 @@ le-build-overlay/
 │                                    icons/ (node art as WebP, committed, referenced by each row's `icon`)
 ├── extractor/                    ← nodes_flat.json (input) → convert_icons.py + extract.py → db/data/; requirements.txt (Pillow)
 ├── scripts/                      ← dev.js (npm run dev)
-├── config/                       ← build.example.json, maxroll-paste.example.txt (examples only)
+├── config/                       ← build.example.json ("Try the example build"); anything else in config/ is git-ignored
+├── docs/                         ← screenshot.webp (README), ROADMAP.md (planned work, not built yet)
 └── tests/                        ← node:test — db, parser, tree-utils, view-model, main-process (store/hotkeys),
                                      extractor + convert-icons (run the Python scripts on fixtures), data-contract (the real data files)
 ```
@@ -71,7 +72,7 @@ Load build dialog ──api.previewPhase──► main: parseBuild (live validat
 app/js/main.js
    ├─ api.init() → { db:{trees,classes}, build, profiles, activeProfile, settings, defaultSettings, failedHotkeys, missingData }
    ├─ ViewModel.buildView(build, db) → lanes[] (steps with done/current/upcoming, now, next, colorSlot)
-   ├─ actions → TreeUtils.stepTrack / setTrackProgress / applyCarryOver → commit() → api.saveBuild
+   ├─ actions → TreeUtils.stepTrack / setTrackProgress / switchPhase → commit() → api.saveBuild
    └─ api.onHotkey(): global keys → { action: 'advance'|'undo'|'phase'|'latch' }
 ```
 
@@ -111,8 +112,27 @@ Maxroll `skillTrees` keys are the game's `treeID` verbatim (`es6ai` = Erasing St
 - **Mastery `0`** is the plain class, used while leveling before the mastery quest. Labels are just the class name ("Rogue").
 - **Safety net**: `summarizeBuild()` reports `passiveMismatch` when a passive history doesn't fit its class's tree, and the Load build dialog shows it. `tests/data-contract.test.js` runs the same check on every planner fixture. **Add a fixture for each new class/mastery you import.**
 
-### Phases
-A loadout has 1–5 phases, all with the same **class**. Each phase has its own `masteryId` (e.g. Leveling = 0, Endgame = Bladedancer), and `loadout.masteryId` = the highest one. The view uses the active phase's mastery, and `computeTransition` returns `masteryChange`, which the banner shows as "Choose the Bladedancer mastery". `gotoPhase`: `applyCarryOver` sets each target track to `min(fromProgress, commonPrefixLength(histories))`, and `computeTransition` lists points to unspec and skills to remove. That list is shown as a banner until the user dismisses it. Phase switches, loads and *Start from here* offer an Undo toast.
+### Phases and the character state
+A loadout has 1–6 phases (`MAX_PHASES` in `loadout-dialog.js`), all with the same **class**. Each phase has its own `masteryId` (e.g. Leveling = 0, Endgame = Bladedancer), and `loadout.masteryId` = the highest one. Maxroll phases also carry `level` (the character level the variant is planned for).
+
+**The character state** (`build.held`, `build.mastery`) is what the character has in game, whatever the phase:
+- `held` = `{ passive: {node: points}, [skillKey]: {…} }`, including skills the current phase doesn't use but that are still specialized.
+- `mastery` = the chosen mastery (0 = none yet).
+- `setTrackProgress`/`stepTrack` keep it in step on every allocate or undo.
+- Builds without it get it from their current phase (`ensureHeld`, run by `normalizeBuild`). A fresh load has mastery 0.
+
+**Entering a phase** (`switchPhase` → `enterPhase` in `shared/tree-utils.js`) compares what's held with the new routes, **per node, never by order**; the game only cares how many points a node has. `rebaseTrack` moves the held points to the front of the route (guide order kept in `track.guide`), so progress stays a flat prefix and the rest of the app is unchanged.
+- **Nothing changes until the player confirms.** A forward switch (or a guide update) stores its instructions as `build.pending` and leaves `held`/`mastery` alone. **Done** runs `applyPending()`, which takes the points off (never below what the current phase counts as allocated), drops despecialized skills and sets the mastery. **×** dismisses without changing anything. A backward switch keeps the pending instructions, so a misclicked switch loses nothing. A forward switch *from the phase the instructions were for* applies them first: the player played that phase, so they did them, even without pressing Done. Otherwise, e.g. after a misclick forward and back, the new instructions are recomputed from the unchanged state and replace the old ones. The banner is `build.pending`, so it survives phase switches, profile switches and restarts. Allocating and `Esc` never close it.
+- **Forward**:
+  - **Respec**: only points a route doesn't want at all, **node by node** (`nodes: [{ nodeId, remove, from, to }]`) in a safe order: the reverse of the order they were taken in the phase being left (`removalOrder`), since a node taken later can depend on an earlier one.
+  - **Skills** the phase doesn't use: keep them specialized when a slot is free and they come back later. Slots unlock at levels 4, 8, 20, 35 and 50 (`slotsAt(phase.level)`; 5 when the level is unknown). Otherwise despecialize: all points lost, and the skill comes back from 0. Skills never used again are also despecialized.
+  - **Mastery**: "choose" (from 0) or "change" when the phase's mastery differs from `build.mastery`.
+  - The state assumes the player does it.
+- **Backward**: nothing to do in game, and the state is untouched, so going forward again loses nothing.
+- The banner ("Switching to …") groups Respec (numbered node chips: icon, name, −N, from → to/max) / Skills / Mastery. It notes when the player is in another phase than the instructions are for.
+- A switch's Undo restores the whole build, but only while nothing has changed since; an older toast can't restore a stale build.
+
+Proven on the three fixtures (`tests/maxroll-import.test.js`): the old prefix rule asked the Rogue build to unspec 15 of 20 passives it still needed. Phase switches, loads and *Start from here* offer an Undo toast.
 
 ---
 
@@ -134,7 +154,7 @@ A loadout has 1–5 phases, all with the same **class**. Each phase has its own 
   3. **The Load build dialog** (`loadout-dialog.js`, one wide fixed-size modal, three views that keep their state while it's open):
      - **Choose**: two cards (`1` Maxroll link, `2` export codes), saved templates, and "re-import the current build".
        - A Maxroll link on the clipboard adds a one-click **Fetch this build**.
-     - **Maxroll workspace**: variant rail (tick up to 5) plus a pane for the focused variant (stats, skill cards with tree icons, phase name).
+     - **Maxroll workspace**: variant rail (tick up to 6) plus a pane for the focused variant (stats, skill cards with tree icons, phase name).
        - Load uses the ticked variants' `json` directly.
        - "Edit as codes" moves them into the codes workspace.
      - **Codes workspace**: phase rail, codes editor, live preview.
@@ -148,7 +168,7 @@ Guides get edited every patch; re-importing used to reset progress.
   - Otherwise `mapPhasesToVariants()` pairs each phase with a variant: stored name first (reordered), then stored index (renamed), then, for builds imported before the map existed, the phase's own name. A phase whose variant is gone stays as is and is listed as `missing`.
   - The matched variants are parsed, and `diffLoadout()` lists what changed per phase: trees added / removed, routes changed (`common` prefix), mastery. A new date with no real change just updates `source.date` quietly.
 - **Automatic** checks run at start and after a profile switch: at most once a day per character (`profile.updateCheck.at`), off with `settings.updates.checkMaxroll`, and silent unless there's an update (a toast with **Review**). A version dismissed with *Keep my version* (`updateCheck.dismissed`) isn't offered automatically again. The character menu's *Check the guide for updates* always fetches fresh and always answers.
-- **Apply** is renderer-side `mergeProgress(old, new)`: each track keeps `min(progress, common prefix)` (the phase-switch rule). What's lost in the phase being played becomes the respec banner (`computeTransition` shape). It resets the undo stack and offers an Undo toast. Nothing is ever applied without the player's click.
+- **Apply** is renderer-side `mergeProgress(old, new)`: the phase being played is re-entered from the character state (`enterPhase`), so every held point the new routes still want is kept, in any order. What's left becomes the banner ("Guide updated — in …"). It resets the undo stack and offers an Undo toast. Nothing is ever applied without the player's click. `diffLoadout` compares guide routes (`track.guide ?? history`).
 
 ### Character profiles
 Each character has its own build and progress: `<userData>/profiles/<id>.json` = `{ version, id, name, createdAt, updatedAt, build, updateCheck? }`.
@@ -163,7 +183,7 @@ Each character has its own build and progress: `<userData>/profiles/<id>.json` =
 - The last profile can't be deleted. Ids are `p-<time36><rand>`, validated before any path is built.
 
 ### Raw Maxroll paste
-One JSON object per line (passives/class/mastery line + one line per skill); `mergeRawLines` merges them. A single combined object also works. See `config/maxroll-paste.example.txt`.
+One JSON object per line (passives/class/mastery line + one line per skill); `mergeRawLines` merges them. A single combined object also works. A real 6-line paste is in `tests/parser.test.js`.
 
 ### A profile's `build` — multi-phase loadout (was <userData>/build.json)
 ```json
@@ -172,7 +192,7 @@ One JSON object per line (passives/class/mastery line + one line per skill); `me
     { "type": "passive", "label": "Sentinel — Void Knight Passives", "history": [0,0,1], "totalSteps": 3, "currentStep": 0 },
     { "type": "skill", "skillKey": "v01cv", "label": "Void Cleave", "history": [2,2,4], "totalSteps": 3, "currentStep": 0 } ] } ] }
 ```
-Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`, which also backfills a missing `phase.masteryId` from `loadout.masteryId`. `label` is baked at import time; the UI prefers live DB names (view-model titles).
+Also stored: `held` / `mastery` (the character state, see *Phases*), optional `phase.level`, and `track.guide` (the guide's order when entering the phase reordered `history`). Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`, which also backfills a missing `phase.masteryId` from `loadout.masteryId` and derives the character state. `label` is baked at import time; the UI prefers live DB names (view-model titles).
 
 ### <userData>/settings.json
 `{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey}, updates:{checkMaxroll}, activeProfile }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
@@ -222,6 +242,12 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
   - An 'unmentioned' root is only reported, because the inference is a guess (Falconry's nodes say "Falcon").
 - **Output contract**: `validate_output()` checks the exact field set, types, unique `(treeID, nodeID)`, unique skill tree names, all 5 passive trees present, no passive rows in the skill file, and that icon files exist. On any violation it writes **nothing** and exits 1. `tests/data-contract.test.js` checks the same things from the app's side.
 
+### Troubleshooting the data (maintainer)
+- **Wrong node name**: a `(treeID, nodeID)` collision, where the stale node won. `extract.py --verbose` lists them.
+- **Glyph instead of an icon**: the row has no `iconFile`, or the value matches no file. `--verbose` lists both. "0 icons" across the board plus a *WARNING: input has icon-like fields that are not read* means the export renamed the field: add it to `ICON_INPUT_FIELDS`.
+- **A skill shows its treeID, or another skill's name**: the tree has no root row, or a copied root name. Pin the name in `TREE_NAME_OVERRIDES`.
+- **Class or mastery shown wrong / "passive points don't fit the tree"**: save that planner as a fixture in `tests/fixtures/` and check `classes.json`.
+
 ### Known data-quality issues
 - **~86 `(treeID, nodeID)` collisions** in `nodes_flat.json`: stale nodes from older tree versions exported next to live ones (e.g. `es6ai` 12 = "Rythm of the Void" *and* "Void Lens"). `extract.py` keeps the first named row, **which may be the stale one**. The fix is upstream: export only nodes referenced by the live tree. Don't write tests that assert names of collided nodes.
 
@@ -229,10 +255,16 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 
 ## Electron Architecture
 
+**Electron 44** (Chromium 152, Node 24). Things that changed on the way from 28 and matter here:
+- `clipboard.readText()` returns a **Promise** (44+), so always `await` it. The renderer has no `clipboard` module; use `navigator.clipboard` there if ever needed.
+- `npm install` no longer downloads the Electron binary. The first `electron` run does it (42+). `npm ci --ignore-scripts` is therefore safe in CI. The Electron package needs Node ≥ 22.12 (`engines`).
+- `webContents` `console-message` gets one event object (`e.level` is `'debug'|'info'|'warning'|'error'`, plus `e.message`, `e.lineNumber`, `e.sourceId`); the positional arguments are deprecated.
+- Before the next major, read Electron's `docs/breaking-changes.md`. 45 removes Node shims and `Buffer` from sandboxed preloads; `preload.js` only uses `contextBridge` and `ipcRenderer`, so keep it that way.
+
 - **One window**: normal frame, resizable (min 420×480), `sandbox`, `contextIsolation`, no `nodeIntegration`, no app menu, navigation and `window.open` blocked. Bounds, maximized state, zoom (UI scale) and always-on-top persist. Saved bounds are only reused if they're still on a connected display.
 - **Mini mode** (`window:setMode`) is the same window: bounds are saved into the outgoing mode's slot and the incoming slot is restored (first use goes to the top-right of the display). It has min 260×180, is always on top, and uses `setOpacity(display.opacity)`, which does nothing on Linux. The frame stays native, because Electron can't switch frames at runtime.
 - **Single instance**: a second launch focuses the existing window.
-- **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). Old `config/build.json`, the hotkeys from `config/settings.json`, and `config/saves/` are migrated once. A `build.json` then becomes the first character profile.
+- **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). A pre-profiles `build.json` there becomes the first character profile.
 - **Game data** is loaded once and cached in main. `app:init` re-checks `build-db.dataStamp()` (the size and mtime of each file) and re-reads only if a file changed. A window reload picks up re-extracted data without re-parsing ~2 MB on every load.
 
 ### Hotkeys (`electron/hotkeys.js`)
@@ -255,7 +287,8 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - Lanes: `1`–`6` and the configured lane keys (`F1`–`F6` / numpad), `Shift` = undo. `Ctrl`+`1`–`6` / `Ctrl+Enter` fill the step.
 - Navigation: `↑↓` focus a tree, `←→` browse steps (pins the inspector), `Enter`/`Space` allocate in the focused tree, `Backspace` undo.
 - `Ctrl+Z` undoes the last change in any tree (phase-scoped stack, capped at 50).
-- `Esc` unpins the inspector or dismisses the banner. It never leaves mini mode.
+- `Ctrl+Shift+Delete` = full clear (`clearProgress`): every phase back to 0, empty character state, first phase. It's also in the character menu. It's in-app only (never global: destructive), always goes through `confirm()`, then offers an Undo toast that's valid while nothing has changed since.
+- `Esc` unpins the inspector. It never leaves mini mode and never closes the phase instructions.
 - Everything else: `PgUp`/`PgDn` phase, `Ctrl+M` mini mode, `?` shortcut sheet (also `F1` when F-keys aren't the lane keys), `Ctrl+O` load, `Ctrl+,` settings, `Ctrl+=/-/0` UI scale.
 - Toasts: an identical message refreshes the existing toast instead of stacking another. Toasts with an action (Undo, "Go to Endgame") are evicted last.
 
@@ -278,10 +311,11 @@ python extractor/convert_icons.py && python extractor/extract.py   # regenerate 
 
 - Tests run against the committed game data. The Python-backed tests skip themselves when python3 / Pillow are missing.
 - UI changes must be checked in the real app at several window sizes (e.g. 1920, 1440, 1100, 760, 460 px wide). Run it under `xvfb-run` with `LE_USER_DATA` pointing at a temp dir, and drive it via `webContents.executeJavaScript` / `sendInputEvent` + `capturePage`.
+- **Docs split**: `README.md` is the player's guide (install, using the app, after a patch, troubleshooting). No data-extraction or code internals there: those live in this file.
 - `.gitignore` policy: game data we produce is committed (`nodes_flat.json`, `db/data/**`); raw game dumps, runtime state, build output and tooling noise are ignored.
 
 ## Known Open Issues / Decisions
 1. **Duplicate nodes in data**: see above; needs an upstream exporter fix.
 2. **Global keys swallow the key for every app** (Windows `RegisterHotKey`). The lane keys therefore default to `F1`–`F6`. Users migrated from older settings stay on digits until they switch. The repeat guard and the sounds are defensive against Windows behaviour that can't be exercised in Linux CI: check them by hand on Windows after changes to `hotkeys.js`.
-3. **No installer/packaging yet** (electron-builder etc.). Paths are already packaging-safe (userData for state, read-only app dir).
+3. **No installer/packaging yet**. Paths are already packaging-safe (userData for state, read-only app dir). The plan (packaging, auto-update, game-data notice, releases, what Electron 44 enables) is in `docs/ROADMAP.md`.
 4. **Committed `nodes_flat.json` predates `iconFile`**: the 1,027 icons are committed, but the committed export doesn't have `iconFile` yet, so the committed outputs have `icon: null`. Commit the new `nodes_flat.json` together with the regenerated `db/data/*.json`.

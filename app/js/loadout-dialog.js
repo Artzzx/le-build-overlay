@@ -5,7 +5,7 @@
  *
  *   choose  — two cards: "From a Maxroll link" | "Paste export codes"
  *             (+ saved templates, + re-import the current Maxroll build)
- *   maxroll — link bar · left rail: planner variants (tick up to 5) ·
+ *   maxroll — link bar · left rail: planner variants (tick up to 6) ·
  *             right pane: the focused variant (class, level, skills with icons)
  *   codes   — left rail: phases · middle: codes editor · right: live preview
  *
@@ -17,7 +17,7 @@
 import { h, mount } from './dom.js';
 import { ui, treeArt } from './icons.js';
 
-const MAX_PHASES = 5;
+const MAX_PHASES = 6;
 const PREVIEW_DELAY_MS = 250;
 
 const HELP = [
@@ -233,7 +233,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
           onPick: () => go('maxroll'),
         }),
         card('2', 'keyboard', 'Paste export codes', 'Codes from Maxroll’s Export dialog or the in-game export, one phase at a time.', {
-          extra: steps('Works without a Maxroll link or internet', 'One phase per stage (up to 5)', 'Live check of class, points and skills'),
+          extra: steps('Works without a Maxroll link or internet', 'One phase per stage (up to 6)', 'Live check of class, points and skills'),
           onPick: () => go('codes'),
         }),
       ),

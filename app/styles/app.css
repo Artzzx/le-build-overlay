@@ -8,6 +8,7 @@ body {
   margin: 0;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr); /* never wider than the window, whatever the content */
   grid-template-areas: "top" "banner" "main" "status";
   background:
     radial-gradient(1200px 500px at 12% -10%, rgba(91, 168, 255, 0.06), transparent 60%),
@@ -168,6 +169,8 @@ b { font-weight: 600; }
 .menu-action svg { flex: none; color: var(--text-3); }
 .menu-action.is-danger:hover { color: var(--danger); }
 .menu-action.is-danger:hover svg { color: var(--danger); }
+.menu-action:disabled { opacity: 0.4; pointer-events: none; }
+.menu-kbd { margin-left: auto; }
 .menu-sep { height: 1px; margin: 6px 4px; background: var(--line); }
 .menu-form { display: flex; flex-direction: column; gap: 10px; padding: 4px 10px 8px; }
 .menu-form-actions { display: flex; justify-content: flex-end; gap: 6px; }
@@ -179,11 +182,15 @@ b { font-weight: 600; }
   background: transparent; color: var(--text-3); font-weight: 600; font-size: var(--fs-sm);
   transition: background var(--t-fast), color var(--t-fast);
 }
+/* Long Maxroll variant names ("Intermediate Setup (lvl 16 - 49)") shrink with an ellipsis instead of widening the bar. */
+.phase-switch { min-width: 0; flex: 0 1 auto; }
+.phase-switch .segmented { min-width: 0; }
+.phase-switch .seg { flex: 0 1 auto; min-width: 56px; max-width: 190px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seg:hover { color: var(--text); }
 .seg.is-active { background: var(--surface-3); color: var(--text); box-shadow: var(--shadow-1); }
 
-.overall { display: flex; align-items: center; gap: 10px; }
-.overall-text { display: flex; flex-direction: column; line-height: 1.2; }
+.overall { display: flex; align-items: center; gap: 10px; flex: none; }
+.overall-text { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
 .overall-text b { font-size: var(--fs-md); }
 .overall-text span { color: var(--text-3); font-size: var(--fs-xs); }
 
@@ -230,7 +237,30 @@ b { font-weight: 600; }
 .banner-warn { background: var(--warn-soft); border: 1px solid rgba(255, 198, 92, 0.35); color: var(--warn); }
 .banner-body { flex: 1; color: var(--text); }
 .banner-title { font-weight: 600; margin-bottom: 4px; }
+.banner-info { background: var(--surface-2); border: 1px solid var(--line-2); color: var(--info); }
+.banner-group + .banner-group { margin-top: 6px; }
+.banner-group-title { font-size: var(--fs-xs); font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 2px; }
 .banner-list { margin: 0; padding-left: 18px; color: var(--text-2); }
+.banner-list .is-keep { color: var(--text-3); }
+.banner-body { max-height: 42vh; overflow-y: auto; min-width: 0; }
+.banner-note { color: var(--text-3); font-size: var(--fs-sm); margin: -2px 0 6px; }
+.banner-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.banner-tree { list-style: none; margin-left: -18px; }
+.banner-tree + .banner-tree { margin-top: 6px; }
+/* Nodes to take points off, numbered in the order to do it (last taken first). */
+.unspec-nodes { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; padding: 0; list-style: none; }
+.unspec-node {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 4px 10px 4px 4px; max-width: 100%;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-md);
+}
+.unspec-order {
+  display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--warn-soft); color: var(--warn); font-size: var(--fs-xs); font-weight: 700;
+}
+.unspec-node .tile { --size: 28px; }
+.unspec-name { color: var(--text); font-weight: 600; font-size: var(--fs-sm); min-width: 0; overflow-wrap: anywhere; }
+.unspec-pts { color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; }
+.unspec-pts b { color: var(--danger); font-size: var(--fs-sm); }
 .banner-list b { color: var(--text); }
 @keyframes slide-in { from { opacity: 0; transform: translateY(-6px); } }
 
