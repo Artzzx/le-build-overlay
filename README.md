@@ -17,7 +17,7 @@ A desktop companion for **Last Epoch**. Load your build from a [Maxroll planner]
 
 ### Install
 
-There's no installer yet. Until there is, you need [Node.js](https://nodejs.org) 18 or newer:
+There's no installer yet. Until there is, you need [Node.js](https://nodejs.org) 22.12 or newer:
 
 ```bash
 git clone https://github.com/Artzzx/le-build-overlay.git
@@ -26,7 +26,7 @@ npm install
 npm start
 ```
 
-To update later: `git pull`, then `npm install`.
+The first `npm start` downloads Electron (about 100 MB) once. To update later: `git pull`, then `npm install`.
 
 ### First start
 

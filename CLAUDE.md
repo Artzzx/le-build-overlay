@@ -57,7 +57,7 @@ le-build-overlay/
 ├── extractor/                    ← nodes_flat.json (input) → convert_icons.py + extract.py → db/data/; requirements.txt (Pillow)
 ├── scripts/                      ← dev.js (npm run dev)
 ├── config/                       ← build.example.json ("Try the example build"); anything else in config/ is git-ignored
-├── docs/                         ← screenshot.webp (README)
+├── docs/                         ← screenshot.webp (README), ROADMAP.md (planned work, not built yet)
 └── tests/                        ← node:test — db, parser, tree-utils, view-model, main-process (store/hotkeys),
                                      extractor + convert-icons (run the Python scripts on fixtures), data-contract (the real data files)
 ```
@@ -236,6 +236,12 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 
 ## Electron Architecture
 
+**Electron 44** (Chromium 152, Node 24). Things that changed on the way from 28 and matter here:
+- `clipboard.readText()` returns a **Promise** (44+), so always `await` it. The renderer has no `clipboard` module; use `navigator.clipboard` there if ever needed.
+- `npm install` no longer downloads the Electron binary. The first `electron` run does it (42+). `npm ci --ignore-scripts` is therefore safe in CI. The Electron package needs Node ≥ 22.12 (`engines`).
+- `webContents` `console-message` gets one event object (`e.level` is `'debug'|'info'|'warning'|'error'`, plus `e.message`, `e.lineNumber`, `e.sourceId`); the positional arguments are deprecated.
+- Before the next major, read Electron's `docs/breaking-changes.md`. 45 removes Node shims and `Buffer` from sandboxed preloads; `preload.js` only uses `contextBridge` and `ipcRenderer`, so keep it that way.
+
 - **One window**: normal frame, resizable (min 420×480), `sandbox`, `contextIsolation`, no `nodeIntegration`, no app menu, navigation and `window.open` blocked. Bounds, maximized state, zoom (UI scale) and always-on-top persist. Saved bounds are only reused if they're still on a connected display.
 - **Mini mode** (`window:setMode`) is the same window: bounds are saved into the outgoing mode's slot and the incoming slot is restored (first use goes to the top-right of the display). It has min 260×180, is always on top, and uses `setOpacity(display.opacity)`, which does nothing on Linux. The frame stays native, because Electron can't switch frames at runtime.
 - **Single instance**: a second launch focuses the existing window.
@@ -291,5 +297,5 @@ python extractor/convert_icons.py && python extractor/extract.py   # regenerate 
 ## Known Open Issues / Decisions
 1. **Duplicate nodes in data**: see above; needs an upstream exporter fix.
 2. **Global keys swallow the key for every app** (Windows `RegisterHotKey`). The lane keys therefore default to `F1`–`F6`. Users migrated from older settings stay on digits until they switch. The repeat guard and the sounds are defensive against Windows behaviour that can't be exercised in Linux CI: check them by hand on Windows after changes to `hotkeys.js`.
-3. **No installer/packaging yet** (electron-builder etc.). Paths are already packaging-safe (userData for state, read-only app dir).
+3. **No installer/packaging yet**. Paths are already packaging-safe (userData for state, read-only app dir). The plan (packaging, auto-update, game-data notice, releases, what Electron 44 enables) is in `docs/ROADMAP.md`.
 4. **Committed `nodes_flat.json` predates `iconFile`**: the 1,027 icons are committed, but the committed export doesn't have `iconFile` yet, so the committed outputs have `icon: null`. Commit the new `nodes_flat.json` together with the regenerated `db/data/*.json`.
