@@ -62,6 +62,10 @@ def convert_one(src, dst, size, quality, Image):
 
 
 def main():
+    # Windows pipes default to the ANSI code page (cp1252), which can't print → ≈ — ×:
+    # a report line would crash the run. Always write UTF-8 (npm run data and the tests read it as such).
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding='utf-8', errors='replace')
     ap = argparse.ArgumentParser(description='Convert db/data/icons images to WebP.')
     ap.add_argument('--icons-dir', type=Path, default=DEFAULT_ICONS_DIR)
     ap.add_argument('--size', type=int, default=128, help='max width/height in px (default 128)')
