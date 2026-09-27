@@ -10,6 +10,7 @@
  *  - resolving a track's nodes against the indexed DB
  *  - stepping a track forward/back inside a multi-phase loadout
  *  - phase-switch carry-over and transition summaries
+ *  - guide updates: diffLoadout / mergeProgress (a newer version of the same build)
  *
  * ─── Terminology ─────────────────────────────────────────────────────────────
  *  track.currentStep = number of FLAT history entries already allocated
@@ -255,6 +256,59 @@
     });
   }
 
+  // ─── Guide updates (same build, newer version of the guide) ─────────────────
+
+  /**
+   * What changed between two versions of the same loadout, phase by phase
+   * (phases are paired by index — the caller lines them up).
+   * @returns {{ changed: boolean, phases: { index, name, added: object[], removed: object[], changed: object[], masteryChange }[] }}
+   *   added/removed: { type, skillKey, label, points }; changed: { type, skillKey, label, before, after, common }
+   */
+  function diffLoadout(oldBuild, newBuild) {
+    const phases = newBuild.phases.map((np, index) => {
+      const op = oldBuild.phases[index] ?? { tracks: [] };
+      const added = [];
+      const changed = [];
+      np.tracks.forEach(nt => {
+        const ot = op.tracks.find(t => sameTrack(nt, t));
+        if (!ot) { added.push({ type: nt.type, skillKey: nt.skillKey, label: nt.label, points: nt.history.length }); return; }
+        const common = commonPrefixLength(ot.history, nt.history);
+        if (common !== ot.history.length || common !== nt.history.length) {
+          changed.push({ type: nt.type, skillKey: nt.skillKey, label: nt.label, before: ot.history.length, after: nt.history.length, common });
+        }
+      });
+      const removed = op.tracks
+        .filter(ot => !np.tracks.some(nt => sameTrack(nt, ot)))
+        .map(ot => ({ type: ot.type, skillKey: ot.skillKey, label: ot.label, points: ot.history.length }));
+      const masteryChange = typeof op.masteryId === 'number' && op.masteryId !== np.masteryId ? { from: op.masteryId, to: np.masteryId } : null;
+      return { index, name: np.name, added, removed, changed, masteryChange };
+    });
+    const changed = newBuild.phases.length !== oldBuild.phases.length
+      || phases.some(p => p.added.length || p.removed.length || p.changed.length || p.masteryChange);
+    return { changed, phases };
+  }
+
+  /**
+   * The new loadout with the player's progress carried over: each track keeps
+   * min(old progress, common history prefix) — the same rule as a phase switch.
+   * `transition` = what to respec in game for the CURRENT phase (the one being
+   * played), in computeTransition's shape, or null when nothing is lost.
+   */
+  function mergeProgress(oldBuild, newBuild) {
+    const cur = Math.min(oldBuild.currentPhase ?? 0, newBuild.phases.length - 1);
+    const phases = newBuild.phases.map((np, i) => {
+      const op = oldBuild.phases[i];
+      return op ? applyCarryOver([op, np], 0, 1)[1] : np;
+    });
+    let transition = null;
+    const op = oldBuild.phases[cur];
+    if (op) {
+      const t = computeTransition([op, newBuild.phases[cur]], 0, 1);
+      if (t.unspecNeeded.length || t.masteryChange) transition = { ...t, fromName: op.name, toName: newBuild.phases[cur].name };
+    }
+    return { build: { ...newBuild, currentPhase: cur, phases }, transition };
+  }
+
   return {
     indexNodes,
     makeDb,
@@ -269,5 +323,7 @@
     computeTransition,
     applyCarryOver,
     passiveFit,
+    diffLoadout,
+    mergeProgress,
   };
 }));

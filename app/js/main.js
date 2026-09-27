@@ -26,11 +26,13 @@ import { openLoadout } from './loadout-dialog.js';
 import { openSettings } from './settings-dialog.js';
 import { openHelp } from './help-dialog.js';
 import { createToaster } from './toast.js';
+import { openProfileMenu } from './profile-menu.js';
+import { openUpdate } from './update-dialog.js';
 
 const { laneKeyLabel, laneKey, laneFromCode, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
 let toast = () => {}; // set in boot() once the container exists
 
-const { normalizeBuild, stepTrack, setTrackProgress, computeTransition, applyCarryOver } = window.TreeUtils;
+const { normalizeBuild, stepTrack, setTrackProgress, computeTransition, applyCarryOver, mergeProgress } = window.TreeUtils;
 const { buildView, stepStartProgress } = window.ViewModel;
 const api = window.api;
 
@@ -39,7 +41,9 @@ const api = window.api;
 
 const state = {
   db: null,            // { passives, skills, classes } — same shape TreeUtils expects
-  build: null,         // multi-phase loadout
+  build: null,         // multi-phase loadout (the active profile's)
+  profiles: [],        // [{ id, name, buildName, classId, masteryId }] — every character
+  activeProfile: null, // id of the character whose build is shown
   view: null,          // ViewModel.buildView(build, db)
   settings: null,
   defaults: null,
@@ -62,7 +66,7 @@ const els = {};
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 async function boot() {
-  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help']) {
+  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help', 'dlg-update']) {
     els[id] = $(id);
   }
   toast = createToaster(els.toasts);
@@ -76,6 +80,8 @@ async function boot() {
   const trees = res.db.trees;
   state.db = { passives: trees, skills: trees, classes: res.db.classes };
   state.build = normalizeBuild(res.build);
+  state.profiles = res.profiles ?? [];
+  state.activeProfile = res.activeProfile ?? null;
   state.settings = res.settings;
   state.defaults = res.defaultSettings;
   state.missingData = res.missingData ?? [];
@@ -94,6 +100,8 @@ async function boot() {
   renderAll();
   requestAnimationFrame(() => revealAll(false));
   document.body.classList.add('is-ready');
+  // Has the guide changed since it was loaded? (Maxroll builds only; main limits it to once a day.)
+  setTimeout(() => checkGuideUpdate(), 1500);
 }
 
 // ─── Derived ──────────────────────────────────────────────────────────────────
@@ -147,6 +155,7 @@ function commit(next, o = {}) {
     requestAnimationFrame(() => revealAll(true));
   }
   if (o.flash != null) flashLane(o.flash);
+  refreshProfileSummary();
   document.title = `${state.build.name} — LE Build Planner`;
   return true;
 }
@@ -196,6 +205,15 @@ function allocate(i, delta, { source = 'app', fill = false } = {}) {
   cue(delta < 0 ? 'undo' : treeDone ? 'treeDone' : stepDone ? 'stepDone' : 'allocate');
   setLastAction(lane, after, after.done - lane.done);
   if (treeDone) celebrate(after);
+}
+
+/** Keep the character menu's "build · class" line in step with the active build. */
+function refreshProfileSummary() {
+  const p = activeProfile();
+  if (!p || !state.build) return;
+  p.buildName = state.build.name;
+  p.classId = state.build.classId;
+  p.masteryId = state.build.masteryId;
 }
 
 function pushUndo(entry) {
@@ -385,18 +403,163 @@ function showLoadout() {
     trees: state.db?.skills ?? {},
     currentSource: state.build?.source ?? null,
     hasProgress: lanes().some(l => l.done > 0),
-    onLoaded(build) {
-      state.pinned = null;
-      state.hover = null;
-      state.focusLane = 0;
-      state.transition = null;
-      resetHistory();
-      state.build = null; // force full render
-      commit(normalizeBuild(build));
-      renderBanner();
-      toast(`Loaded “${build.name}”.`, { kind: 'success' });
+    profileName: activeProfile()?.name ?? 'this character',
+    currentClassId: state.build?.classId ?? null,
+    onLoaded(res) {
+      const isNew = res.activeProfile !== state.activeProfile;
+      applyProfiles(res);
+      toast(isNew ? `Loaded “${res.build.name}” as a new character.` : `Loaded “${res.build.name}”.`, { kind: 'success' });
     },
   });
+}
+
+// ─── Character profiles ───────────────────────────────────────────────────────
+
+const activeProfile = () => state.profiles.find(p => p.id === state.activeProfile) ?? null;
+
+/** Show another build (a profile switch or a fresh load): per-build UI state starts over. */
+function replaceBuild(build) {
+  state.pinned = null;
+  state.hover = null;
+  state.focusLane = 0;
+  state.transition = null;
+  resetHistory();
+  state.build = build ? normalizeBuild(build) : null;
+  renderAll();
+  requestAnimationFrame(() => revealAll(false));
+}
+
+/** Apply a { build, profiles, activeProfile } answer from main. */
+function applyProfiles(res) {
+  state.profiles = res.profiles ?? state.profiles;
+  state.activeProfile = res.activeProfile ?? state.activeProfile;
+  replaceBuild(res.build);
+}
+
+/** "Rogue · Bladedancer" for a profile summary. */
+function describeProfile(p) {
+  if (p.classId == null) return '';
+  const cls = state.db.classes.classes?.[p.classId] ?? `Class ${p.classId}`;
+  const mastery = p.masteryId ? window.ViewModel.masteryName(state.db, p.classId, p.masteryId) : null;
+  return mastery ? `${cls} · ${mastery}` : cls;
+}
+
+function showProfileMenu(anchor) {
+  openProfileMenu({
+    anchor,
+    profiles: state.profiles,
+    activeId: state.activeProfile,
+    describe: describeProfile,
+    canCheckUpdate: !!state.build?.source?.maxroll,
+    onSwitch: async (id) => {
+      const res = await api.switchProfile(id);
+      if (!res.ok) return toast(`Couldn’t switch: ${res.error}`, { kind: 'error' });
+      applyProfiles(res);
+      toast(`Now playing ${activeProfile()?.name ?? 'another character'}.`, { duration: 2000 });
+      checkGuideUpdate();
+    },
+    onCreate: async () => {
+      const res = await api.createProfile();
+      if (!res.ok) return toast(`Couldn’t create a character: ${res.error}`, { kind: 'error' });
+      applyProfiles(res);
+      showLoadout();
+    },
+    onRename: async (id, name) => {
+      const res = await api.renameProfile(id, name);
+      if (!res.ok) return toast(`Couldn’t rename: ${res.error}`, { kind: 'error' });
+      state.profiles = res.profiles;
+      renderTopbar();
+    },
+    onDelete: async (id) => {
+      const gone = state.profiles.find(p => p.id === id)?.name;
+      const res = await api.deleteProfile(id);
+      if (!res.ok) return toast(`Couldn’t delete: ${res.error}`, { kind: 'error' });
+      applyProfiles(res);
+      toast(`Deleted “${gone}”. Now playing ${activeProfile()?.name}.`);
+    },
+    onCheckUpdate: () => checkGuideUpdate({ manual: true }),
+  });
+}
+
+// ─── Guide updates ────────────────────────────────────────────────────────────
+
+/**
+ * Ask main whether the active build's Maxroll guide changed. Automatic checks
+ * stay silent unless there's an update; a manual check always answers.
+ */
+async function checkGuideUpdate({ manual = false } = {}) {
+  if (!state.build?.source?.maxroll) {
+    if (manual) toast('This build wasn’t loaded from a Maxroll link — there’s no guide to check.');
+    return;
+  }
+  const profile = state.activeProfile;
+  if (manual) toast('Checking the guide on Maxroll…', { duration: 1500 });
+  const res = await api.checkGuideUpdate(manual);
+  if (state.activeProfile !== profile) return; // switched character meanwhile
+  if (!res.ok) {
+    if (manual) toast(`Couldn’t check the guide: ${res.error}`, { kind: 'error' });
+    return;
+  }
+  if (res.status === 'update') {
+    if (manual) return showUpdate(res.update);
+    const phases = res.update.diff.phases.filter(p => p.added.length || p.removed.length || p.changed.length || p.masteryChange);
+    toast(`The guide was updated${phases.length ? ` (${phases.map(p => p.name).join(', ')})` : ''}.`, {
+      duration: 15000,
+      action: { label: 'Review', run: () => showUpdate(res.update) },
+    });
+  } else if (manual) {
+    toast(res.status === 'unmapped'
+      ? 'Can’t match this build’s phases to the guide’s variants any more — re-import it from Load build.'
+      : 'The guide hasn’t changed since you loaded it.', { kind: res.status === 'unmapped' ? 'warn' : 'info' });
+  }
+}
+
+function showUpdate(update) {
+  if (els['dlg-update'].open || !state.build) return;
+  const before = state.build;
+  const merged = mergeProgress(before, normalizeBuild(update.newBuild));
+  const mName = (id) => (id ? window.ViewModel.masteryName(state.db, before.classId, id) ?? `mastery ${id}` : state.db.classes.classes?.[before.classId] ?? 'none');
+  openUpdate({
+    dialog: els['dlg-update'],
+    update,
+    transition: merged.transition,
+    currentPhase: merged.build.currentPhase,
+    treeName: transitionLabel,
+    masteryName: mName,
+    onKeep: () => { api.dismissGuideUpdate(update.planner.date ?? ''); },
+    onApply: () => {
+      if (state.build !== before) return toast('The build changed meanwhile — check for the update again.', { kind: 'warn' });
+      state.pinned = null;
+      state.hover = null;
+      resetHistory(); // routes changed: old undo entries no longer point at the same nodes
+      commit(merged.build);
+      state.transition = merged.transition;
+      renderBanner();
+      toast('Guide update applied — your progress was kept.', {
+        kind: 'success',
+        action: {
+          label: 'Undo',
+          run: () => {
+            resetHistory();
+            state.transition = null;
+            commit(before);
+            renderBanner();
+          },
+        },
+      });
+    },
+  });
+}
+
+/** Top bar button: the active character's name; opens the character menu. */
+function profileButton({ compact = false } = {}) {
+  const p = activeProfile();
+  return h(compact ? 'button.profile-btn.is-compact' : 'button.profile-btn', {
+    type: 'button',
+    title: 'Characters — switch, add, rename',
+    'aria-haspopup': 'dialog',
+    onclick: (e) => showProfileMenu(e.currentTarget),
+  }, h('span.profile-name', p?.name ?? 'Character'), ui('chevronDown', { size: 13 }));
 }
 
 function showSettings() {
@@ -413,9 +576,8 @@ function showSettings() {
 async function loadExample() {
   const res = await api.loadExample();
   if (!res.ok) return toast(`Couldn’t load the example: ${res.error}`, { kind: 'error' });
-  resetHistory();
-  state.build = null;
-  commit(normalizeBuild(res.build));
+  replaceBuild(res.build);
+  refreshProfileSummary();
   toast('Example build loaded — replace it with yours any time (Ctrl+O).');
 }
 
@@ -592,7 +754,10 @@ function renderTopbar() {
   }
 
   if (!v) {
-    mount(els.topbar, h('div.brand', h('span.brand-mark', ui('sparkles', { size: 18 })), h('span.brand-name', 'LE Build Planner')), h('div.top-spacer'), actions);
+    mount(els.topbar,
+      h('div.brand', h('span.brand-mark', ui('sparkles', { size: 18 })),
+        h('div.brand-text', profileButton(), h('div.build-class', 'No build loaded'))),
+      h('div.top-spacer'), actions);
     return;
   }
 
@@ -614,6 +779,7 @@ function renderTopbar() {
     h('div.brand',
       h('span.brand-mark', ui('sparkles', { size: 18 })),
       h('div.brand-text',
+        profileButton(),
         h('div.build-name', { title: v.name }, v.name),
         h('div.build-class', v.classLabel))),
     phaseSwitcher,

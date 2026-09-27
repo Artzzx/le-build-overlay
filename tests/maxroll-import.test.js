@@ -147,3 +147,28 @@ describe('decodePlanner (more real planners — class ids are the game enum)', (
     assert.deepEqual(final.lanes.slice(1).map(l => l.title), ['Enchant Weapon', 'Mana Strike', 'Shatter Strike', 'Flame Ward', 'Surge']);
   });
 });
+
+describe('guide updates: planner date + mapPhasesToVariants', () => {
+  const planner = M.decodePlanner(RAW, DB.skills);
+  const v = (index, name) => ({ index, name });
+  const variants = [v(0, 'Leveling'), v(1, 'Early'), v(2, 'Endgame')];
+
+  test('the planner’s last-save date is kept (a new date = the guide was edited)', () => {
+    assert.equal(planner.date, JSON.parse(RAW).date);
+    assert.equal(M.decodePlanner({ ...JSON.parse(RAW), date: undefined }, DB.skills).date, null);
+  });
+
+  test('stored variants: by name first (reordered), then by index (renamed), else null', () => {
+    const stored = [{ variant: 0, name: 'Leveling' }, { variant: 2, name: 'Endgame' }];
+    assert.deepEqual(M.mapPhasesToVariants(stored, [{}, {}], variants), [0, 2]);
+    const reordered = [v(0, 'Endgame'), v(1, 'Leveling')];
+    assert.deepEqual(M.mapPhasesToVariants(stored, [{}, {}], reordered), [1, 0]);
+    const renamed = [v(0, 'Leveling 1-50'), v(1, 'x'), v(2, 'Endgame v2')];
+    assert.deepEqual(M.mapPhasesToVariants(stored, [{}, {}], renamed), [0, 2]);
+    assert.deepEqual(M.mapPhasesToVariants(stored, [{}, {}], [v(0, 'Other')]), [0, null]);
+  });
+
+  test('builds imported before the map was stored fall back to the phase names', () => {
+    assert.deepEqual(M.mapPhasesToVariants(undefined, [{ name: 'endgame' }, { name: 'Custom' }], variants), [2, null]);
+  });
+});

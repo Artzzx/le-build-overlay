@@ -123,6 +123,12 @@ export function openSettings({ dialog, settings, defaults, save, pauseHotkeys })
       ),
 
       h('section.dialog-section',
+        h('h3', 'Guide updates'),
+        field('Check Maxroll for guide updates', 'At start, once a day, for builds loaded from a Maxroll link. You review every change before anything is applied.',
+          toggle(draft.updates.checkMaxroll, (v) => { draft.updates.checkMaxroll = v; }, 'Check Maxroll for guide updates')),
+      ),
+
+      h('section.dialog-section',
         h('h3', 'Global hotkeys'),
         field('Enable global hotkeys', 'Allocate and undo while the game has focus. Released automatically while this window is focused, so typing here always works.',
           toggle(k.enabled, (v) => { k.enabled = v; paint(); }, 'Enable global hotkeys')),

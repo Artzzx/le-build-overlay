@@ -15,11 +15,14 @@
  *  - All renderer access goes through electron/preload.js (window.api).
  *
  * IPC (renderer → main, invoke):
- *   app:init                 → { db, build, settings, defaultSettings, failedHotkeys, missingData, version }
- *   build:save    (build)    → { ok }
+ *   app:init                 → { db, build, profiles, activeProfile, settings, defaultSettings, failedHotkeys, missingData, version }
+ *   build:save    (build)    → { ok }                       (into the active profile)
  *   build:preview ({ json }) → { ok, summary } | { ok:false, error }
- *   build:load    ({ phases, loadoutName }) → { ok, build } | { ok:false, error }
+ *   build:load    ({ phases, loadoutName, source, target }) → { ok, build, profiles, activeProfile }
+ *                              target 'new' = a new character profile; otherwise the active one
  *   build:example            → { ok, build } | { ok:false, error }
+ *   profiles:create ({ name }) | profiles:switch ({ id }) | profiles:rename ({ id, name }) | profiles:delete ({ id })
+ *                            → { ok, build, profiles, activeProfile }
  *   settings:save (settings) → { ok, settings, failedHotkeys }
  *   hotkeys:pause ({ paused }) → { ok }   (while recording a shortcut)
  *   window:setMode ({ mode }) → { ok, settings }   ('full' | 'compact')
@@ -27,6 +30,9 @@
  *                              | { ok:false, error, canOpen }
  *   maxroll:clipboardLink    → { ok, link|null }   (pre-fills the import field; never auto-fetches)
  *   maxroll:open ({ link })  → { ok }              (opens the planner in the browser)
+ *   maxroll:checkUpdate ({ manual }) → { ok, status: 'none'|'skipped'|'upToDate'|'dismissed'|'unmapped'|'update',
+ *                              update?: { planner, newBuild, diff, missing } }   (the active build's guide)
+ *   maxroll:dismissUpdate ({ date }) → { ok }       ("Keep mine": don't offer that version again)
  *   templates:list | templates:save | templates:load | templates:delete
  *
  * main → renderer:
@@ -60,6 +66,7 @@ let win = null;
 let store = null;
 let hotkeys = null;
 let settings = null;
+let profileId = null; // the active character profile (store.js profiles)
 
 // ─── Game data ────────────────────────────────────────────────────────────────
 
@@ -263,6 +270,108 @@ function summarizeBuild(json) {
   };
 }
 
+// ─── Profiles ─────────────────────────────────────────────────────────────────
+
+/** Default name for a character: its class ("Rogue"); the player renames it to their character's name. */
+function characterName(build) {
+  const cls = Number.isInteger(build?.classId) ? loadGameData().db.classes.classes?.[build.classId] : null;
+  return cls || 'Character 1';
+}
+
+/** Make `id` the active profile and remember it for the next start. */
+function setActiveProfile(id) {
+  profileId = id;
+  if (settings.activeProfile !== id) settings = store.saveSettings({ ...settings, activeProfile: id });
+}
+
+/** What the renderer needs after any profile change: the active build + the list. */
+function profileState() {
+  return { build: store.readProfile(profileId)?.build ?? null, profiles: store.listProfiles(), activeProfile: profileId };
+}
+
+/**
+ * Keep only what we know about a build's origin:
+ * { maxroll: id, date?, phases?: [{ variant: index, name }] } — the phase map lets
+ * the guide-update check line the planner's variants up with this build's phases.
+ */
+function cleanSource(source, phaseCount) {
+  if (!source || typeof source.maxroll !== 'string' || !MaxrollImport.parseMaxrollLink(source.maxroll)) return null;
+  const out = { maxroll: source.maxroll };
+  if (typeof source.date === 'string' && source.date.length < 40) out.date = source.date;
+  if (Array.isArray(source.phases) && source.phases.length === phaseCount
+    && source.phases.every(p => Number.isInteger(p?.variant) && p.variant >= 0 && typeof p?.name === 'string')) {
+    out.phases = source.phases.map(p => ({ variant: p.variant, name: p.name.slice(0, 80) }));
+  }
+  return out;
+}
+
+// ─── Guide updates ────────────────────────────────────────────────────────────
+
+const UPDATE_CHECK_EVERY_MS = 24 * 60 * 60 * 1000; // automatic checks: once a day per character
+
+/**
+ * Has the active build's Maxroll guide changed since it was loaded? Never applies
+ * anything: returns the new version + a diff for the renderer to offer.
+ * Automatic checks (manual=false) respect the setting, the daily limit and a
+ * dismissed version; a manual check always fetches fresh.
+ */
+async function checkGuideUpdate({ manual = false } = {}) {
+  const profile = store.readProfile(profileId);
+  const build = profile?.build;
+  const src = build?.source;
+  if (!src?.maxroll || !Array.isArray(build.phases)) return { status: 'none' };
+  const check = profile.updateCheck ?? {};
+  if (!manual && (!settings.updates.checkMaxroll || Date.now() - (check.at ?? 0) < UPDATE_CHECK_EVERY_MS)) return { status: 'skipped' };
+
+  const raw = await maxroll().fetchPlanner(src.maxroll, { fresh: manual });
+  store.updateProfile(profileId, { updateCheck: { ...check, at: Date.now() } });
+  const { db } = loadGameData();
+  const planner = MaxrollImport.decodePlanner(raw, db.skills);
+  if (planner.date && planner.date === src.date) return { status: 'upToDate' };
+  if (!manual && planner.date && planner.date === check.dismissed) return { status: 'dismissed' };
+
+  const picks = MaxrollImport.mapPhasesToVariants(src.phases, build.phases, planner.variants);
+  if (picks.every(v => v == null)) return { status: 'unmapped' };
+  const { parseLoadout } = require('../parser/maxroll');
+  const matched = build.phases
+    .map((p, i) => (picks[i] == null ? null : { i, name: p.name, json: JSON.stringify(planner.variants[picks[i]].build) }))
+    .filter(Boolean);
+  const parsed = parseLoadout(matched.map(({ name, json }) => ({ name, json })), db.skills, db.classes, build.name);
+  if (parsed.classId !== build.classId) throw new Error('The guide is now for another class — load it as a new character instead.');
+  // Phases whose variant is gone stay as they are.
+  const phases = build.phases.map((p, i) => {
+    const k = matched.findIndex(m => m.i === i);
+    return k >= 0 ? parsed.phases[k] : p;
+  });
+  const newBuild = {
+    ...build,
+    masteryId: Math.max(0, ...phases.map(p => p.masteryId ?? 0)),
+    phases,
+    source: {
+      maxroll: src.maxroll,
+      ...(planner.date ? { date: planner.date } : {}),
+      phases: build.phases.map((p, i) => (picks[i] == null
+        ? src.phases?.[i] ?? { variant: -1, name: p.name }
+        : { variant: picks[i], name: planner.variants[picks[i]].name })),
+    },
+  };
+  const diff = TreeUtils.diffLoadout(build, newBuild);
+  if (!diff.changed) {
+    // Saved again on Maxroll without changing the route: remember the new date quietly.
+    store.saveProfileBuild(profileId, { ...build, source: newBuild.source });
+    return { status: 'upToDate' };
+  }
+  return {
+    status: 'update',
+    update: {
+      planner: { name: planner.name, author: planner.author, date: planner.date },
+      newBuild,
+      diff,
+      missing: build.phases.filter((_, i) => picks[i] == null).map(p => p.name),
+    },
+  };
+}
+
 // ─── IPC ──────────────────────────────────────────────────────────────────────
 
 /** Wrap a handler so thrown errors become { ok:false, error } instead of rejections. */
@@ -283,7 +392,7 @@ function registerIpc() {
     return {
       db: { trees: db.skills, classes: db.classes },
       missingData: missing,
-      build: store.loadBuild(),
+      ...profileState(),
       settings,
       defaultSettings: DEFAULT_SETTINGS,
       failedHotkeys: hotkeys.getFailures(),
@@ -293,7 +402,7 @@ function registerIpc() {
 
   handle('build:save', (build) => {
     if (!build || !Array.isArray(build.phases)) throw new Error('Refusing to save an invalid loadout');
-    store.saveBuild(build);
+    store.saveProfileBuild(profileId, build);
     return {};
   });
 
@@ -326,14 +435,30 @@ function registerIpc() {
     return {};
   });
 
-  handle('build:load', ({ phases, loadoutName, source }) => {
+  handle('maxroll:checkUpdate', ({ manual } = {}) => checkGuideUpdate({ manual: !!manual }));
+
+  handle('maxroll:dismissUpdate', ({ date }) => {
+    const profile = store.readProfile(profileId);
+    if (profile && typeof date === 'string') store.updateProfile(profileId, { updateCheck: { ...profile.updateCheck, dismissed: date } });
+    return {};
+  });
+
+  handle('build:load', ({ phases, loadoutName, source, target }) => {
     const { parseLoadout } = require('../parser/maxroll');
     const { db } = loadGameData();
     const build = parseLoadout(phases, db.skills, db.classes, loadoutName || 'Imported loadout');
-    // Where it came from (e.g. { maxroll: 'sb62zd0e' }) — lets the dialog offer "update from Maxroll".
-    if (source && typeof source.maxroll === 'string') build.source = { maxroll: source.maxroll };
-    store.saveBuild(build);
-    return { build };
+    // Where it came from — lets the app re-import it and check the guide for updates.
+    const src = cleanSource(source, build.phases.length);
+    if (src) build.source = src;
+    if (target === 'new') {
+      setActiveProfile(store.createProfile({ name: characterName(build), build }).id);
+    } else {
+      const current = store.readProfile(profileId);
+      // An empty, never-renamed "Character 1" takes the class name with its first build.
+      const rename = current && !current.build && /^Character( \d+)?$/.test(current.name) ? { name: characterName(build) } : {};
+      store.updateProfile(profileId, { ...rename, build });
+    }
+    return profileState();
   });
 
   handle('build:example', () => {
@@ -341,7 +466,7 @@ function registerIpc() {
     const build = JSON.parse(fs.readFileSync(EXAMPLE_BUILD, 'utf-8'));
     delete build._comment;
     validateLoadout(build);
-    store.saveBuild(build);
+    store.saveProfileBuild(profileId, build);
     return { build };
   });
 
@@ -349,6 +474,7 @@ function registerIpc() {
     // Bounds and the window mode are owned by main (persistBounds / window:setMode).
     settings = store.saveSettings({
       ...next,
+      activeProfile: profileId,
       window: settings.window,
       compactWindow: settings.compactWindow,
       display: { ...next?.display, mode: settings.display.mode },
@@ -366,6 +492,25 @@ function registerIpc() {
   handle('hotkeys:pause', ({ paused }) => { hotkeys.pause(!!paused); return {}; });
 
   handle('window:setMode', ({ mode }) => { setWindowMode(mode); return { settings }; });
+
+  handle('profiles:create', ({ name } = {}) => {
+    setActiveProfile(store.createProfile({ name: name || `Character ${store.listProfiles().length + 1}` }).id);
+    return profileState();
+  });
+  handle('profiles:switch', ({ id }) => {
+    if (!store.readProfile(id)) throw new Error('That character no longer exists.');
+    setActiveProfile(id);
+    return profileState();
+  });
+  handle('profiles:rename', ({ id, name }) => {
+    store.updateProfile(id, { name });
+    return profileState();
+  });
+  handle('profiles:delete', ({ id }) => {
+    store.deleteProfile(id);
+    if (id === profileId) setActiveProfile(store.resolveProfile(null).id);
+    return profileState();
+  });
 
   handle('templates:list', () => ({ list: store.listTemplates() }));
   handle('templates:save', (t) => ({ filename: store.saveTemplate(t) }));
@@ -390,6 +535,9 @@ app.whenReady().then(() => {
   const migrated = store.migrateLegacy();
   if (migrated.length) console.log(`[main] Migrated from config/: ${migrated.join(', ')}`);
   settings = store.loadSettings();
+  const migratedProfile = store.migrateProfiles(characterName);
+  if (migratedProfile) console.log('[main] build.json → first character profile');
+  setActiveProfile(store.resolveProfile(migratedProfile ?? settings.activeProfile).id);
 
   hotkeys = createHotkeys({ globalShortcut, emit: emitHotkey, toggleWindow });
   hotkeys.apply(settings.hotkeys);

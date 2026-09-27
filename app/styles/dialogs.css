@@ -32,6 +32,10 @@
   padding: 12px 20px; border-top: 1px solid var(--line); background: var(--bg-raised);
 }
 .dialog-foot-actions { display: flex; gap: 8px; margin-left: auto; }
+.ld-target { display: flex; align-items: center; gap: 8px; }
+.ld-target[hidden] { display: none; }
+.ld-target-label { color: var(--text-3); font-size: var(--fs-sm); white-space: nowrap; }
+.ld-target .seg { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dialog-status { font-size: var(--fs-sm); color: var(--text-3); min-height: 18px; flex: 1 1 200px; }
 .dialog-status.is-error { color: var(--danger); }
 .dialog-status.is-warn { color: var(--warn); }
@@ -307,3 +311,14 @@
   .ld-name .input { max-width: none; }
 }
 
+
+/* Guide updated (update-dialog.js) */
+.dialog-update { width: min(620px, calc(100vw - 32px)); }
+.up-ok { display: flex; align-items: center; gap: 8px; color: var(--now); font-size: var(--fs-sm); }
+.up-phase { border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 12px; background: var(--bg-raised); }
+.up-phase.is-same { opacity: 0.6; }
+.up-phase-head { display: flex; align-items: center; gap: 8px; }
+.up-phase-name { font-weight: 650; }
+.up-list { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; color: var(--text-2); font-size: var(--fs-sm); }
+.up-list .is-add b { color: var(--now); }
+.up-list .is-remove b { color: var(--danger); }

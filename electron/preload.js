@@ -17,11 +17,18 @@ contextBridge.exposeInMainWorld('api', {
 
   saveBuild: (build) => invoke('build:save', build),
   previewPhase: (json) => invoke('build:preview', { json }),
-  loadLoadout: (phases, loadoutName, source) => invoke('build:load', { phases, loadoutName, source }),
+  loadLoadout: (phases, loadoutName, source, target) => invoke('build:load', { phases, loadoutName, source, target }),
   fetchMaxroll: (link) => invoke('maxroll:fetch', { link }),
   maxrollClipboardLink: () => invoke('maxroll:clipboardLink'),
   openMaxroll: (link) => invoke('maxroll:open', { link }),
+  checkGuideUpdate: (manual) => invoke('maxroll:checkUpdate', { manual }),
+  dismissGuideUpdate: (date) => invoke('maxroll:dismissUpdate', { date }),
   loadExample: () => invoke('build:example'),
+
+  createProfile: (name) => invoke('profiles:create', { name }),
+  switchProfile: (id) => invoke('profiles:switch', { id }),
+  renameProfile: (id, name) => invoke('profiles:rename', { id, name }),
+  deleteProfile: (id) => invoke('profiles:delete', { id }),
 
   saveSettings: (settings) => invoke('settings:save', settings),
   pauseHotkeys: (paused) => invoke('hotkeys:pause', { paused }),

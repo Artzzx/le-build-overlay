@@ -33,11 +33,16 @@ const HELP = [
  * @param {object} [o.trees]          — db.skills (tree names + icons for skill cards)
  * @param {object} [o.currentSource]  — the loaded build's source ({ maxroll: id }) for "re-import"
  * @param {boolean} o.hasProgress     — current build has allocated points (show replace warning)
- * @param {(build) => void} o.onLoaded
+ * @param {string} o.profileName      — the active character's name
+ * @param {number|null} o.currentClassId — the active build's class (null = no build)
+ * @param {(res: { build, profiles, activeProfile }) => void} o.onLoaded
  */
-export function openLoadout({ dialog, api, trees = {}, currentSource = null, hasProgress, onLoaded }) {
+export function openLoadout({ dialog, api, trees = {}, currentSource = null, hasProgress, profileName, currentClassId = null, onLoaded }) {
   let view = 'choose';
   let busy = false;
+  // Load into the active character or a new one. null = automatic: a new character when the
+  // build is another class than the current one (an alt), else this character.
+  let target = null;
   let templates = [];
   let clipboardLink = null;
 
@@ -54,6 +59,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
   const crumb = h('div.ld-crumb');
   const backBtn = h('button.btn.btn-ghost.btn-sm.ld-back', { type: 'button', onclick: () => go('choose'), title: 'Back (Alt+←)' }, ui('chevronLeft', { size: 15 }), 'Back');
   const loadBtn = h('button.btn.btn-primary', { type: 'button', onclick: onLoad, title: 'Load (Ctrl+Enter)' });
+  const targetSlot = h('div.ld-target');
   const saveTplBtn = h('button.btn.btn-secondary', { type: 'button', onclick: onSaveTemplate }, ui('save', { size: 15 }), 'Save as template');
 
   const setStatus = (msg, kind = 'error') => { status.className = `dialog-status is-${kind}`; status.textContent = msg; };
@@ -87,6 +93,33 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
     return h('div.ld-placeholder', ui(icon, { size: 28, stroke: 1.5 }), h('div.ld-placeholder-title', title), text ? h('p', text) : null, actions.length ? h('div.ld-placeholder-actions', actions) : null);
   }
 
+  /** Class of the build about to be loaded, once known. */
+  function incomingClassId() {
+    if (view === 'maxroll') return chosenVariants().find(v => v.summary)?.summary.classId ?? null;
+    if (view === 'codes') return codes.phases.find(p => p.preview)?.preview.classId ?? null;
+    return null;
+  }
+
+  function effectiveTarget() {
+    if (target) return target;
+    const incoming = incomingClassId();
+    return currentClassId != null && incoming != null && incoming !== currentClassId ? 'new' : 'current';
+  }
+
+  function paintTarget() {
+    targetSlot.hidden = view === 'choose';
+    const t = effectiveTarget();
+    const seg = (key, label, title) => h('button.seg', {
+      type: 'button', role: 'radio', 'aria-checked': String(t === key), class: t === key ? 'is-active' : '', title,
+      onclick: () => { target = key; paintFooter(); },
+    }, label);
+    mount(targetSlot,
+      h('span.ld-target-label', 'Load into'),
+      h('div.segmented', { role: 'radiogroup', 'aria-label': 'Load into' },
+        seg('current', profileName, `Replace ${profileName}’s build`),
+        seg('new', 'New character', 'Keep this character as it is and add a new one')));
+  }
+
   // ─── Validation ─────────────────────────────────────────────────────────────
 
   const timers = new WeakMap();
@@ -109,6 +142,12 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
 
   const chosenVariants = () => (mx.planner?.variants ?? []).filter(v => mx.selected.has(v.index)).slice(0, MAX_PHASES);
   const variantName = (v) => (mx.names.get(v.index) ?? v.name).trim() || v.name;
+  // Where the build came from, phase by phase — lets the app check the guide for updates later.
+  const maxrollSource = () => ({
+    maxroll: mx.planner.id,
+    ...(mx.planner.date ? { date: mx.planner.date } : {}),
+    phases: chosenVariants().map(v => ({ variant: v.index, name: v.name })),
+  });
 
   function problems() {
     const out = [];
@@ -150,10 +189,12 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
       ? h('span', 'Where does your build come from?')
       : [h('span', 'Load build'), ui('chevronRight', { size: 14 }), h('b', view === 'maxroll' ? 'From Maxroll' : 'Export codes')]);
 
+    paintTarget();
     const issues = view === 'choose' ? [] : problems();
     const started = view === 'maxroll' ? !!mx.planner : codes.phases.some(p => p.json.trim());
     if (issues.length && started) setStatus(issues[0], codes.phases.some(p => p.error) && view === 'codes' ? 'error' : 'info');
-    else if (hasProgress && ready()) setStatus('Loading replaces your current build and resets its progress.', 'warn');
+    else if (ready() && effectiveTarget() === 'new') setStatus(`Adds a new character. ${profileName} is kept as it is.`, 'info');
+    else if (hasProgress && ready()) setStatus(`Replaces ${profileName}’s build and resets its progress.`, 'warn');
     else setStatus('');
   }
 
@@ -299,6 +340,9 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
   let codesPreviewSlot = null;
   let codesRailSlot = null;
 
+  // Phases added or removed by hand no longer line up with the planner's variants.
+  const forgetPhaseMap = () => { if (codes.source) codes.source = { maxroll: codes.source.maxroll, date: codes.source.date }; };
+
   function phaseDot(p) {
     if (p.pending) return h('span.dot.is-pending', { title: 'Checking…' });
     if (p.error) return h('span.dot.is-error', { title: 'Has a problem' });
@@ -319,10 +363,10 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
         h('div.ld-rail-meta', p.preview ? `${p.preview.passivePoints} pts · ${p.preview.skills.length} skill${p.preview.skills.length !== 1 ? 's' : ''}` : p.error ? h('span.ld-err', 'has a problem') : p.pending ? 'checking…' : 'empty')),
       codes.phases.length > 1 ? h('button.btn-icon.btn-xs.ld-rail-x', {
         type: 'button', 'aria-label': `Remove ${p.name || p.placeholder}`, title: 'Remove phase',
-        onclick: () => { codes.phases.splice(i, 1); codes.active = Math.min(codes.active, codes.phases.length - 1); paint(); },
+        onclick: () => { codes.phases.splice(i, 1); forgetPhaseMap(); codes.active = Math.min(codes.active, codes.phases.length - 1); paint(); },
       }, ui('x', { size: 13 })) : null))),
       codes.phases.length < MAX_PHASES
-        ? h('button.ld-add', { type: 'button', onclick: () => { codes.phases.push(newPhase(codes.phases.length + 1)); codes.active = codes.phases.length - 1; paint(); } }, ui('plus', { size: 14 }), 'Add phase')
+        ? h('button.ld-add', { type: 'button', onclick: () => { codes.phases.push(newPhase(codes.phases.length + 1)); forgetPhaseMap(); codes.active = codes.phases.length - 1; paint(); } }, ui('plus', { size: 14 }), 'Add phase')
         : null,
     );
   }
@@ -436,7 +480,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
     codes.name = mx.name.trim() || mx.planner.name;
     codes.phases = chosen.map((v, i) => ({ ...newPhase(i + 1), name: variantName(v).slice(0, 40), json: v.json, preview: v.summary }));
     codes.active = 0;
-    codes.source = { maxroll: mx.planner.id };
+    codes.source = maxrollSource();
     go('codes');
   }
 
@@ -446,7 +490,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
       return {
         name: mx.name.trim() || mx.planner.name,
         phases: chosenVariants().map(v => ({ name: variantName(v).slice(0, 40), json: v.json })),
-        source: { maxroll: mx.planner.id },
+        source: maxrollSource(),
       };
     }
     return {
@@ -494,11 +538,11 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
     busy = true;
     paintFooter();
     const l = currentLoadout();
-    const res = await api.loadLoadout(l.phases, l.name || undefined, l.source ?? undefined);
+    const res = await api.loadLoadout(l.phases, l.name || undefined, l.source ?? undefined, effectiveTarget());
     busy = false;
     if (!res.ok) { paintFooter(); return setStatus(res.error); }
     dialog.close();
-    onLoaded(res.build);
+    onLoaded(res);
   }
 
   function onKeyDown(e) {
@@ -518,6 +562,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
       body,
       h('footer.dialog-foot',
         status,
+        targetSlot,
         h('div.dialog-foot-actions', saveTplBtn, h('button.btn.btn-ghost', { type: 'button', onclick: () => dialog.close() }, 'Cancel'), loadBtn),
       ),
     ),
