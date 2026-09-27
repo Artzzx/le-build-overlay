@@ -110,7 +110,13 @@
       masteryId: Number.isInteger(p.mastery) ? p.mastery : 0,
       unmatched,
       warnings,
-      build: { class: p.class, mastery: Number.isInteger(p.mastery) ? p.mastery : 0, passives: { history: passives, position: passives.length }, skillTrees },
+      build: {
+        class: p.class,
+        mastery: Number.isInteger(p.mastery) ? p.mastery : 0,
+        ...(Number.isInteger(p.level) && p.level > 0 ? { level: p.level } : {}), // → how many skill slots are open
+        passives: { history: passives, position: passives.length },
+        skillTrees,
+      },
     };
   }
 

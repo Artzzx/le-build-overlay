@@ -44,8 +44,8 @@ le-build-overlay/
 │   ├── js/dom.js                 ← h(), mount(), svg(), richText()
 │   └── styles/                   ← tokens.css, app.css (shell), lanes.css, mini.css, dialogs.css
 ├── shared/                       ← PURE logic, UMD: require() in Node, window.* in the renderer
-│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over, passiveFit,
-│   │                               diffLoadout/mergeProgress (guide updates)
+│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, passiveFit,
+│   │                               character state + switchPhase/rebaseTrack/slotsAt, diffLoadout/mergeProgress (guide updates)
 │   ├── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
 │   ├── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
 │   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree, mapPhasesToVariants
@@ -72,7 +72,7 @@ Load build dialog ──api.previewPhase──► main: parseBuild (live validat
 app/js/main.js
    ├─ api.init() → { db:{trees,classes}, build, profiles, activeProfile, settings, defaultSettings, failedHotkeys, missingData }
    ├─ ViewModel.buildView(build, db) → lanes[] (steps with done/current/upcoming, now, next, colorSlot)
-   ├─ actions → TreeUtils.stepTrack / setTrackProgress / applyCarryOver → commit() → api.saveBuild
+   ├─ actions → TreeUtils.stepTrack / setTrackProgress / switchPhase → commit() → api.saveBuild
    └─ api.onHotkey(): global keys → { action: 'advance'|'undo'|'phase'|'latch' }
 ```
 
@@ -112,8 +112,26 @@ Maxroll `skillTrees` keys are the game's `treeID` verbatim (`es6ai` = Erasing St
 - **Mastery `0`** is the plain class, used while leveling before the mastery quest. Labels are just the class name ("Rogue").
 - **Safety net**: `summarizeBuild()` reports `passiveMismatch` when a passive history doesn't fit its class's tree, and the Load build dialog shows it. `tests/data-contract.test.js` runs the same check on every planner fixture. **Add a fixture for each new class/mastery you import.**
 
-### Phases
-A loadout has 1–5 phases, all with the same **class**. Each phase has its own `masteryId` (e.g. Leveling = 0, Endgame = Bladedancer), and `loadout.masteryId` = the highest one. The view uses the active phase's mastery, and `computeTransition` returns `masteryChange`, which the banner shows as "Choose the Bladedancer mastery". `gotoPhase`: `applyCarryOver` sets each target track to `min(fromProgress, commonPrefixLength(histories))`, and `computeTransition` lists points to unspec and skills to remove. That list is shown as a banner until the user dismisses it. Phase switches, loads and *Start from here* offer an Undo toast.
+### Phases and the character state
+A loadout has 1–5 phases, all with the same **class**. Each phase has its own `masteryId` (e.g. Leveling = 0, Endgame = Bladedancer), and `loadout.masteryId` = the highest one. Maxroll phases also carry `level` (the character level the variant is planned for).
+
+**The character state** (`build.held`, `build.mastery`) is what the character has in game, whatever the phase:
+- `held` = `{ passive: {node: points}, [skillKey]: {…} }`, including skills the current phase doesn't use but that are still specialized.
+- `mastery` = the chosen mastery (0 = none yet).
+- `setTrackProgress`/`stepTrack` keep it in step on every allocate or undo.
+- Builds without it get it from their current phase (`ensureHeld`, run by `normalizeBuild`). A fresh load has mastery 0.
+
+**Entering a phase** (`switchPhase` → `enterPhase` in `shared/tree-utils.js`) compares what's held with the new routes, **per node, never by order**; the game only cares how many points a node has. `rebaseTrack` moves the held points to the front of the route (guide order kept in `track.guide`), so progress stays a flat prefix and the rest of the app is unchanged.
+- **Forward**:
+  - **Respec**: only points a route doesn't want at all.
+  - **Skills** the phase doesn't use: keep them specialized when a slot is free and they come back later. Slots unlock at levels 4, 8, 20, 35 and 50 (`slotsAt(phase.level)`; 5 when the level is unknown). Otherwise despecialize: all points lost, and the skill comes back from 0. Skills never used again are also despecialized.
+  - **Mastery**: "choose" (from 0) or "change" when the phase's mastery differs from `build.mastery`.
+  - The state assumes the player does it.
+- **Backward**: nothing to do in game, and the state is untouched, so going forward again loses nothing.
+- The banner ("Switching to …") groups Respec / Skills / Mastery.
+- A switch's Undo restores the whole build, but only while nothing has changed since; an older toast can't restore a stale build.
+
+Proven on the three fixtures (`tests/maxroll-import.test.js`): the old prefix rule asked the Rogue build to unspec 15 of 20 passives it still needed. Phase switches, loads and *Start from here* offer an Undo toast.
 
 ---
 
@@ -149,7 +167,7 @@ Guides get edited every patch; re-importing used to reset progress.
   - Otherwise `mapPhasesToVariants()` pairs each phase with a variant: stored name first (reordered), then stored index (renamed), then, for builds imported before the map existed, the phase's own name. A phase whose variant is gone stays as is and is listed as `missing`.
   - The matched variants are parsed, and `diffLoadout()` lists what changed per phase: trees added / removed, routes changed (`common` prefix), mastery. A new date with no real change just updates `source.date` quietly.
 - **Automatic** checks run at start and after a profile switch: at most once a day per character (`profile.updateCheck.at`), off with `settings.updates.checkMaxroll`, and silent unless there's an update (a toast with **Review**). A version dismissed with *Keep my version* (`updateCheck.dismissed`) isn't offered automatically again. The character menu's *Check the guide for updates* always fetches fresh and always answers.
-- **Apply** is renderer-side `mergeProgress(old, new)`: each track keeps `min(progress, common prefix)` (the phase-switch rule). What's lost in the phase being played becomes the respec banner (`computeTransition` shape). It resets the undo stack and offers an Undo toast. Nothing is ever applied without the player's click.
+- **Apply** is renderer-side `mergeProgress(old, new)`: the phase being played is re-entered from the character state (`enterPhase`), so every held point the new routes still want is kept, in any order. What's left becomes the banner ("Guide updated — in …"). It resets the undo stack and offers an Undo toast. Nothing is ever applied without the player's click. `diffLoadout` compares guide routes (`track.guide ?? history`).
 
 ### Character profiles
 Each character has its own build and progress: `<userData>/profiles/<id>.json` = `{ version, id, name, createdAt, updatedAt, build, updateCheck? }`.
@@ -173,7 +191,7 @@ One JSON object per line (passives/class/mastery line + one line per skill); `me
     { "type": "passive", "label": "Sentinel — Void Knight Passives", "history": [0,0,1], "totalSteps": 3, "currentStep": 0 },
     { "type": "skill", "skillKey": "v01cv", "label": "Void Cleave", "history": [2,2,4], "totalSteps": 3, "currentStep": 0 } ] } ] }
 ```
-Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`, which also backfills a missing `phase.masteryId` from `loadout.masteryId`. `label` is baked at import time; the UI prefers live DB names (view-model titles).
+Also stored: `held` / `mastery` (the character state, see *Phases*), optional `phase.level`, and `track.guide` (the guide's order when entering the phase reordered `history`). Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`, which also backfills a missing `phase.masteryId` from `loadout.masteryId` and derives the character state. `label` is baked at import time; the UI prefers live DB names (view-model titles).
 
 ### <userData>/settings.json
 `{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey}, updates:{checkMaxroll}, activeProfile }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).

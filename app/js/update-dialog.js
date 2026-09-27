@@ -3,7 +3,7 @@
  * ────────────────────────
  * "Guide updated" review: what changed in the build's Maxroll guide since it
  * was loaded, phase by phase, and what that does to the player's progress.
- * Apply keeps every point on the unchanged part of each route (TreeUtils.mergeProgress);
+ * Apply keeps every held point the new routes still want, in any order (TreeUtils.mergeProgress);
  * Keep mine leaves the build as it is and stops offering this version.
  */
 

@@ -60,7 +60,14 @@ Click the node you're actually at in a tree, then **Start from here**. The app m
 
 The phase tabs at the top switch between *Leveling*, *Endgame*, and so on (also `F9` / `Shift`+`F9` in game, or `PgDn` / `PgUp` in the app).
 
-When you switch, a yellow banner lists what to do in game: points to **unspec**, skills to **take off your bar**, or the **mastery** to choose. Your progress carries over wherever the two phases share the same route. When every tree in a phase is done, the app offers to move to the next one.
+When you switch, the app compares what your character already has with the new phase:
+
+- **Every point you already hold is kept** when the new route still wants it, even if the guide takes it in a different order.
+- **Respec** lists only the points the new route doesn't use at all.
+- **Skills** the phase doesn't use stay specialized if you have a free slot (slots open at levels 4, 8, 20, 35 and 50) and the skill comes back later, with its points. Otherwise the banner tells you to despecialize it.
+- **Mastery**: when to choose it, or change it.
+
+Going back to an earlier phase asks for nothing and forgets nothing. When every tree in a phase is done, the app offers to move to the next one.
 
 ### Mini mode
 
