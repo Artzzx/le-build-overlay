@@ -169,6 +169,8 @@ b { font-weight: 600; }
 .menu-action svg { flex: none; color: var(--text-3); }
 .menu-action.is-danger:hover { color: var(--danger); }
 .menu-action.is-danger:hover svg { color: var(--danger); }
+.menu-action:disabled { opacity: 0.4; pointer-events: none; }
+.menu-kbd { margin-left: auto; }
 .menu-sep { height: 1px; margin: 6px 4px; background: var(--line); }
 .menu-form { display: flex; flex-direction: column; gap: 10px; padding: 4px 10px 8px; }
 .menu-form-actions { display: flex; justify-content: flex-end; gap: 6px; }

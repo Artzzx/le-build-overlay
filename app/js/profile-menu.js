@@ -25,6 +25,8 @@ import { ui } from './icons.js';
  * @param {(id, name) => void} o.onRename
  * @param {(id) => void} o.onDelete
  * @param {() => void} o.onCheckUpdate
+ * @param {boolean} o.canClear            — the active build has progress to clear
+ * @param {() => void} o.onClear          — full clear (asks for confirmation itself)
  */
 export function openProfileMenu(o) {
   const dlg = h('dialog.menu-pop', { 'aria-label': 'Characters' });
@@ -57,6 +59,8 @@ export function openProfileMenu(o) {
       o.canCheckUpdate
         ? h('button.menu-item.menu-action', { type: 'button', onclick: run(o.onCheckUpdate) }, ui('refresh', { size: 15 }), 'Check the guide for updates')
         : null,
+      h('button.menu-item.menu-action', { type: 'button', onclick: run(o.onClear), disabled: !o.canClear, title: 'Every phase back to 0 (Ctrl+Shift+Delete)' },
+        ui('undo', { size: 15 }), 'Clear all progress', h('kbd.key.key-sm.menu-kbd', 'Ctrl Shift Del')),
       h('button.menu-item.menu-action', { type: 'button', onclick: () => paint(renameView) }, ui('edit', { size: 15 }), `Rename “${active?.name ?? ''}”`),
       o.profiles.length > 1
         ? h('button.menu-item.menu-action.is-danger', {

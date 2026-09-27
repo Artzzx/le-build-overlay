@@ -35,6 +35,7 @@ export function openHelp({ dialog, hotkeys: hk, onOpenSettings }) {
     row([keycap('1', 'key-sm'), h('span.dash', '–'), keycap('6', 'key-sm'), hk.laneKeys !== 'digits' ? [h('span.help-or', 'or'), keycap(LANE_KEYSET_LABELS[hk.laneKeys], 'key-sm')] : null], 'Allocate (Shift = undo)'),
     row(k('Ctrl+1'), 'Fill: every remaining point of the step (Ctrl+1–6)'),
     row(k('Ctrl+Z'), 'Undo the last change, in any tree'),
+    row(k('Ctrl+Shift+Delete'), 'Clear all progress, every phase (asks first)'),
     row([keycap('↑', 'key-sm'), keycap('↓', 'key-sm')], 'Focus a tree'),
     row([keycap('←', 'key-sm'), keycap('→', 'key-sm')], 'Browse its steps'),
     row([keycap('Enter', 'key-sm')], 'Allocate in the focused tree'),

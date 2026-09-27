@@ -15,7 +15,7 @@ const assert = require('node:assert/strict');
 const {
   indexNodes, makeDb, groupHistory, findCurrentGroup, lookupNode, isTrackUnresolved,
   normalizeBuild, stepTrack, commonPrefixLength, passiveFit,
-  diffLoadout, mergeProgress, rebaseTrack, switchPhase, applyPending, slotsAt,
+  diffLoadout, mergeProgress, rebaseTrack, switchPhase, applyPending, slotsAt, clearProgress, hasProgress,
 } = require('../shared/tree-utils');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -397,6 +397,28 @@ describe('switchPhase', () => {
     assert.equal(back.build.phases[0].tracks[0].currentStep, 3, 'all 3 points still there');
     // Confirming while back in A never takes off points A counts as allocated.
     assert.deepEqual(applyPending(back.build).held.passive, { 1: 2, 2: 1 });
+  });
+});
+
+describe('clearProgress', () => {
+  test('every phase back to 0, first phase, empty character, guide order restored', () => {
+    const { setTrackProgress } = require('../shared/tree-utils');
+    let l = normalizeBuild(loadout([
+      { name: 'A', masteryId: 0, tracks: [passive([1, 1, 2])] },
+      { name: 'B', masteryId: 1, tracks: [passive([2, 1, 1, 3])] },
+    ]));
+    l = setTrackProgress(l, 0, 3);
+    l = switchPhase(l, 1).build; // B's route gets reordered ([1,1,2,3]) and a pending mastery choice
+    assert.equal(hasProgress(l), true);
+    const c = clearProgress(l);
+    assert.equal(hasProgress(c), false);
+    assert.equal(c.currentPhase, 0);
+    assert.deepEqual(c.held, {});
+    assert.equal(c.mastery, 0);
+    assert.equal(c.pending, null);
+    assert.deepEqual(c.phases[1].tracks[0].history, [2, 1, 1, 3]);
+    assert.equal('guide' in c.phases[1].tracks[0], false);
+    assert.equal(c.name, l.name, 'the build itself is kept');
   });
 });
 

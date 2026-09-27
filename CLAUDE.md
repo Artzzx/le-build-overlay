@@ -287,7 +287,8 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - Lanes: `1`–`6` and the configured lane keys (`F1`–`F6` / numpad), `Shift` = undo. `Ctrl`+`1`–`6` / `Ctrl+Enter` fill the step.
 - Navigation: `↑↓` focus a tree, `←→` browse steps (pins the inspector), `Enter`/`Space` allocate in the focused tree, `Backspace` undo.
 - `Ctrl+Z` undoes the last change in any tree (phase-scoped stack, capped at 50).
-- `Esc` unpins the inspector or dismisses the banner. It never leaves mini mode.
+- `Ctrl+Shift+Delete` = full clear (`clearProgress`): every phase back to 0, empty character state, first phase. It's also in the character menu. It's in-app only (never global: destructive), always goes through `confirm()`, then offers an Undo toast that's valid while nothing has changed since.
+- `Esc` unpins the inspector. It never leaves mini mode and never closes the phase instructions.
 - Everything else: `PgUp`/`PgDn` phase, `Ctrl+M` mini mode, `?` shortcut sheet (also `F1` when F-keys aren't the lane keys), `Ctrl+O` load, `Ctrl+,` settings, `Ctrl+=/-/0` UI scale.
 - Toasts: an identical message refreshes the existing toast instead of stacking another. Toasts with an action (Undo, "Go to Endgame") are evicted last.
 

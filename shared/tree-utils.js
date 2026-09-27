@@ -420,6 +420,32 @@
     return { ...build, held, mastery: p.masteryChange ? p.masteryChange.to : build.mastery, pending: null };
   }
 
+  /**
+   * Full clear: every phase back to 0, the character holds nothing, no mastery,
+   * no pending instructions, back to the first phase. Routes return to the guide's
+   * order. The build itself (phases, routes, source) is untouched.
+   */
+  function clearProgress(build) {
+    if (!build?.phases) return build;
+    return {
+      ...build,
+      currentPhase: 0,
+      held: {},
+      mastery: 0,
+      pending: null,
+      phases: build.phases.map(p => ({
+        ...p,
+        tracks: p.tracks.map(({ guide, ...t }) => ({ ...t, history: guide ?? t.history, currentStep: 0 })),
+      })),
+    };
+  }
+
+  /** True when any point is allocated in any phase, or the character holds anything. */
+  function hasProgress(build) {
+    return !!build?.phases?.some(p => p.tracks.some(t => t.currentStep > 0))
+      || Object.values(build?.held ?? {}).some(tree => total(tree) > 0);
+  }
+
   // ─── Guide updates (same build, newer version of the guide) ─────────────────
 
   /**
@@ -487,6 +513,8 @@
     rebaseTrack,
     switchPhase,
     applyPending,
+    clearProgress,
+    hasProgress,
     slotsAt,
     passiveFit,
     diffLoadout,

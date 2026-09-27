@@ -33,7 +33,7 @@ const { laneKeyLabel, laneKey, laneFromCode, prettyAccelerator, LANE_KEYSET_LABE
 let toast = () => {}; // set in boot() once the container exists
 
 const TreeUtils = window.TreeUtils;
-const { normalizeBuild, stepTrack, setTrackProgress, switchPhase, applyPending, mergeProgress } = window.TreeUtils;
+const { normalizeBuild, stepTrack, setTrackProgress, switchPhase, applyPending, mergeProgress, clearProgress, hasProgress } = window.TreeUtils;
 const { buildView, stepStartProgress } = window.ViewModel;
 const api = window.api;
 
@@ -338,6 +338,35 @@ function gotoPhase(to) {
 }
 
 /**
+ * Full clear (Ctrl+Shift+Delete, or the character menu): every phase of the active
+ * character back to 0. In-app only, never a global key, and always confirmed —
+ * then an Undo toast, valid while nothing has changed since.
+ */
+function clearAllProgress() {
+  const before = state.build;
+  if (!before) return;
+  if (!hasProgress(before)) return toast('Nothing to clear — no points allocated yet.', { duration: 2000 });
+  const who = activeProfile()?.name ?? 'this character';
+  if (!confirm(`Clear all progress for ${who}?\n\nEvery phase goes back to 0 points and the first phase. The build itself is kept.`)) return;
+  const cleared = clearProgress(before);
+  state.pinned = null;
+  state.hover = null;
+  state.focusLane = 0;
+  resetHistory();
+  commit(cleared);
+  toast('All progress cleared.', {
+    duration: 10000,
+    action: {
+      label: 'Undo',
+      run: () => {
+        if (state.build !== cleared) return toast('Can’t undo the clear any more — the build changed since.', { duration: 2500 });
+        commit(before);
+      },
+    },
+  });
+}
+
+/**
  * Close the phase instructions. `done` = the player did it in game: the character
  * state takes the respecs / despecializations / mastery into account (applyPending).
  * Otherwise they're only dismissed (a misclicked switch): nothing changes.
@@ -477,6 +506,8 @@ function showProfileMenu(anchor) {
       toast(`Deleted “${gone}”. Now playing ${activeProfile()?.name}.`);
     },
     onCheckUpdate: () => checkGuideUpdate({ manual: true }),
+    canClear: hasProgress(state.build),
+    onClear: clearAllProgress,
   });
 }
 
@@ -613,6 +644,7 @@ function onKeyDown(e) {
       Comma: showSettings,
       KeyM: toggleMiniMode,
       KeyZ: () => { if (state.view && !e.shiftKey) undoLast(); },
+      Delete: () => { if (e.shiftKey && !e.repeat) clearAllProgress(); },
       Enter: () => { if (state.view && !e.repeat) allocate(state.focusLane, +1, { fill: true }); },
       Equal: () => setUiScale(state.settings.display.uiScale + 0.1),
       NumpadAdd: () => setUiScale(state.settings.display.uiScale + 0.1),

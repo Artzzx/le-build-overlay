@@ -123,6 +123,7 @@ Big patches rework trees, move nodes and add skills. The first time you play aft
 | Undo a point | `Shift`+`F1`–`F6` | `Shift`+`1`–`6`, the undo button, or `Backspace` |
 | Fill the whole node | — | `Ctrl`+`1`–`6`, `Ctrl`+`Enter`, or **Fill ×N** |
 | Undo the last change (any tree) | — | `Ctrl`+`Z` or **Undo** in the status bar |
+| Clear all progress (every phase) | — | `Ctrl`+`Shift`+`Delete`, or **Clear all progress** in the characters menu. It asks first, then offers Undo |
 | Next / previous phase | `F9` / `Shift`+`F9` | the phase tabs, or `PgDn` / `PgUp` |
 | Show / hide the window | `F8` | — |
 | Mini mode ↔ full window | — | `Ctrl`+`M` |
