@@ -165,7 +165,7 @@ describe('mergeRawLines', () => {
     assert.ok(result.skillTrees.smbmb);
   });
 
-  test('merges real multi-line Maxroll paste (6 lines, see config/maxroll-paste.example.txt)', () => {
+  test('merges a real multi-line Maxroll paste (6 lines: passives, then one per skill)', () => {
     const raw = [
       '{"passives":{"history":[6,6,6,6,6,6,6,6,1,7,7,7,7,7,8,8,8,8,8,0,3,3,3,3,3,3,3,3,20,20,20,20,20,25,25,21,21,21,21,21,30,30,30,30,30,33,22,22,22,22,36,39,39,39,39,41,41,41,41,41,44,22,22,22,40,46,46,46,46,46,45,45,22,50,50,50,50,50,50,50,50,78,78,78,78,78,28,31,31,31,31,28,28,28,28,31,37,37,37,37,37,79,82,82,82,82,82,0,0,0,0,0,0],"position":113},"class":4,"mastery":2}',
       '{"skillTrees":{"htsk5":{"history":[9,10,1,4,5,1,3,3,3,23,23,23,27,28,6,8,6,6,9,9,9,11,23,18,18,18],"position":26}}}',

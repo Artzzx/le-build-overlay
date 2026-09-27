@@ -8,6 +8,7 @@ body {
   margin: 0;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr); /* never wider than the window, whatever the content */
   grid-template-areas: "top" "banner" "main" "status";
   background:
     radial-gradient(1200px 500px at 12% -10%, rgba(91, 168, 255, 0.06), transparent 60%),
@@ -179,11 +180,15 @@ b { font-weight: 600; }
   background: transparent; color: var(--text-3); font-weight: 600; font-size: var(--fs-sm);
   transition: background var(--t-fast), color var(--t-fast);
 }
+/* Long Maxroll variant names ("Intermediate Setup (lvl 16 - 49)") shrink with an ellipsis instead of widening the bar. */
+.phase-switch { min-width: 0; flex: 0 1 auto; }
+.phase-switch .segmented { min-width: 0; }
+.phase-switch .seg { flex: 0 1 auto; min-width: 56px; max-width: 190px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .seg:hover { color: var(--text); }
 .seg.is-active { background: var(--surface-3); color: var(--text); box-shadow: var(--shadow-1); }
 
-.overall { display: flex; align-items: center; gap: 10px; }
-.overall-text { display: flex; flex-direction: column; line-height: 1.2; }
+.overall { display: flex; align-items: center; gap: 10px; flex: none; }
+.overall-text { display: flex; flex-direction: column; line-height: 1.2; white-space: nowrap; }
 .overall-text b { font-size: var(--fs-md); }
 .overall-text span { color: var(--text-3); font-size: var(--fs-xs); }
 

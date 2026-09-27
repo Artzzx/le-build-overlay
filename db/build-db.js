@@ -158,7 +158,7 @@ function getPassiveTreeId(classId) {
 
 /**
  * Look up a node within a skill tree.
- * skillKey = treeID from "Global Tree Data.json" = Maxroll skillTrees key.
+ * skillKey = the game's treeID = the Maxroll skillTrees key.
  *
  * @param {string}        skillKey  — e.g. "es6ai"
  * @param {number|string} nodeId

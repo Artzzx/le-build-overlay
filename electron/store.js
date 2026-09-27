@@ -11,8 +11,7 @@
  * turns it into the first profile and renames it build.json.migrated.
  *
  * <userData> is Electron's per-user app data dir (e.g. %APPDATA%/le-build-overlay)
- * so a packaged app never writes into its install folder. Older versions kept
- * these files in <repo>/config/ — migrateLegacy() copies them over once.
+ * so a packaged app never writes into its install folder.
  *
  * Writes are atomic (temp file + rename) so a crash mid-write can't corrupt
  * the user's progress. Unreadable JSON is moved aside as *.corrupt-<ts> and the
@@ -124,11 +123,10 @@ function mergeSettings(raw) {
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 /**
- * @param {{ dir: string, legacyDir?: string, log?: Console }} opts
- *   dir       — where state lives (app.getPath('userData'))
- *   legacyDir — old <repo>/config dir to migrate from
+ * @param {{ dir: string, log?: Console }} opts
+ *   dir — where state lives (app.getPath('userData'))
  */
-function createStore({ dir, legacyDir = null, log = console }) {
+function createStore({ dir, log = console }) {
   const paths = {
     dir,
     build: path.join(dir, 'build.json'), // pre-profiles; migrated by migrateProfiles()
@@ -159,42 +157,6 @@ function createStore({ dir, legacyDir = null, log = console }) {
     const tmp = `${file}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
     fs.renameSync(tmp, file);
-  }
-
-  /** Copy build.json / hotkeys / saves from the old in-repo config dir, once. */
-  function migrateLegacy() {
-    if (!legacyDir || !fs.existsSync(legacyDir)) return [];
-    const migrated = [];
-    fs.mkdirSync(dir, { recursive: true });
-
-    const legacyBuild = path.join(legacyDir, 'build.json');
-    if (!fs.existsSync(paths.build) && fs.existsSync(legacyBuild)) {
-      fs.copyFileSync(legacyBuild, paths.build);
-      migrated.push('build.json');
-    }
-
-    // Only hotkeys carry over — old window bounds were for the tiny overlay.
-    const legacySettings = path.join(legacyDir, 'settings.json');
-    if (!fs.existsSync(paths.settings) && fs.existsSync(legacySettings)) {
-      const old = readJson(legacySettings, null);
-      if (old?.hotkeys) {
-        writeJson(paths.settings, mergeSettings({ hotkeys: old.hotkeys }));
-        migrated.push('settings.json (hotkeys)');
-      }
-    }
-
-    const legacySaves = path.join(legacyDir, 'saves');
-    if (fs.existsSync(legacySaves)) {
-      fs.mkdirSync(paths.saves, { recursive: true });
-      for (const f of fs.readdirSync(legacySaves).filter(n => n.endsWith('.json'))) {
-        const dest = path.join(paths.saves, f);
-        if (!fs.existsSync(dest)) {
-          fs.copyFileSync(path.join(legacySaves, f), dest);
-          migrated.push(`saves/${f}`);
-        }
-      }
-    }
-    return migrated;
   }
 
   // ─── Profiles (one per character: its loadout + progress) ───────────────────
@@ -346,7 +308,7 @@ function createStore({ dir, legacyDir = null, log = console }) {
   }
 
   return {
-    paths, readJson, writeJson, migrateLegacy,
+    paths, readJson, writeJson,
     listProfiles, readProfile, createProfile, updateProfile, saveProfileBuild, deleteProfile, migrateProfiles, resolveProfile,
     loadSettings, saveSettings,
     saveTemplate, listTemplates, loadTemplate, deleteTemplate,

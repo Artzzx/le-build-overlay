@@ -531,9 +531,7 @@ app.whenReady().then(() => {
   if (!IS_PRIMARY) return;
   Menu.setApplicationMenu(null);
 
-  store = createStore({ dir: app.getPath('userData'), legacyDir: path.join(ROOT, 'config') });
-  const migrated = store.migrateLegacy();
-  if (migrated.length) console.log(`[main] Migrated from config/: ${migrated.join(', ')}`);
+  store = createStore({ dir: app.getPath('userData') });
   settings = store.loadSettings();
   const migratedProfile = store.migrateProfiles(characterName);
   if (migratedProfile) console.log('[main] build.json → first character profile');

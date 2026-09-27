@@ -22,7 +22,7 @@ The app used to be a transparent click-through overlay (`overlay/`). That code i
 le-build-overlay/
 ├── electron/
 │   ├── main.js        ← window, IPC handlers, lifecycle, game-data cache
-│   ├── store.js       ← <userData>/profiles/<id>.json, settings.json, saves/ (atomic writes, migration)
+│   ├── store.js       ← <userData>/profiles/<id>.json, settings.json, saves/ (atomic writes, build.json → profile migration)
 │   ├── hotkeys.js     ← global shortcuts: direct / latch ("arm first"), suspend while focused, pause
 │   ├── maxroll.js     ← fetch a Maxroll planner by id (net.fetch → hidden-window fallback; LE_MAXROLL_FIXTURES for tests)
 │   └── preload.js     ← window.api — the ONLY renderer bridge (contextIsolation + sandbox)
@@ -56,7 +56,8 @@ le-build-overlay/
 │                                    icons/ (node art as WebP, committed, referenced by each row's `icon`)
 ├── extractor/                    ← nodes_flat.json (input) → convert_icons.py + extract.py → db/data/; requirements.txt (Pillow)
 ├── scripts/                      ← dev.js (npm run dev)
-├── config/                       ← build.example.json, maxroll-paste.example.txt (examples only)
+├── config/                       ← build.example.json ("Try the example build"); anything else in config/ is git-ignored
+├── docs/                         ← screenshot.webp (README)
 └── tests/                        ← node:test — db, parser, tree-utils, view-model, main-process (store/hotkeys),
                                      extractor + convert-icons (run the Python scripts on fixtures), data-contract (the real data files)
 ```
@@ -163,7 +164,7 @@ Each character has its own build and progress: `<userData>/profiles/<id>.json` =
 - The last profile can't be deleted. Ids are `p-<time36><rand>`, validated before any path is built.
 
 ### Raw Maxroll paste
-One JSON object per line (passives/class/mastery line + one line per skill); `mergeRawLines` merges them. A single combined object also works. See `config/maxroll-paste.example.txt`.
+One JSON object per line (passives/class/mastery line + one line per skill); `mergeRawLines` merges them. A single combined object also works. A real 6-line paste is in `tests/parser.test.js`.
 
 ### A profile's `build` — multi-phase loadout (was <userData>/build.json)
 ```json
@@ -222,6 +223,12 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
   - An 'unmentioned' root is only reported, because the inference is a guess (Falconry's nodes say "Falcon").
 - **Output contract**: `validate_output()` checks the exact field set, types, unique `(treeID, nodeID)`, unique skill tree names, all 5 passive trees present, no passive rows in the skill file, and that icon files exist. On any violation it writes **nothing** and exits 1. `tests/data-contract.test.js` checks the same things from the app's side.
 
+### Troubleshooting the data (maintainer)
+- **Wrong node name**: a `(treeID, nodeID)` collision, where the stale node won. `extract.py --verbose` lists them.
+- **Glyph instead of an icon**: the row has no `iconFile`, or the value matches no file. `--verbose` lists both. "0 icons" across the board plus a *WARNING: input has icon-like fields that are not read* means the export renamed the field: add it to `ICON_INPUT_FIELDS`.
+- **A skill shows its treeID, or another skill's name**: the tree has no root row, or a copied root name. Pin the name in `TREE_NAME_OVERRIDES`.
+- **Class or mastery shown wrong / "passive points don't fit the tree"**: save that planner as a fixture in `tests/fixtures/` and check `classes.json`.
+
 ### Known data-quality issues
 - **~86 `(treeID, nodeID)` collisions** in `nodes_flat.json`: stale nodes from older tree versions exported next to live ones (e.g. `es6ai` 12 = "Rythm of the Void" *and* "Void Lens"). `extract.py` keeps the first named row, **which may be the stale one**. The fix is upstream: export only nodes referenced by the live tree. Don't write tests that assert names of collided nodes.
 
@@ -232,7 +239,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - **One window**: normal frame, resizable (min 420×480), `sandbox`, `contextIsolation`, no `nodeIntegration`, no app menu, navigation and `window.open` blocked. Bounds, maximized state, zoom (UI scale) and always-on-top persist. Saved bounds are only reused if they're still on a connected display.
 - **Mini mode** (`window:setMode`) is the same window: bounds are saved into the outgoing mode's slot and the incoming slot is restored (first use goes to the top-right of the display). It has min 260×180, is always on top, and uses `setOpacity(display.opacity)`, which does nothing on Linux. The frame stays native, because Electron can't switch frames at runtime.
 - **Single instance**: a second launch focuses the existing window.
-- **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). Old `config/build.json`, the hotkeys from `config/settings.json`, and `config/saves/` are migrated once. A `build.json` then becomes the first character profile.
+- **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). A pre-profiles `build.json` there becomes the first character profile.
 - **Game data** is loaded once and cached in main. `app:init` re-checks `build-db.dataStamp()` (the size and mtime of each file) and re-reads only if a file changed. A window reload picks up re-extracted data without re-parsing ~2 MB on every load.
 
 ### Hotkeys (`electron/hotkeys.js`)
@@ -278,6 +285,7 @@ python extractor/convert_icons.py && python extractor/extract.py   # regenerate 
 
 - Tests run against the committed game data. The Python-backed tests skip themselves when python3 / Pillow are missing.
 - UI changes must be checked in the real app at several window sizes (e.g. 1920, 1440, 1100, 760, 460 px wide). Run it under `xvfb-run` with `LE_USER_DATA` pointing at a temp dir, and drive it via `webContents.executeJavaScript` / `sendInputEvent` + `capturePage`.
+- **Docs split**: `README.md` is the player's guide (install, using the app, after a patch, troubleshooting). No data-extraction or code internals there: those live in this file.
 - `.gitignore` policy: game data we produce is committed (`nodes_flat.json`, `db/data/**`); raw game dumps, runtime state, build output and tooling noise are ignored.
 
 ## Known Open Issues / Decisions

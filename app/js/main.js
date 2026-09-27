@@ -768,7 +768,7 @@ function renderTopbar() {
       h('div.segmented', { role: 'tablist' },
         v.phases.map(p => h('button.seg', {
           type: 'button', role: 'tab', 'aria-selected': String(p.index === v.currentPhase),
-          title: p.masteryName ?? state.db.classes.classes?.[state.build.classId] ?? '',
+          title: `${p.name} · ${p.masteryName ?? state.db.classes.classes?.[state.build.classId] ?? ''}`,
           class: p.index === v.currentPhase ? 'is-active' : '',
           onclick: () => gotoPhase(p.index),
         }, p.name))),
