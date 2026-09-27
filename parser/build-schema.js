@@ -196,26 +196,10 @@ function validateLoadout(loadout) {
   return loadout;
 }
 
-// ─── Empty build template ─────────────────────────────────────────────────────
-
-/**
- * Returns a valid empty build skeleton (useful for testing or as a fallback).
- * @returns {object}
- */
-function emptyBuild() {
-  return {
-    name: 'Unnamed Build',
-    classId: 0,
-    masteryId: 0,
-    tracks: [],
-  };
-}
-
 module.exports = {
   validateBuild,
   validateLoadout,
   validateTrack,
   groupHistory,
   initializeBuild,
-  emptyBuild,
 };

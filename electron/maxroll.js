@@ -65,10 +65,13 @@ function createMaxrollClient({ fetch, loadInWindow = null, fixturesDir = null, n
     throw new MaxrollError(`No fixture for planner “${id}”.`);
   }
 
-  /** Raw planner JSON for an id. Throws MaxrollError with a player-facing message. */
-  async function fetchPlanner(id) {
+  /**
+   * Raw planner JSON for an id. Throws MaxrollError with a player-facing message.
+   * `fresh` skips the cache (a guide-update check the player asked for).
+   */
+  async function fetchPlanner(id, { fresh = false } = {}) {
     const hit = cache.get(id);
-    if (hit && now() - hit.at < CACHE_MS) return hit.json;
+    if (!fresh && hit && now() - hit.at < CACHE_MS) return hit.json;
     if (fixturesDir) return fromFixture(id);
 
     const url = API_BASE + encodeURIComponent(id);
@@ -123,4 +126,4 @@ function hiddenWindowLoader(BrowserWindow) {
   });
 }
 
-module.exports = { createMaxrollClient, hiddenWindowLoader, MaxrollError, USER_AGENT };
+module.exports = { createMaxrollClient, hiddenWindowLoader };

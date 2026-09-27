@@ -154,16 +154,6 @@ function getPassiveTreeId(classId) {
   return _classes.passiveTreeByClass?.[String(classId)] ?? null;
 }
 
-/**
- * Get the passive tree name for a given classId.
- * @param {number|string} classId
- * @returns {string|null}  e.g. "Knight"
- */
-function getPassiveTreeName(classId) {
-  const treeId = getPassiveTreeId(classId);
-  return treeId ? (_passives[treeId]?.name ?? null) : null;
-}
-
 // ─── Skill queries ────────────────────────────────────────────────────────────
 
 /**
@@ -230,13 +220,29 @@ function missingFiles() {
   return [..._missing];
 }
 
+/**
+ * Fingerprint of the data files on disk (name, size, mtime). Equal stamps mean
+ * nothing changed, so a caller can skip a reload (see loadGameData in main).
+ * @param {string} [dir]
+ * @returns {string}
+ */
+function dataStamp(dir = DATA_DIR) {
+  return [...DATA_FILES, 'classes.json'].map((f) => {
+    try {
+      const st = fs.statSync(path.join(dir, f));
+      return `${f}:${st.size}:${st.mtimeMs}`;
+    } catch {
+      return `${f}:missing`;
+    }
+  }).join('|');
+}
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
 module.exports = {
   load,
   getPassive,
   getPassiveTreeId,
-  getPassiveTreeName,
   getSkillNode,
   getSkillName,
   getClassName,
@@ -244,4 +250,5 @@ module.exports = {
   all,
   isPopulated,
   missingFiles,
+  dataStamp,
 };

@@ -29,7 +29,7 @@ function keyName(code) {
 }
 
 /** KeyboardEvent → "Ctrl+Shift+F6" (null for lone modifiers / unsupported keys). */
-export function eventToAccelerator(e) {
+function eventToAccelerator(e) {
   if (MODIFIER_KEYS.has(e.key)) return null;
   const key = keyName(e.code);
   if (!key) return null;
@@ -41,8 +41,7 @@ export function eventToAccelerator(e) {
   return [...mods, key].join('+');
 }
 
-/** Pretty label for an accelerator (keeps it short for keycaps) — see shared/hotkey-scheme.js. */
-export const prettyAccelerator = (acc) => window.HotkeyScheme.prettyAccelerator(acc);
+const { prettyAccelerator } = window.HotkeyScheme;
 
 /**
  * A button that records the next key combo pressed.

@@ -15,6 +15,7 @@ const assert = require('node:assert/strict');
 const {
   indexNodes, makeDb, groupHistory, findCurrentGroup, lookupNode, isTrackUnresolved,
   normalizeBuild, stepTrack, commonPrefixLength, computeTransition, applyCarryOver, passiveFit,
+  diffLoadout, mergeProgress,
 } = require('../shared/tree-utils');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -272,6 +273,78 @@ describe('computeTransition + applyCarryOver', () => {
   test('no unspec needed when nothing allocated', () => {
     const fresh = phases.map(p => ({ ...p, tracks: p.tracks.map(t => ({ ...t, currentStep: 0 })) }));
     assert.deepEqual(computeTransition(fresh, 0, 1).unspecNeeded, []);
+  });
+});
+
+// ─── Guide updates: diffLoadout + mergeProgress ──────────────────────────────
+
+describe('diffLoadout + mergeProgress', () => {
+  const played = loadout([
+    { name: 'Leveling', masteryId: 0, tracks: [passive([1, 1, 2, 2], 4), skill('fl44', [4, 4, 14], 3), skill('fi9', [3, 3], 2)] },
+    { name: 'Endgame', masteryId: 1, tracks: [passive([1, 1, 2, 2, 6], 0), skill('fl44', [4, 4, 14, 14], 0)] },
+  ], 0);
+
+  test('identical build: nothing changed, progress kept, no respec', () => {
+    const fresh = loadout(played.phases.map(p => ({ ...p, tracks: p.tracks.map(t => ({ ...t, currentStep: 0 })) })));
+    assert.equal(diffLoadout(played, fresh).changed, false);
+    const { build, transition } = mergeProgress(played, fresh);
+    assert.deepEqual(build.phases[0].tracks.map(t => t.currentStep), [4, 3, 2]);
+    assert.equal(transition, null);
+  });
+
+  test('points appended at the end keep all progress', () => {
+    const next = loadout([
+      { name: 'Leveling', masteryId: 0, tracks: [passive([1, 1, 2, 2, 8, 8]), skill('fl44', [4, 4, 14]), skill('fi9', [3, 3])] },
+      played.phases[1],
+    ]);
+    const d = diffLoadout(played, next);
+    assert.equal(d.changed, true);
+    assert.deepEqual(d.phases[0].changed, [{ type: 'passive', skillKey: undefined, label: 'Passives', before: 4, after: 6, common: 4 }]);
+    const { build, transition } = mergeProgress(played, next);
+    assert.deepEqual(build.phases[0].tracks.map(t => t.currentStep), [4, 3, 2]);
+    assert.equal(transition, null);
+  });
+
+  test('an early node changed: progress capped at the common prefix, respec listed', () => {
+    const next = loadout([
+      { name: 'Leveling', masteryId: 0, tracks: [passive([1, 5, 5, 5]), skill('fl44', [4, 4, 14]), skill('fi9', [3, 3])] },
+      played.phases[1],
+    ]);
+    const { build, transition } = mergeProgress(played, next);
+    assert.equal(build.phases[0].tracks[0].currentStep, 1);
+    assert.deepEqual(transition.unspecNeeded, [{ label: 'Passives', type: 'passive', skillKey: undefined, amount: 3, isRemove: false }]);
+    assert.equal(transition.toName, 'Leveling');
+  });
+
+  test('a skill swapped out: listed as removed and as a skill to take off the bar', () => {
+    const next = loadout([
+      { name: 'Leveling', masteryId: 0, tracks: [passive([1, 1, 2, 2]), skill('fl44', [4, 4, 14]), skill('sm9', [7])] },
+      played.phases[1],
+    ]);
+    const d = diffLoadout(played, next).phases[0];
+    assert.deepEqual(d.added.map(t => t.skillKey), ['sm9']);
+    assert.deepEqual(d.removed.map(t => t.skillKey), ['fi9']);
+    const { build, transition } = mergeProgress(played, next);
+    assert.deepEqual(build.phases[0].tracks.map(t => t.currentStep), [4, 3, 0]);
+    assert.deepEqual(transition.unspecNeeded.map(u => [u.skillKey, u.amount, u.isRemove]), [['fi9', 2, true]]);
+  });
+
+  test('a phase dropped or added counts as a change; the current phase is clamped', () => {
+    const onePhase = loadout([played.phases[0]]);
+    assert.equal(diffLoadout(played, onePhase).changed, true);
+    const later = { ...played, currentPhase: 1 };
+    assert.equal(mergeProgress(later, onePhase).build.currentPhase, 0);
+    const three = loadout([...played.phases, { name: 'Late', masteryId: 1, tracks: [passive([1])] }]);
+    const d = diffLoadout(played, three);
+    assert.equal(d.changed, true);
+    assert.deepEqual(d.phases[2].added.map(t => t.type), ['passive']);
+    assert.equal(mergeProgress(played, three).build.phases[2].tracks[0].currentStep, 0);
+  });
+
+  test('a mastery change in the played phase shows in the transition', () => {
+    const next = loadout([{ ...played.phases[0], masteryId: 1 }, played.phases[1]]);
+    assert.deepEqual(diffLoadout(played, next).phases[0].masteryChange, { from: 0, to: 1 });
+    assert.deepEqual(mergeProgress(played, next).transition.masteryChange, { from: 0, to: 1 });
   });
 });
 

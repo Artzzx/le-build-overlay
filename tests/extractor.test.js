@@ -74,6 +74,18 @@ describe('extract.py', { skip: !PYTHON && 'python3 not installed' }, () => {
     row('es6ai', 19, 'Dupe', { stats: [{ statName: 'Damage', value: '+2%' }, { statName: 'Speed', value: '+1%' }] }),
   ];
 
+  test('writes one compact row per line (small files, per-node git diffs)', () => {
+    run(dir, ROWS);
+    const text = fs.readFileSync(path.join(dir, 'out', 'skill_tree_reconciled.json'), 'utf8');
+    const lines = text.trimEnd().split('\n');
+    assert.equal(lines[0], '[');
+    assert.equal(lines[lines.length - 1], ']');
+    const rows = lines.slice(1, -1);
+    assert.ok(rows.length > 0);
+    for (const line of rows) assert.doesNotThrow(() => JSON.parse(line.replace(/,$/, '')), line);
+    assert.ok(!text.includes('\n  '), 'no indentation');
+  });
+
   test('resolves icons by path, path tail, name, stem and convention', () => {
     const { status, skills, stdout, stderr } = run(dir, ROWS);
     assert.equal(status, 0, stderr);

@@ -24,10 +24,15 @@ import { playCue } from './feedback.js';
 import { renderInspector } from './inspector.js';
 import { openLoadout } from './loadout-dialog.js';
 import { openSettings } from './settings-dialog.js';
+import { openHelp } from './help-dialog.js';
+import { createToaster } from './toast.js';
+import { openProfileMenu } from './profile-menu.js';
+import { openUpdate } from './update-dialog.js';
 
 const { laneKeyLabel, laneKey, laneFromCode, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
+let toast = () => {}; // set in boot() once the container exists
 
-const { normalizeBuild, stepTrack, setTrackProgress, computeTransition, applyCarryOver } = window.TreeUtils;
+const { normalizeBuild, stepTrack, setTrackProgress, computeTransition, applyCarryOver, mergeProgress } = window.TreeUtils;
 const { buildView, stepStartProgress } = window.ViewModel;
 const api = window.api;
 
@@ -36,7 +41,9 @@ const api = window.api;
 
 const state = {
   db: null,            // { passives, skills, classes } — same shape TreeUtils expects
-  build: null,         // multi-phase loadout
+  build: null,         // multi-phase loadout (the active profile's)
+  profiles: [],        // [{ id, name, buildName, classId, masteryId }] — every character
+  activeProfile: null, // id of the character whose build is shown
   view: null,          // ViewModel.buildView(build, db)
   settings: null,
   defaults: null,
@@ -59,9 +66,10 @@ const els = {};
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 async function boot() {
-  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help']) {
+  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help', 'dlg-update']) {
     els[id] = $(id);
   }
+  toast = createToaster(els.toasts);
 
   const res = await api.init();
   if (!res.ok) {
@@ -72,6 +80,8 @@ async function boot() {
   const trees = res.db.trees;
   state.db = { passives: trees, skills: trees, classes: res.db.classes };
   state.build = normalizeBuild(res.build);
+  state.profiles = res.profiles ?? [];
+  state.activeProfile = res.activeProfile ?? null;
   state.settings = res.settings;
   state.defaults = res.defaultSettings;
   state.missingData = res.missingData ?? [];
@@ -79,11 +89,19 @@ async function boot() {
 
   api.onHotkey(onGlobalHotkey);
   document.addEventListener('keydown', onKeyDown);
-  window.addEventListener('resize', () => requestAnimationFrame(() => revealAll(false)));
+  // One reveal per frame while resizing, not one per resize event.
+  let revealQueued = false;
+  window.addEventListener('resize', () => {
+    if (revealQueued) return;
+    revealQueued = true;
+    requestAnimationFrame(() => { revealQueued = false; revealAll(false); });
+  });
 
   renderAll();
   requestAnimationFrame(() => revealAll(false));
   document.body.classList.add('is-ready');
+  // Has the guide changed since it was loaded? (Maxroll builds only; main limits it to once a day.)
+  setTimeout(() => checkGuideUpdate(), 1500);
 }
 
 // ─── Derived ──────────────────────────────────────────────────────────────────
@@ -137,6 +155,7 @@ function commit(next, o = {}) {
     requestAnimationFrame(() => revealAll(true));
   }
   if (o.flash != null) flashLane(o.flash);
+  refreshProfileSummary();
   document.title = `${state.build.name} — LE Build Planner`;
   return true;
 }
@@ -186,6 +205,15 @@ function allocate(i, delta, { source = 'app', fill = false } = {}) {
   cue(delta < 0 ? 'undo' : treeDone ? 'treeDone' : stepDone ? 'stepDone' : 'allocate');
   setLastAction(lane, after, after.done - lane.done);
   if (treeDone) celebrate(after);
+}
+
+/** Keep the character menu's "build · class" line in step with the active build. */
+function refreshProfileSummary() {
+  const p = activeProfile();
+  if (!p || !state.build) return;
+  p.buildName = state.build.name;
+  p.classId = state.build.classId;
+  p.masteryId = state.build.masteryId;
 }
 
 function pushUndo(entry) {
@@ -375,18 +403,163 @@ function showLoadout() {
     trees: state.db?.skills ?? {},
     currentSource: state.build?.source ?? null,
     hasProgress: lanes().some(l => l.done > 0),
-    onLoaded(build) {
-      state.pinned = null;
-      state.hover = null;
-      state.focusLane = 0;
-      state.transition = null;
-      resetHistory();
-      state.build = null; // force full render
-      commit(normalizeBuild(build));
-      renderBanner();
-      toast(`Loaded “${build.name}”.`, { kind: 'success' });
+    profileName: activeProfile()?.name ?? 'this character',
+    currentClassId: state.build?.classId ?? null,
+    onLoaded(res) {
+      const isNew = res.activeProfile !== state.activeProfile;
+      applyProfiles(res);
+      toast(isNew ? `Loaded “${res.build.name}” as a new character.` : `Loaded “${res.build.name}”.`, { kind: 'success' });
     },
   });
+}
+
+// ─── Character profiles ───────────────────────────────────────────────────────
+
+const activeProfile = () => state.profiles.find(p => p.id === state.activeProfile) ?? null;
+
+/** Show another build (a profile switch or a fresh load): per-build UI state starts over. */
+function replaceBuild(build) {
+  state.pinned = null;
+  state.hover = null;
+  state.focusLane = 0;
+  state.transition = null;
+  resetHistory();
+  state.build = build ? normalizeBuild(build) : null;
+  renderAll();
+  requestAnimationFrame(() => revealAll(false));
+}
+
+/** Apply a { build, profiles, activeProfile } answer from main. */
+function applyProfiles(res) {
+  state.profiles = res.profiles ?? state.profiles;
+  state.activeProfile = res.activeProfile ?? state.activeProfile;
+  replaceBuild(res.build);
+}
+
+/** "Rogue · Bladedancer" for a profile summary. */
+function describeProfile(p) {
+  if (p.classId == null) return '';
+  const cls = state.db.classes.classes?.[p.classId] ?? `Class ${p.classId}`;
+  const mastery = p.masteryId ? window.ViewModel.masteryName(state.db, p.classId, p.masteryId) : null;
+  return mastery ? `${cls} · ${mastery}` : cls;
+}
+
+function showProfileMenu(anchor) {
+  openProfileMenu({
+    anchor,
+    profiles: state.profiles,
+    activeId: state.activeProfile,
+    describe: describeProfile,
+    canCheckUpdate: !!state.build?.source?.maxroll,
+    onSwitch: async (id) => {
+      const res = await api.switchProfile(id);
+      if (!res.ok) return toast(`Couldn’t switch: ${res.error}`, { kind: 'error' });
+      applyProfiles(res);
+      toast(`Now playing ${activeProfile()?.name ?? 'another character'}.`, { duration: 2000 });
+      checkGuideUpdate();
+    },
+    onCreate: async () => {
+      const res = await api.createProfile();
+      if (!res.ok) return toast(`Couldn’t create a character: ${res.error}`, { kind: 'error' });
+      applyProfiles(res);
+      showLoadout();
+    },
+    onRename: async (id, name) => {
+      const res = await api.renameProfile(id, name);
+      if (!res.ok) return toast(`Couldn’t rename: ${res.error}`, { kind: 'error' });
+      state.profiles = res.profiles;
+      renderTopbar();
+    },
+    onDelete: async (id) => {
+      const gone = state.profiles.find(p => p.id === id)?.name;
+      const res = await api.deleteProfile(id);
+      if (!res.ok) return toast(`Couldn’t delete: ${res.error}`, { kind: 'error' });
+      applyProfiles(res);
+      toast(`Deleted “${gone}”. Now playing ${activeProfile()?.name}.`);
+    },
+    onCheckUpdate: () => checkGuideUpdate({ manual: true }),
+  });
+}
+
+// ─── Guide updates ────────────────────────────────────────────────────────────
+
+/**
+ * Ask main whether the active build's Maxroll guide changed. Automatic checks
+ * stay silent unless there's an update; a manual check always answers.
+ */
+async function checkGuideUpdate({ manual = false } = {}) {
+  if (!state.build?.source?.maxroll) {
+    if (manual) toast('This build wasn’t loaded from a Maxroll link — there’s no guide to check.');
+    return;
+  }
+  const profile = state.activeProfile;
+  if (manual) toast('Checking the guide on Maxroll…', { duration: 1500 });
+  const res = await api.checkGuideUpdate(manual);
+  if (state.activeProfile !== profile) return; // switched character meanwhile
+  if (!res.ok) {
+    if (manual) toast(`Couldn’t check the guide: ${res.error}`, { kind: 'error' });
+    return;
+  }
+  if (res.status === 'update') {
+    if (manual) return showUpdate(res.update);
+    const phases = res.update.diff.phases.filter(p => p.added.length || p.removed.length || p.changed.length || p.masteryChange);
+    toast(`The guide was updated${phases.length ? ` (${phases.map(p => p.name).join(', ')})` : ''}.`, {
+      duration: 15000,
+      action: { label: 'Review', run: () => showUpdate(res.update) },
+    });
+  } else if (manual) {
+    toast(res.status === 'unmapped'
+      ? 'Can’t match this build’s phases to the guide’s variants any more — re-import it from Load build.'
+      : 'The guide hasn’t changed since you loaded it.', { kind: res.status === 'unmapped' ? 'warn' : 'info' });
+  }
+}
+
+function showUpdate(update) {
+  if (els['dlg-update'].open || !state.build) return;
+  const before = state.build;
+  const merged = mergeProgress(before, normalizeBuild(update.newBuild));
+  const mName = (id) => (id ? window.ViewModel.masteryName(state.db, before.classId, id) ?? `mastery ${id}` : state.db.classes.classes?.[before.classId] ?? 'none');
+  openUpdate({
+    dialog: els['dlg-update'],
+    update,
+    transition: merged.transition,
+    currentPhase: merged.build.currentPhase,
+    treeName: transitionLabel,
+    masteryName: mName,
+    onKeep: () => { api.dismissGuideUpdate(update.planner.date ?? ''); },
+    onApply: () => {
+      if (state.build !== before) return toast('The build changed meanwhile — check for the update again.', { kind: 'warn' });
+      state.pinned = null;
+      state.hover = null;
+      resetHistory(); // routes changed: old undo entries no longer point at the same nodes
+      commit(merged.build);
+      state.transition = merged.transition;
+      renderBanner();
+      toast('Guide update applied — your progress was kept.', {
+        kind: 'success',
+        action: {
+          label: 'Undo',
+          run: () => {
+            resetHistory();
+            state.transition = null;
+            commit(before);
+            renderBanner();
+          },
+        },
+      });
+    },
+  });
+}
+
+/** Top bar button: the active character's name; opens the character menu. */
+function profileButton({ compact = false } = {}) {
+  const p = activeProfile();
+  return h(compact ? 'button.profile-btn.is-compact' : 'button.profile-btn', {
+    type: 'button',
+    title: 'Characters — switch, add, rename',
+    'aria-haspopup': 'dialog',
+    onclick: (e) => showProfileMenu(e.currentTarget),
+  }, h('span.profile-name', p?.name ?? 'Character'), ui('chevronDown', { size: 13 }));
 }
 
 function showSettings() {
@@ -403,9 +576,8 @@ function showSettings() {
 async function loadExample() {
   const res = await api.loadExample();
   if (!res.ok) return toast(`Couldn’t load the example: ${res.error}`, { kind: 'error' });
-  resetHistory();
-  state.build = null;
-  commit(normalizeBuild(res.build));
+  replaceBuild(res.build);
+  refreshProfileSummary();
   toast('Example build loaded — replace it with yours any time (Ctrl+O).');
 }
 
@@ -555,6 +727,11 @@ function renderAll() {
   renderStatusbar();
 }
 
+/** The global phase key when set (and hotkeys are on), else the in-app key. */
+function phaseKeyLabel(acc, inApp) {
+  return state.settings.hotkeys.enabled && acc ? prettyAccelerator(acc) : inApp;
+}
+
 function renderTopbar() {
   const v = state.view;
   const actions = h('div.top-actions',
@@ -577,14 +754,17 @@ function renderTopbar() {
   }
 
   if (!v) {
-    mount(els.topbar, h('div.brand', h('span.brand-mark', ui('sparkles', { size: 18 })), h('span.brand-name', 'LE Build Planner')), h('div.top-spacer'), actions);
+    mount(els.topbar,
+      h('div.brand', h('span.brand-mark', ui('sparkles', { size: 18 })),
+        h('div.brand-text', profileButton(), h('div.build-class', 'No build loaded'))),
+      h('div.top-spacer'), actions);
     return;
   }
 
   const pct = Math.round(v.pct * 100);
   const phaseSwitcher = v.phases.length > 1
     ? h('nav.phase-switch', { 'aria-label': 'Phases' },
-      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': 'Previous phase', title: `Previous phase (${prettyAccelerator(state.settings.hotkeys.phasePrevKey) || 'PgUp'})`, onclick: () => gotoPhase(v.currentPhase - 1) }, ui('chevronLeft', { size: 16 })),
+      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': 'Previous phase', title: `Previous phase (${phaseKeyLabel(state.settings.hotkeys.phasePrevKey, 'PgUp')})`, onclick: () => gotoPhase(v.currentPhase - 1) }, ui('chevronLeft', { size: 16 })),
       h('div.segmented', { role: 'tablist' },
         v.phases.map(p => h('button.seg', {
           type: 'button', role: 'tab', 'aria-selected': String(p.index === v.currentPhase),
@@ -592,13 +772,14 @@ function renderTopbar() {
           class: p.index === v.currentPhase ? 'is-active' : '',
           onclick: () => gotoPhase(p.index),
         }, p.name))),
-      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': 'Next phase', title: `Next phase (${prettyAccelerator(state.settings.hotkeys.phaseNextKey) || 'PgDn'})`, onclick: () => gotoPhase(v.currentPhase + 1) }, ui('chevronRight', { size: 16 })))
+      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': 'Next phase', title: `Next phase (${phaseKeyLabel(state.settings.hotkeys.phaseNextKey, 'PgDn')})`, onclick: () => gotoPhase(v.currentPhase + 1) }, ui('chevronRight', { size: 16 })))
     : null;
 
   mount(els.topbar,
     h('div.brand',
       h('span.brand-mark', ui('sparkles', { size: 18 })),
       h('div.brand-text',
+        profileButton(),
         h('div.build-name', { title: v.name }, v.name),
         h('div.build-class', v.classLabel))),
     phaseSwitcher,
@@ -816,57 +997,8 @@ function lastActionChip() {
   );
 }
 
-// ─── Shortcut sheet ───────────────────────────────────────────────────────────
-
 function showHelp() {
-  const dialog = els['dlg-help'];
-  if (dialog.open) return;
-  const hk = state.settings.hotkeys;
-  const k = (acc) => acc.split('+').map((p, i) => [i ? h('span.plus', '+') : null, keycap(prettyAccelerator(p), 'key-sm')]);
-  const row = (keys, label) => h('div.help-row', h('span.help-keys', keys), h('span.help-label', label));
-  const lanes = (kind) => [k(laneKeyLabel(hk, 0, kind).replace(/ /g, '')), h('span.dash', '–'), k(prettyAccelerator(laneKey(hk, 5)).replace(/ /g, ''))];
-
-  const inGame = hk.enabled
-    ? [
-      hk.hotkeyMode === 'latch' ? row(k(hk.latchKey), 'Arm the lane keys for 5 s') : null,
-      row(lanes('adv'), 'Allocate the next point in lane 1–6'),
-      row(lanes('undo'), 'Undo the last point in that lane'),
-      hk.phaseNextKey ? row(k(hk.phaseNextKey), 'Next phase') : null,
-      hk.phasePrevKey ? row(k(hk.phasePrevKey), 'Previous phase') : null,
-      hk.toggle ? row(k(hk.toggle), 'Show / hide this window') : null,
-    ]
-    : [h('p.help-off', 'Global hotkeys are off — turn them on in Settings to allocate without leaving the game.')];
-
-  const inApp = [
-    row([keycap('1', 'key-sm'), h('span.dash', '–'), keycap('6', 'key-sm'), hk.laneKeys !== 'digits' ? [h('span.help-or', 'or'), keycap(LANE_KEYSET_LABELS[hk.laneKeys], 'key-sm')] : null], 'Allocate (Shift = undo)'),
-    row(k('Ctrl+1'), 'Fill: every remaining point of the step (Ctrl+1–6)'),
-    row(k('Ctrl+Z'), 'Undo the last change, in any tree'),
-    row([keycap('↑', 'key-sm'), keycap('↓', 'key-sm')], 'Focus a tree'),
-    row([keycap('←', 'key-sm'), keycap('→', 'key-sm')], 'Browse its steps'),
-    row([keycap('Enter', 'key-sm')], 'Allocate in the focused tree'),
-    row(k('PageDown'), 'Next phase (PageUp: previous)'),
-    row(k('Ctrl+M'), 'Mini mode ↔ full window'),
-    row(k('Ctrl+O'), 'Load build'),
-    row(k('Ctrl+,'), 'Settings'),
-    row([keycap('Ctrl', 'key-sm'), h('span.plus', '+'), keycap('+', 'key-sm'), keycap('−', 'key-sm')], 'Interface size'),
-  ];
-
-  mount(dialog,
-    h('div.dialog-card.dialog-help',
-      h('header.dialog-head',
-        h('h2', 'Shortcuts'),
-        h('button.btn-icon', { type: 'button', 'aria-label': 'Close', onclick: () => dialog.close() }, ui('x', { size: 18 }))),
-      h('div.dialog-body',
-        h('section.dialog-section', h('h3', 'While playing'), inGame),
-        h('section.dialog-section', h('h3', 'In this window'), inApp)),
-      h('footer.dialog-foot',
-        h('div.dialog-status'),
-        h('div.dialog-foot-actions',
-          h('button.btn.btn-secondary', { type: 'button', onclick: () => { dialog.close(); showSettings(); } }, ui('gear', { size: 15 }), 'Change keys'),
-          h('button.btn.btn-primary', { type: 'button', onclick: () => dialog.close() }, 'Got it'))),
-    ),
-  );
-  dialog.showModal();
+  openHelp({ dialog: els['dlg-help'], hotkeys: state.settings.hotkeys, onOpenSettings: showSettings });
 }
 
 function emptyState() {
@@ -876,45 +1008,14 @@ function emptyState() {
       h('h1', 'Load your build'),
       h('p.empty-lead', 'See every tree at a glance — what to allocate now, what comes next — and tick points off as you level.'),
       h('ol.empty-steps',
-        h('li', h('b', 'Copy'), ' the export codes from your Maxroll planner (or the in-game export).'),
-        h('li', h('b', 'Paste'), ' them into ', h('i', 'Load build'), '. Add phases for leveling and endgame.'),
+        h('li', h('b', 'Copy'), ' your Maxroll planner link (or its export codes, or the in-game export).'),
+        h('li', h('b', 'Paste'), ' it into ', h('i', 'Load build'), ' — each planner variant becomes a phase.'),
         h('li', h('b', 'Allocate'), ' in game, then press the lane’s key (', h('b', state.settings?.hotkeys.enabled ? LANE_KEYSET_LABELS[state.settings.hotkeys.laneKeys] : '1–6'), ') — even while the game has focus.')),
       h('div.empty-actions',
         h('button.btn.btn-primary.btn-lg', { type: 'button', onclick: showLoadout }, ui('upload', { size: 18 }), 'Load build', h('kbd.key.key-sm.key-on-primary', 'Ctrl O')),
         h('button.btn.btn-ghost.btn-lg', { type: 'button', onclick: loadExample }, 'Try the example build')),
     ),
   );
-}
-
-// ─── Toasts ───────────────────────────────────────────────────────────────────
-
-function toast(message, { kind = 'info', action = null, duration = action ? 6000 : 3200 } = {}) {
-  // The same message again (e.g. a lane key hammered on a finished tree) refreshes
-  // the existing toast instead of stacking copies that push useful ones out.
-  const same = [...els.toasts.children].find(t => t.dataset.msg === message && !t.classList.contains('is-leaving'));
-  if (same && !action) {
-    same.restartTimer(duration);
-    return;
-  }
-  const el = h(`div.toast.toast-${kind}`, { role: 'status', dataset: { msg: message } },
-    h('span.toast-msg', message),
-    action ? h('button.toast-action', { type: 'button', onclick: () => { action.run(); remove(); } }, action.label) : null,
-    h('button.toast-x', { type: 'button', 'aria-label': 'Dismiss', onclick: () => remove() }, ui('x', { size: 14 })),
-  );
-  function remove() {
-    el.classList.add('is-leaving');
-    setTimeout(() => el.remove(), 180);
-  }
-  let timer = null;
-  el.restartTimer = (ms) => { clearTimeout(timer); timer = setTimeout(remove, ms); };
-  if (action) el.classList.add('has-action');
-  // Keep at most 3 toasts; evict plain ones first so an offer like "Go to Endgame"
-  // survives a burst of key presses.
-  while (els.toasts.children.length >= 3) {
-    (els.toasts.querySelector('.toast:not(.has-action)') ?? els.toasts.firstElementChild).remove();
-  }
-  els.toasts.append(el);
-  el.restartTimer(duration);
 }
 
 boot();

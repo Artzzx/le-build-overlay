@@ -22,7 +22,7 @@ The app used to be a transparent click-through overlay (`overlay/`). That code i
 le-build-overlay/
 ├── electron/
 │   ├── main.js        ← window, IPC handlers, lifecycle, game-data cache
-│   ├── store.js       ← <userData>/build.json, settings.json, saves/ (atomic writes, migration)
+│   ├── store.js       ← <userData>/profiles/<id>.json, settings.json, saves/ (atomic writes, migration)
 │   ├── hotkeys.js     ← global shortcuts: direct / latch ("arm first"), suspend while focused, pause
 │   ├── maxroll.js     ← fetch a Maxroll planner by id (net.fetch → hidden-window fallback; LE_MAXROLL_FIXTURES for tests)
 │   └── preload.js     ← window.api — the ONLY renderer bridge (contextIsolation + sandbox)
@@ -35,15 +35,20 @@ le-build-overlay/
 │   ├── js/inspector.js           ← node details + route list
 │   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): choose screen (Maxroll link | export codes | templates) → horizontal workspace
 │   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, mini opacity, sound, lane keys, hotkeys (key recorder, conflict check)
+│   ├── js/help-dialog.js         ← shortcut sheet (?), built from the current key settings
+│   ├── js/profile-menu.js        ← character menu (top bar name): switch / new / rename / delete / check guide
+│   ├── js/update-dialog.js       ← "Guide updated" review: diff per phase, Apply (keeps progress) / Keep mine
+│   ├── js/toast.js               ← createToaster(): dedupe identical messages, max 3, action toasts evicted last
 │   ├── js/icons.js               ← node/tree artwork from db/data/icons, glyph fallback, UI svg icons
 │   ├── js/keys.js                ← KeyboardEvent → Electron accelerator, keyRecorder()
 │   ├── js/dom.js                 ← h(), mount(), svg(), richText()
 │   └── styles/                   ← tokens.css, app.css (shell), lanes.css, mini.css, dialogs.css
 ├── shared/                       ← PURE logic, UMD: require() in Node, window.* in the renderer
-│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over, passiveFit
+│   ├── tree-utils.js             ← indexNodes/makeDb, groupHistory, lookupNode, stepTrack/setTrackProgress, phase carry-over, passiveFit,
+│   │                               diffLoadout/mergeProgress (guide updates)
 │   ├── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
 │   ├── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
-│   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree
+│   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree, mapPhasesToVariants
 ├── parser/                       ← maxroll.js (paste → loadout), build-schema.js (validators)
 ├── db/
 │   ├── build-db.js               ← loads db/data (main process + tests)
@@ -62,9 +67,9 @@ le-build-overlay/
 
 ```
 Load build dialog ──api.previewPhase──► main: parseBuild (live validation per phase)
-                  ──api.loadLoadout───► main: parseLoadout → store.saveBuild → returns build
+                  ──api.loadLoadout───► main: parseLoadout → active or new profile → returns { build, profiles, activeProfile }
 app/js/main.js
-   ├─ api.init() → { db:{trees,classes}, build, settings, defaultSettings, failedHotkeys, dataSource }
+   ├─ api.init() → { db:{trees,classes}, build, profiles, activeProfile, settings, defaultSettings, failedHotkeys, missingData }
    ├─ ViewModel.buildView(build, db) → lanes[] (steps with done/current/upcoming, now, next, colorSlot)
    ├─ actions → TreeUtils.stepTrack / setTrackProgress / applyCarryOver → commit() → api.saveBuild
    └─ api.onHotkey(): global keys → { action: 'advance'|'undo'|'phase'|'latch' }
@@ -134,13 +139,33 @@ A loadout has 1–5 phases, all with the same **class**. Each phase has its own 
        - "Edit as codes" moves them into the codes workspace.
      - **Codes workspace**: phase rail, codes editor, live preview.
      - **Keys**: `Ctrl+Enter` loads and `Alt+←` goes back. Shortcuts listen on the document while the dialog is open, and re-renders restore focus.
-  4. Loadouts from Maxroll carry `source: { maxroll: id }`.
-- Requests happen only on the user's click (a clipboard link is only pre-filled). Export paste stays the fallback for every error, and errors can offer **Open in browser**.
+  4. Loadouts from Maxroll carry `source: { maxroll: id, date, phases: [{ variant, name }] }`: the planner's last-save date and, per phase, the variant it came from (index + name at import). `cleanSource()` in main validates it.
+- Requests happen only on the user's click (a clipboard link is only pre-filled), **except** the guide-update check below: once a day at start, for Maxroll builds, and it can be turned off in Settings. Export paste stays the fallback for every error, and errors can offer **Open in browser**.
+
+### Guide updates (Maxroll builds)
+Guides get edited every patch; re-importing used to reset progress.
+- **Check** (`maxroll:checkUpdate` → `checkGuideUpdate()` in main): fetches the planner. The same `date` as `source.date` means up to date, with no diffing.
+  - Otherwise `mapPhasesToVariants()` pairs each phase with a variant: stored name first (reordered), then stored index (renamed), then, for builds imported before the map existed, the phase's own name. A phase whose variant is gone stays as is and is listed as `missing`.
+  - The matched variants are parsed, and `diffLoadout()` lists what changed per phase: trees added / removed, routes changed (`common` prefix), mastery. A new date with no real change just updates `source.date` quietly.
+- **Automatic** checks run at start and after a profile switch: at most once a day per character (`profile.updateCheck.at`), off with `settings.updates.checkMaxroll`, and silent unless there's an update (a toast with **Review**). A version dismissed with *Keep my version* (`updateCheck.dismissed`) isn't offered automatically again. The character menu's *Check the guide for updates* always fetches fresh and always answers.
+- **Apply** is renderer-side `mergeProgress(old, new)`: each track keeps `min(progress, common prefix)` (the phase-switch rule). What's lost in the phase being played becomes the respec banner (`computeTransition` shape). It resets the undo stack and offers an Undo toast. Nothing is ever applied without the player's click.
+
+### Character profiles
+Each character has its own build and progress: `<userData>/profiles/<id>.json` = `{ version, id, name, createdAt, updatedAt, build, updateCheck? }`.
+- `settings.activeProfile` is owned by main, like the window bounds.
+- `store.migrateProfiles()` turns the pre-profiles `build.json` into the first profile once, and keeps the old file as `build.json.migrated`.
+- **Names**:
+  - A new profile is named after its class ("Rogue", "Rogue 2", unique).
+  - An empty, never-renamed "Character N" takes the class name with its first load.
+  - The player renames it in the character menu.
+- **Loading**: the Load build footer's **Load into** picks this character or a new one. It defaults to a new character when the incoming class differs from the current build's.
+- **Switching** resets per-build UI state (undo stack, pins, banner). Hotkeys always act on the active profile.
+- The last profile can't be deleted. Ids are `p-<time36><rand>`, validated before any path is built.
 
 ### Raw Maxroll paste
 One JSON object per line (passives/class/mastery line + one line per skill); `mergeRawLines` merges them. A single combined object also works. See `config/maxroll-paste.example.txt`.
 
-### <userData>/build.json — multi-phase loadout
+### A profile's `build` — multi-phase loadout (was <userData>/build.json)
 ```json
 { "name": "Void Knight Erasing Strike", "classId": 2, "masteryId": 1, "currentPhase": 0,
   "phases": [ { "name": "Leveling", "masteryId": 1, "tracks": [
@@ -150,7 +175,7 @@ One JSON object per line (passives/class/mastery line + one line per skill); `me
 Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`, which also backfills a missing `phase.masteryId` from `loadout.masteryId`. `label` is baked at import time; the UI prefers live DB names (view-model titles).
 
 ### <userData>/settings.json
-`{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey} }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
+`{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey}, updates:{checkMaxroll}, activeProfile }`. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
 - `display.mode` is `'full'` or `'compact'` (mini mode). Only main changes it, via `window:setMode`.
 - `opacity` applies to mini mode only.
 - `laneKeys` is `'fkeys'`, `'digits'` or `'numpad'`. A saved `hotkeys` block without `laneKeys` predates the setting and becomes `'digits'` (its old `F1` toggle would clash with lane 1). Fresh installs get `'fkeys'`.
@@ -167,7 +192,7 @@ Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normal
 { passives: trees, skills: trees /* same object */, classes, duplicates }
 trees = { [treeID]: { name, icon, nodes: { [String(nodeID)]: { id, nodeName, description, maxPoints, stats, icon } } } }
 ```
-Both files are committed (regenerate + commit after each patch). There is no fallback: if either is missing, `build-db.missingFiles()` reports it and the status bar shows **Game data missing**.
+Both files are committed (regenerate + commit after each patch). They're written as **one compact row per line**, which is 23 % smaller than indented JSON, and git diffs still show exactly which nodes changed. There is no fallback: if either is missing, `build-db.missingFiles()` reports it and the status bar shows **Game data missing**.
 
 ### classes.json (hand-maintained)
 `{ classes:{"2":"Sentinel"}, masteriesByClass:{"2":{"1":"Void Knight","2":"Forge Guard","3":"Paladin"}}, passiveTreeByClass:{"2":"kn-1"}, unverifiedMasteries:["2:1",…] }`
@@ -207,8 +232,8 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - **One window**: normal frame, resizable (min 420×480), `sandbox`, `contextIsolation`, no `nodeIntegration`, no app menu, navigation and `window.open` blocked. Bounds, maximized state, zoom (UI scale) and always-on-top persist. Saved bounds are only reused if they're still on a connected display.
 - **Mini mode** (`window:setMode`) is the same window: bounds are saved into the outgoing mode's slot and the incoming slot is restored (first use goes to the top-right of the display). It has min 260×180, is always on top, and uses `setOpacity(display.opacity)`, which does nothing on Linux. The frame stays native, because Electron can't switch frames at runtime.
 - **Single instance**: a second launch focuses the existing window.
-- **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). Old `config/build.json`, the hotkeys from `config/settings.json`, and `config/saves/` are migrated once.
-- **Game data** is loaded once and cached in main; `app:init` refreshes it (so a window reload picks up re-extracted data).
+- **userData**: `app.getPath('userData')`, overridable with env `LE_USER_DATA` (tests/screenshots). Old `config/build.json`, the hotkeys from `config/settings.json`, and `config/saves/` are migrated once. A `build.json` then becomes the first character profile.
+- **Game data** is loaded once and cached in main. `app:init` re-checks `build-db.dataStamp()` (the size and mtime of each file) and re-reads only if a file changed. A window reload picks up re-extracted data without re-parsing ~2 MB on every load.
 
 ### Hotkeys (`electron/hotkeys.js`)
 | Default | Action | While the app window is focused |
@@ -224,7 +249,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - The Settings dialog refuses to save when `hotkeyConflicts()` finds a clash.
 
 ### IPC (`window.api` → main, all `invoke`)
-`init`, `saveBuild`, `previewPhase(json)`, `loadLoadout(phases, name, source?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`. Main → renderer: `hotkey` events via `onHotkey(cb)`.
+`init`, `saveBuild` (active profile), `previewPhase(json)`, `loadLoadout(phases, name, source?, target?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `checkGuideUpdate(manual)`, `dismissGuideUpdate(date)`, `createProfile(name?)`, `switchProfile(id)`, `renameProfile(id, name)`, `deleteProfile(id)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`. Main → renderer: `hotkey` events via `onHotkey(cb)`.
 
 ### In-app keyboard (renderer, ignored while typing or a dialog is open)
 - Lanes: `1`–`6` and the configured lane keys (`F1`–`F6` / numpad), `Shift` = undo. `Ctrl`+`1`–`6` / `Ctrl+Enter` fill the step.

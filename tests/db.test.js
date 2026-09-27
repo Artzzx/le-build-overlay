@@ -288,3 +288,30 @@ describe('db.missingFiles', () => {
     }
   });
 });
+
+// ─── dataStamp (lets main skip re-reading unchanged game data) ────────────────
+
+describe('db.dataStamp', () => {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+
+  test('stable while files are unchanged, different after a change, "missing" for absent files', () => {
+    const db = freshDb();
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'le-stamp-'));
+    try {
+      assert.match(db.dataStamp(dir), /skill_tree_reconciled\.json:missing/);
+      for (const f of ['skill_tree_reconciled.json', 'passives.json', 'classes.json']) fs.writeFileSync(path.join(dir, f), '[]');
+      const a = db.dataStamp(dir);
+      assert.equal(db.dataStamp(dir), a);
+      fs.writeFileSync(path.join(dir, 'passives.json'), '[{"x":1}]');
+      assert.notEqual(db.dataStamp(dir), a);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test('covers the real data folder', () => {
+    assert.match(freshDb().dataStamp(), /skill_tree_reconciled\.json:\d+:/);
+  });
+});

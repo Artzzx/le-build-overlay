@@ -31,32 +31,24 @@
  *
  * ─── Usage ───────────────────────────────────────────────────────────────────
  *
- *   const { parseBuild, loadBuildFromFile, saveBuild } = require('./maxroll');
+ *   const { parseBuild, parseLoadout } = require('./maxroll');
  *
- *   // From string (e.g., user pasted JSON):
+ *   // From a pasted export (string or parsed object):
  *   const build = parseBuild(rawJsonString, skillsDb, classesDb, 'My Build');
  *
- *   // From file:
- *   const build = loadBuildFromFile('./config/my-build.json', skillsDb, classesDb);
- *
- *   // Persist:
- *   saveBuild(build, './config/build.json');
+ * Persistence is not this module's job — electron/store.js owns all file I/O.
  *
  * ─── API ─────────────────────────────────────────────────────────────────────
  *
  *   parseBuild(rawJsonOrString, skillsDb, classesDb, buildName?)  → normalizedBuild
- *   loadBuildFromFile(filePath, skillsDb, classesDb)              → normalizedBuild
  *   parseLoadout(phaseInputs, skillsDb, classesDb, loadoutName?)  → loadout
- *   saveBuild(normalizedBuild, filePath)                          → void
  *
  * Advancing, undoing and node lookup operate on the loadout at runtime and live
- * in shared/tree-utils.js (used by the overlay renderer).
+ * in shared/tree-utils.js.
  */
 
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
 const { validateBuild, validateLoadout, initializeBuild } = require('./build-schema');
 
 // ─── Multi-line merge ─────────────────────────────────────────────────────────
@@ -246,37 +238,11 @@ function resolveSkillName(skillKey, skillsDb) {
 
 // ─── File I/O ─────────────────────────────────────────────────────────────────
 
-/**
- * Load and parse a Maxroll JSON file from disk.
- *
- * @param {string} filePath - path to the raw Maxroll JSON file
- * @param {object} skillsDb
- * @param {object} classesDb
- * @returns {object} normalized build
- */
-function loadBuildFromFile(filePath, skillsDb, classesDb) {
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  const fileName = path.basename(filePath, '.json');
-  return parseBuild(raw, skillsDb, classesDb, fileName);
-}
-
-/**
- * Write a normalized build object to disk as JSON.
- * Used both for saving new builds (from config window) and
- * for persisting currentStep changes (from hotkey advance/undo).
- *
- * @param {object} build - normalized build
- * @param {string} filePath - output path (typically config/build.json)
- */
-function saveBuild(build, filePath) {
-  fs.writeFileSync(filePath, JSON.stringify(build, null, 2), 'utf-8');
-}
-
 // ─── Multi-phase loadout parser ───────────────────────────────────────────────
 
 /**
  * Parse an array of phase inputs (each with a name + raw Maxroll JSON) into a
- * multi-phase loadout object suitable for saving to config/build.json.
+ * multi-phase loadout object (saved by electron/store.js as <userData>/build.json).
  *
  * All phases must be the same class — throws otherwise. The mastery may differ
  * per phase (e.g. leveling at mastery 0, the plain class, then Bladedancer):
@@ -329,8 +295,6 @@ module.exports = {
   parseBuild,
   parseLoadout,
   mergeRawLines,
-  loadBuildFromFile,
-  saveBuild,
   resolveClassName,
   resolveSkillName,
 };

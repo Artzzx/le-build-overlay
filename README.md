@@ -13,6 +13,8 @@ Built to be read at a glance while you play:
 - **Mini mode** (`Ctrl`+`M`). A small, always-on-top, see-through window for a corner of the screen, with one line per tree showing the next node and its key. It keeps its own size and position. Finished trees shrink to a single line.
 - **Less clicking.** **Fill ×N** puts every remaining point of a multi-point step in at once. `Ctrl`+`Z` undoes the last change in any tree. When every tree in a phase is done, the app offers to move to the next phase.
 - **Phases.** Leveling → Endgame (up to 5). Every phase must be the same class, but the mastery can change: level as a plain Rogue (mastery 0), then switch to Bladedancer. Switching phases keeps your progress where the trees overlap, and tells you exactly what to respec (and which mastery to pick) in game.
+- **One app, every character.** Each character (main, alts, a new season) keeps its own build and progress. Switch them from the name at the top left. Loading a build of another class adds a new character instead of wiping the one you're levelling.
+- **Guide updates.** For builds loaded from a Maxroll link, the app checks once a day whether the guide was edited. It shows what changed per phase and applies it only if you agree, keeping every point on the unchanged part of each route and telling you what to respec. It can be turned off in Settings.
 - **Node details.** Description, per-point stats, and the route around any node. *Start from here* catches the app up to a character you've already levelled.
 - **Node icons.** Every node shows its in-game icon (see [Node icons](#node-icons)). Nodes without art get a generated glyph.
 
@@ -53,7 +55,7 @@ Click **Load build**, paste a **Maxroll planner link** (`https://maxroll.gg/last
 
 The Maxroll import uses the same public endpoint the planner page uses. It isn't an official API: if Maxroll changes or blocks it, the dialog says so, and pasting export codes still works.
 
-Your build, progress, settings and saved templates live in the per-user app data folder (`%APPDATA%/le-build-overlay` on Windows), not in the repo. Files from the old overlay's `config/` folder are migrated automatically on first launch.
+Your characters (build + progress each), settings and saved templates live in the per-user app data folder (`%APPDATA%/le-build-overlay` on Windows), not in the repo. Files from the old overlay's `config/` folder are migrated automatically on first launch.
 
 The game data the app needs (all trees, nodes and icons) is committed in `db/data/`. You only run the extractor after a game patch (below).
 
@@ -117,7 +119,7 @@ The goal is to find a strategy that reliably matches every node group to the cor
 le-build-overlay/
 ├── electron/
 │   ├── main.js               ← main process: window, IPC, lifecycle
-│   ├── store.js              ← build / settings / templates in the user-data folder
+│   ├── store.js              ← character profiles / settings / templates in the user-data folder
 │   ├── hotkeys.js            ← global shortcuts (direct / arm-first, released while focused)
 │   └── preload.js            ← the only renderer bridge (window.api)
 ├── app/                      ← the UI (vanilla JS modules, no framework, no bundler)

@@ -4,10 +4,10 @@
 
 import { h, mount } from './dom.js';
 import { ui } from './icons.js';
-import { keyRecorder, prettyAccelerator } from './keys.js';
+import { keyRecorder } from './keys.js';
 import { playCue } from './feedback.js';
 
-const { hotkeyConflicts, laneKeyLabel, LANE_KEYSET_LABELS } = window.HotkeyScheme;
+const { hotkeyConflicts, laneKeyLabel, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
 
 const MODIFIERS = [['', 'None'], ['Alt', 'Alt'], ['Ctrl', 'Ctrl'], ['Shift', 'Shift']];
 
@@ -120,6 +120,12 @@ export function openSettings({ dialog, settings, defaults, save, pauseHotkeys })
             slider({ value: Math.round(draft.display.volume * 100), min: 5, max: 100, step: 5, label: 'Volume', onInput: (v) => { draft.display.volume = v / 100; } }),
             h('button.btn.btn-secondary.btn-sm', { type: 'button', onclick: () => playCue('stepDone', draft.display.volume) }, ui('volume', { size: 14 }), 'Test')))
           : null,
+      ),
+
+      h('section.dialog-section',
+        h('h3', 'Guide updates'),
+        field('Check Maxroll for guide updates', 'At start, once a day, for builds loaded from a Maxroll link. You review every change before anything is applied.',
+          toggle(draft.updates.checkMaxroll, (v) => { draft.updates.checkMaxroll = v; }, 'Check Maxroll for guide updates')),
       ),
 
       h('section.dialog-section',

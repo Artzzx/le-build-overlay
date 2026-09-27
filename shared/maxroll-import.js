@@ -136,6 +136,7 @@
     if (!variants.length) throw new Error('None of this planner’s variants has a passive tree.');
     return {
       id: r.id ?? null,
+      date: typeof r.date === 'string' ? r.date : null, // last save — a changed date = the guide was edited
       name: String(r.name ?? '').trim() || 'Maxroll build',
       author: r.user?.username ?? null,
       activeProfile: Number.isInteger(data.activeProfile) ? data.activeProfile : 0,
@@ -150,5 +151,27 @@
     return visible[n - 1]?.index ?? null;
   }
 
-  return { API_BASE, parseMaxrollLink, normalizeName, matchSkillTree, decodePlanner, visibleVariantIndex };
+  const sameName = (a, b) => String(a ?? '').trim().toLowerCase() === String(b ?? '').trim().toLowerCase();
+
+  /**
+   * Guide update: which of the planner's variants is each of the build's phases now?
+   * `sourcePhases` = what was stored at import ([{ variant, name }], the variant's
+   * index and name then). Match by the stored name first (the author may have
+   * reordered variants), else the stored index (they may have renamed it). Builds
+   * imported before that was stored fall back to the phase's own name.
+   * @returns {(number|null)[]} a variant index per phase, null = not found
+   */
+  function mapPhasesToVariants(sourcePhases, phases, variants) {
+    return phases.map((phase, i) => {
+      const stored = Array.isArray(sourcePhases) ? sourcePhases[i] : null;
+      if (stored) {
+        const byName = variants.filter(v => sameName(v.name, stored.name));
+        const hit = byName.find(v => v.index === stored.variant) ?? byName[0] ?? variants.find(v => v.index === stored.variant);
+        return hit ? hit.index : null;
+      }
+      return variants.find(v => sameName(v.name, phase.name))?.index ?? null;
+    });
+  }
+
+  return { API_BASE, parseMaxrollLink, matchSkillTree, decodePlanner, visibleVariantIndex, mapPhasesToVariants };
 }));

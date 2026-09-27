@@ -73,19 +73,75 @@ describe('createStore', () => {
   beforeEach(() => { dir = tmpDir(); });
   afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-  test('build round-trips and writes atomically (no temp file left)', () => {
+  test('profiles: create, save build atomically, list, rename, delete (never the last one)', () => {
     const store = createStore({ dir, log: quiet });
-    assert.equal(store.loadBuild(), null);
-    store.saveBuild({ phases: [] });
-    assert.deepEqual(store.loadBuild(), { phases: [] });
-    assert.deepEqual(fs.readdirSync(dir), ['build.json']);
+    assert.deepEqual(store.listProfiles(), []);
+    const a = store.createProfile({ name: '  Rogue main  ' });
+    assert.match(a.id, /^p-[a-z0-9]+$/);
+    assert.equal(a.name, 'Rogue main');
+    store.saveProfileBuild(a.id, { name: 'Bladedancer', classId: 4, masteryId: 1, phases: [] });
+    assert.deepEqual(fs.readdirSync(path.join(dir, 'profiles')), [`${a.id}.json`]); // no temp file left
+    assert.equal(store.readProfile(a.id).build.name, 'Bladedancer');
+
+    const b = store.createProfile({ name: 'Rogue main', build: { name: 'Paladin alt', classId: 2, phases: [] } });
+    assert.equal(b.name, 'Rogue main 2', 'names stay unique');
+    const list = store.listProfiles();
+    assert.deepEqual(list.map(p => p.id), [a.id, b.id]);
+    assert.deepEqual([list[0].buildName, list[0].classId, list[0].masteryId], ['Bladedancer', 4, 1]);
+    assert.equal(list[1].buildName, 'Paladin alt');
+
+    store.updateProfile(b.id, { name: '' });
+    assert.equal(store.readProfile(b.id).name, 'Rogue main 2', 'an empty rename keeps the old name');
+    store.deleteProfile(b.id);
+    assert.throws(() => store.deleteProfile(a.id), /only character/);
+    assert.equal(store.listProfiles().length, 1);
   });
 
-  test('corrupt JSON is moved aside and the fallback returned', () => {
+  test('profile ids cannot traverse; a corrupt profile is moved aside and skipped', () => {
+    const store = createStore({ dir, log: quiet });
+    assert.throws(() => store.readProfile('../settings'), /Invalid profile id/);
+    assert.throws(() => store.saveProfileBuild('p-../../x', {}), /Invalid profile id/);
+    const a = store.createProfile({ name: 'A' });
+    fs.writeFileSync(path.join(dir, 'profiles', 'p-broken1.json'), '{oops');
+    assert.deepEqual(store.listProfiles().map(p => p.id), [a.id]);
+    assert.ok(fs.readdirSync(path.join(dir, 'profiles')).some(f => f.startsWith('p-broken1.json.corrupt-')));
+  });
+
+  test('migrateProfiles: build.json becomes the first profile, once, and is kept as .migrated', () => {
+    fs.writeFileSync(path.join(dir, 'build.json'), JSON.stringify({ name: 'Void Knight', phases: [] }));
+    const store = createStore({ dir, log: quiet });
+    const id = store.migrateProfiles((b) => `${b.name} char`);
+    assert.ok(id);
+    assert.equal(store.readProfile(id).name, 'Void Knight char');
+    assert.deepEqual(store.readProfile(id).build, { name: 'Void Knight', phases: [] });
+    assert.ok(fs.existsSync(path.join(dir, 'build.json.migrated')));
+    assert.equal(fs.existsSync(path.join(dir, 'build.json')), false);
+    assert.equal(store.migrateProfiles(), null, 'second run is a no-op');
+    assert.equal(store.listProfiles().length, 1);
+  });
+
+  test('migrateProfiles: a corrupt build.json is moved aside, no profile made from it', () => {
     fs.writeFileSync(path.join(dir, 'build.json'), '{oops');
     const store = createStore({ dir, log: quiet });
-    assert.equal(store.loadBuild(), null);
+    assert.equal(store.migrateProfiles(), null);
     assert.ok(fs.readdirSync(dir).some(f => f.startsWith('build.json.corrupt-')));
+  });
+
+  test('resolveProfile: preferred if it exists, else the oldest, else a new "Character 1"', () => {
+    const store = createStore({ dir, log: quiet });
+    const fresh = store.resolveProfile(null);
+    assert.equal(fresh.name, 'Character 1');
+    const b = store.createProfile({ name: 'B' });
+    assert.equal(store.resolveProfile(b.id).id, b.id);
+    assert.equal(store.resolveProfile('p-gone123').id, fresh.id);
+    assert.equal(store.listProfiles().length, 2, 'no extra profile when one exists');
+  });
+
+  test('mergeSettings keeps a valid activeProfile and drops anything else', () => {
+    assert.equal(mergeSettings({ activeProfile: 'p-abc123' }).activeProfile, 'p-abc123');
+    assert.equal(mergeSettings({ activeProfile: '../x' }).activeProfile, null);
+    assert.equal(mergeSettings({ updates: { checkMaxroll: false } }).updates.checkMaxroll, false);
+    assert.equal(mergeSettings({}).updates.checkMaxroll, true);
   });
 
   test('saveSettings returns and persists merged settings', () => {
