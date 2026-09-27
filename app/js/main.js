@@ -17,7 +17,7 @@
  */
 
 import { h, mount } from './dom.js';
-import { ui } from './icons.js';
+import { ui, nodeArt } from './icons.js';
 import { renderLane, revealCurrent, keycap, laneAccent } from './lanes.js';
 import { renderMiniLane } from './mini.js';
 import { playCue } from './feedback.js';
@@ -32,7 +32,8 @@ import { openUpdate } from './update-dialog.js';
 const { laneKeyLabel, laneKey, laneFromCode, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
 let toast = () => {}; // set in boot() once the container exists
 
-const { normalizeBuild, stepTrack, setTrackProgress, switchPhase, mergeProgress } = window.TreeUtils;
+const TreeUtils = window.TreeUtils;
+const { normalizeBuild, stepTrack, setTrackProgress, switchPhase, applyPending, mergeProgress } = window.TreeUtils;
 const { buildView, stepStartProgress } = window.ViewModel;
 const api = window.api;
 
@@ -52,7 +53,6 @@ const state = {
   focusLane: 0,        // keyboard / inspector focus
   pinned: null,        // { lane, step } — clicked node
   hover: null,         // { lane, step } — hovered node (transient)
-  transition: null,    // { toName, unspecNeeded } after a phase switch
   latch: false,        // global hotkeys armed (latch mode)
   undoStack: [],       // [{ phase, lane, prev }] — Ctrl+Z / "Undo" in the status bar, newest last
   lastAction: null,    // { lane, sign, amount, title, detail, accent } — status bar chip
@@ -184,7 +184,6 @@ function allocate(i, delta, { source = 'app', fill = false } = {}) {
   state.focusLane = i;
   const hadPin = state.pinned;
   state.pinned = null;
-  if (state.transition) dismissTransition(false);
   const changed = commit(next, {
     lanes: [...new Set([i, prevFocus, hadPin?.lane].filter(n => n != null))],
     flash: delta > 0 ? i : null,
@@ -315,16 +314,14 @@ function gotoPhase(to) {
   if (to === b.currentPhase) return;
   // Entering a phase starts from what the character holds (shared/tree-utils.js enterPhase):
   // only points the new routes don't want are to be unspecced, in any order.
-  const { build: next, transition } = switchPhase(b, to);
+  const { build: next } = switchPhase(b, to);
   state.pinned = null;
   state.hover = null;
   state.focusLane = 0;
   state.lastAction = null;
   // Entering rewrites the target phase's progress: its old undo entries no longer apply.
   state.undoStack = state.undoStack.filter(u => u.phase !== to);
-  commit(next);
-  state.transition = transition;
-  renderBanner();
+  commit(next); // the banner is the build's own `pending` (kept until the player closes it)
   toast(`Switched to ${b.phases[to].name}.`, {
     action: {
       label: 'Undo',
@@ -332,7 +329,6 @@ function gotoPhase(to) {
       run: () => {
         // Only while nothing changed since this switch: an older toast must never restore a stale build.
         if (state.build !== next) return toast('Can’t undo that switch any more — the build changed since.', { duration: 2500 });
-        dismissTransition();
         state.undoStack = state.undoStack.filter(u => u.phase !== to);
         state.lastAction = null;
         commit(b);
@@ -341,9 +337,16 @@ function gotoPhase(to) {
   });
 }
 
-function dismissTransition(render = true) {
-  state.transition = null;
-  if (render) renderBanner();
+/**
+ * Close the phase instructions. `done` = the player did it in game: the character
+ * state takes the respecs / despecializations / mastery into account (applyPending).
+ * Otherwise they're only dismissed (a misclicked switch): nothing changes.
+ */
+function closeInstructions({ done }) {
+  const b = state.build;
+  if (!b?.pending) return;
+  commit(done ? applyPending(b) : { ...b, pending: null }, { lanes: [] });
+  renderBanner();
 }
 
 function setUiScale(scale) {
@@ -419,7 +422,6 @@ function replaceBuild(build) {
   state.pinned = null;
   state.hover = null;
   state.focusLane = 0;
-  state.transition = null;
   resetHistory();
   state.build = build ? normalizeBuild(build) : null;
   renderAll();
@@ -529,18 +531,14 @@ function showUpdate(update) {
       state.pinned = null;
       state.hover = null;
       resetHistory(); // routes changed: old undo entries no longer point at the same nodes
-      commit(merged.build);
-      state.transition = merged.transition;
-      renderBanner();
-      toast('Guide update applied — your progress was kept.', {
+      commit(merged.build); // its `pending` is the banner
+      toast(merged.build.pending?.unspecNeeded.length ? 'Guide update applied — see what to respec above.' : 'Guide update applied — your progress was kept.', {
         kind: 'success',
         action: {
           label: 'Undo',
           run: () => {
             resetHistory();
-            state.transition = null;
             commit(before);
-            renderBanner();
           },
         },
       });
@@ -685,8 +683,8 @@ function onKeyDown(e) {
     case 'Escape':
       // Never leaves mini mode: Esc is the game's menu key, a stray press must not
       // blow the window up over the game.
+      // Nor does it close the phase instructions: only their buttons do.
       if (state.pinned) unpin();
-      else if (state.transition) dismissTransition();
       break;
     case 'PageDown':
       e.preventDefault();
@@ -810,7 +808,7 @@ function miniTopbar(v) {
 }
 
 function renderBanner() {
-  const t = state.transition;
+  const t = state.build?.pending;
   if (!t) { els.banner.hidden = true; mount(els.banner); return; }
   els.banner.hidden = false;
   const mc = t.masteryChange;
@@ -820,12 +818,30 @@ function renderBanner() {
   const despec = t.unspecNeeded.filter(u => u.isRemove);
   const group = (title, items) => (items.length ? h('div.banner-group', h('div.banner-group-title', title), h('ul.banner-list', items)) : null);
   const needsRespec = unspec.length || despec.length;
+  const elsewhere = t.toPhase != null && t.toPhase !== state.build.currentPhase;
+
+  /** One tree's respec: the nodes to take points off, in a safe order (last taken first). */
+  const respecTree = (u) => h('li.banner-tree',
+    h('div', h('b', transitionLabel(u)), ` — take off ${pts(u.amount)}${u.nodes?.length > 1 ? ', in this order:' : ':'}`),
+    h('ol.unspec-nodes', (u.nodes ?? []).map((n, i) => {
+      const node = TreeUtils.lookupNode(state.db, state.build.classId, u, n.nodeId);
+      const name = node?.nodeName ?? `Node ${n.nodeId}`;
+      const treeId = u.type === 'passive' ? state.db.classes.passiveTreeByClass?.[String(state.build.classId)] : u.skillKey;
+      return h('li.unspec-node', { title: node?.description ?? '' },
+        h('span.unspec-order', String(i + 1)),
+        h('span.tile.tile-sm.is-upcoming', { class: node?.icon ? 'has-art' : '' },
+          h('span.tile-art', nodeArt({ icon: node?.icon ?? null, iconKey: `${treeId}/${n.nodeId}`, name }))),
+        h('span.unspec-name', name),
+        h('span.unspec-pts', h('b', `−${n.remove}`), ` ${n.from} → ${n.to}${node?.maxPoints ? `/${node.maxPoints}` : ''}`));
+    })));
+
   mount(els.banner,
     h('div.banner', { role: 'alert', class: needsRespec ? 'banner-warn' : 'banner-info' },
       ui(needsRespec ? 'alert' : 'info', { size: 20 }),
       h('div.banner-body',
         h('div.banner-title', t.reason === 'update' ? `Guide updated — in ${t.toName}` : `Switching to ${t.toName}`),
-        group('Respec', unspec.map(u => h('li', h('b', transitionLabel(u)), ` — unspec ${pts(u.amount)} the new route doesn’t use`))),
+        elsewhere ? h('div.banner-note', `You’re in ${state.build.phases[state.build.currentPhase].name} now — these are for ${t.toName}.`) : null,
+        group('Respec', unspec.map(respecTree)),
         group('Skills', [
           ...despec.map(u => h('li', h('b', transitionLabel(u)), u.backIn
             ? ` — despecialize to free the slot (${pts(u.amount)} lost; back in ${u.backIn} from 0)`
@@ -835,7 +851,9 @@ function renderBanner() {
         group('Mastery', mc ? [h('li', mc.from
           ? ['Change your mastery: ', h('b', mName(mc.from)), ' → ', h('b', mName(mc.to))]
           : ['Choose the ', h('b', mName(mc.to)), ' mastery when it unlocks'])] : [])),
-      h('button.btn.btn-secondary.btn-sm', { type: 'button', onclick: () => dismissTransition() }, 'Done'),
+      h('div.banner-actions',
+        h('button.btn.btn-primary.btn-sm', { type: 'button', onclick: () => closeInstructions({ done: true }), title: 'I did this in game' }, ui('check', { size: 14, stroke: 3 }), 'Done'),
+        h('button.btn-icon.btn-sm', { type: 'button', onclick: () => closeInstructions({ done: false }), title: 'Dismiss without doing it (e.g. a misclicked phase)', 'aria-label': 'Dismiss' }, ui('x', { size: 15 }))),
     ),
   );
 }

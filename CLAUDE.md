@@ -113,7 +113,7 @@ Maxroll `skillTrees` keys are the game's `treeID` verbatim (`es6ai` = Erasing St
 - **Safety net**: `summarizeBuild()` reports `passiveMismatch` when a passive history doesn't fit its class's tree, and the Load build dialog shows it. `tests/data-contract.test.js` runs the same check on every planner fixture. **Add a fixture for each new class/mastery you import.**
 
 ### Phases and the character state
-A loadout has 1–5 phases, all with the same **class**. Each phase has its own `masteryId` (e.g. Leveling = 0, Endgame = Bladedancer), and `loadout.masteryId` = the highest one. Maxroll phases also carry `level` (the character level the variant is planned for).
+A loadout has 1–6 phases (`MAX_PHASES` in `loadout-dialog.js`), all with the same **class**. Each phase has its own `masteryId` (e.g. Leveling = 0, Endgame = Bladedancer), and `loadout.masteryId` = the highest one. Maxroll phases also carry `level` (the character level the variant is planned for).
 
 **The character state** (`build.held`, `build.mastery`) is what the character has in game, whatever the phase:
 - `held` = `{ passive: {node: points}, [skillKey]: {…} }`, including skills the current phase doesn't use but that are still specialized.
@@ -122,13 +122,14 @@ A loadout has 1–5 phases, all with the same **class**. Each phase has its own 
 - Builds without it get it from their current phase (`ensureHeld`, run by `normalizeBuild`). A fresh load has mastery 0.
 
 **Entering a phase** (`switchPhase` → `enterPhase` in `shared/tree-utils.js`) compares what's held with the new routes, **per node, never by order**; the game only cares how many points a node has. `rebaseTrack` moves the held points to the front of the route (guide order kept in `track.guide`), so progress stays a flat prefix and the rest of the app is unchanged.
+- **Nothing changes until the player confirms.** A forward switch (or a guide update) stores its instructions as `build.pending` and leaves `held`/`mastery` alone. **Done** runs `applyPending()`, which takes the points off (never below what the current phase counts as allocated), drops despecialized skills and sets the mastery. **×** dismisses without changing anything. A backward switch keeps the pending instructions, so a misclicked switch loses nothing. A new forward switch recomputes them from the same state and replaces them. The banner is `build.pending`, so it survives phase switches, profile switches and restarts. Allocating and `Esc` never close it.
 - **Forward**:
-  - **Respec**: only points a route doesn't want at all.
+  - **Respec**: only points a route doesn't want at all, **node by node** (`nodes: [{ nodeId, remove, from, to }]`) in a safe order: the reverse of the order they were taken in the phase being left (`removalOrder`), since a node taken later can depend on an earlier one.
   - **Skills** the phase doesn't use: keep them specialized when a slot is free and they come back later. Slots unlock at levels 4, 8, 20, 35 and 50 (`slotsAt(phase.level)`; 5 when the level is unknown). Otherwise despecialize: all points lost, and the skill comes back from 0. Skills never used again are also despecialized.
   - **Mastery**: "choose" (from 0) or "change" when the phase's mastery differs from `build.mastery`.
   - The state assumes the player does it.
 - **Backward**: nothing to do in game, and the state is untouched, so going forward again loses nothing.
-- The banner ("Switching to …") groups Respec / Skills / Mastery.
+- The banner ("Switching to …") groups Respec (numbered node chips: icon, name, −N, from → to/max) / Skills / Mastery. It notes when the player is in another phase than the instructions are for.
 - A switch's Undo restores the whole build, but only while nothing has changed since; an older toast can't restore a stale build.
 
 Proven on the three fixtures (`tests/maxroll-import.test.js`): the old prefix rule asked the Rogue build to unspec 15 of 20 passives it still needed. Phase switches, loads and *Start from here* offer an Undo toast.
@@ -153,7 +154,7 @@ Proven on the three fixtures (`tests/maxroll-import.test.js`): the old prefix ru
   3. **The Load build dialog** (`loadout-dialog.js`, one wide fixed-size modal, three views that keep their state while it's open):
      - **Choose**: two cards (`1` Maxroll link, `2` export codes), saved templates, and "re-import the current build".
        - A Maxroll link on the clipboard adds a one-click **Fetch this build**.
-     - **Maxroll workspace**: variant rail (tick up to 5) plus a pane for the focused variant (stats, skill cards with tree icons, phase name).
+     - **Maxroll workspace**: variant rail (tick up to 6) plus a pane for the focused variant (stats, skill cards with tree icons, phase name).
        - Load uses the ticked variants' `json` directly.
        - "Edit as codes" moves them into the codes workspace.
      - **Codes workspace**: phase rail, codes editor, live preview.

@@ -180,9 +180,9 @@ describe('phase switching on the real planners (character state)', () => {
     const vs = planner.variants.filter(v => !v.hidden);
     return TU.normalizeBuild(parseLoadout(vs.map(v => ({ name: v.name, json: JSON.stringify(v.build) })), DB.skills, DB.classes, planner.name));
   };
-  // Allocate every point of the current phase, then switch to the next one.
+  // Confirm what the last switch asked (Done), allocate every point of the phase, then switch to the next one.
   const finishAndNext = (b) => {
-    const full = b.phases[b.currentPhase].tracks.reduce((x, t, i) => TU.setTrackProgress(x, i, t.history.length), b);
+    const full = b.phases[b.currentPhase].tracks.reduce((x, t, i) => TU.setTrackProgress(x, i, t.history.length), TU.applyPending(b));
     return TU.switchPhase(full, b.currentPhase + 1);
   };
   const lane = (b, key) => b.phases[b.currentPhase].tracks.find(t => (key === 'passive' ? t.type === 'passive' : t.skillKey === key));
@@ -230,7 +230,7 @@ describe('phase switching on the real planners (character state)', () => {
     const s2 = finishAndNext(s1.build);
     const s3 = finishAndNext(s2.build);
     for (const s of [s1, s2, s3]) assert.deepEqual(s.transition?.unspecNeeded.filter(u => !u.isRemove) ?? [], []);
-    const back = TU.switchPhase(s3.build, 1);
+    const back = TU.switchPhase(TU.applyPending(s3.build), 1);
     assert.equal(back.transition, null);
     assert.equal(TU.switchPhase(back.build, 3).build.phases[3].tracks[0].currentStep, 50, 'nothing forgotten going back and forth');
   });

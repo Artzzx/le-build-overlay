@@ -283,40 +283,60 @@
   const slotsAt = (level) => (Number.isFinite(level) ? SLOT_LEVELS.filter(l => l <= level).length : SLOT_LEVELS.length);
 
   /**
+   * The order to take surplus points off in game: the reverse of the order they
+   * were taken (a node picked later can depend on an earlier one, never the other
+   * way round). `taken` = the route the points came from; nodes not in it go last.
+   */
+  function removalOrder(surplus, held, taken = []) {
+    const last = {};
+    taken.forEach((n, i) => { last[n] = i; });
+    return Object.keys(surplus)
+      .map(n => ({ nodeId: Number(n), remove: surplus[n], from: held[n] ?? surplus[n], to: (held[n] ?? surplus[n]) - surplus[n] }))
+      .sort((a, b) => (last[b.nodeId] ?? -1) - (last[a.nodeId] ?? -1) || a.nodeId - b.nodeId);
+  }
+
+  /**
    * Put the character into phase `to` of `phases` (the build's own phases, or a
-   * newer version of them after a guide update).
+   * newer version of them after a guide update). The character state is NOT
+   * changed here: what to do in game becomes `build.pending`, applied by
+   * applyPending() when the player confirms it's done (so a misclicked switch
+   * loses nothing).
    *
-   * Forward (or a guide update): points the new routes don't want are to be
-   * unspecced; skills the phase doesn't use stay specialized when a slot is free
-   * and they come back later, otherwise they're to be despecialized (all points
-   * lost); a different mastery is to be chosen. The character state assumes the
-   * player does it.
-   * Backward: nothing to do in game — progress shows what's already covered and
-   * the character state is left untouched (going forward again loses nothing).
+   * Forward (or a guide update): unspec only points the new routes don't want
+   * (node by node, in a safe order); skills the phase doesn't use stay specialized
+   * when a slot is free and they come back, otherwise they're to be despecialized
+   * (all points lost); a different mastery is to be chosen.
+   * Backward: nothing to do in game.
    *
    * @returns {{ build, transition }} transition = null when there is nothing to tell
-   *   { fromName, toName, forward, unspecNeeded: [{ type, skillKey, label, amount, isRemove, backIn? }],
+   *   { toPhase, fromName, toName, forward,
+   *     unspecNeeded: [{ type, skillKey, label, amount, isRemove, backIn?, nodes?: [{ nodeId, remove, from, to }] }],
    *     keptSkills: [{ skillKey, label, points, backIn }], masteryChange: { from, to } | null }
    */
-  function enterPhase(build, phases, to, { forward = true, fromName = null } = {}) {
+  function enterPhase(build, phases, to, { forward = true, fromName = null, takenFrom = null } = {}) {
     const b = ensureHeld(build);
     const target = phases[to];
-    const held = { ...b.held };
+    const held = b.held;
     const unspecNeeded = [];
     const keptSkills = [];
+    const takenRoute = (key) => {
+      const t = takenFrom?.tracks.find(x => trackKey(x) === key);
+      return t ? t.history.slice(0, t.currentStep) : [];
+    };
 
     const tracks = target.tracks.map(t => {
       const key = trackKey(t);
       const r = rebaseTrack(t, held[key]);
       const extra = total(r.surplus);
       if (forward && extra) {
-        unspecNeeded.push({ type: t.type, skillKey: t.skillKey, label: t.label, amount: extra, isRemove: false });
-        held[key] = r.kept;
+        unspecNeeded.push({
+          type: t.type, skillKey: t.skillKey, label: t.label, amount: extra, isRemove: false,
+          nodes: removalOrder(r.surplus, held[key] ?? {}, takenRoute(key)),
+        });
       }
       return r.track;
     });
 
-    let mastery = b.mastery;
     let masteryChange = null;
     if (forward) {
       // Skills held but not used here: keep them specialized if a slot is free and they come back.
@@ -340,35 +360,64 @@
           keptSkills.push({ skillKey: k, label: labelOf(k), points, backIn });
         } else {
           unspecNeeded.push({ type: 'skill', skillKey: k, label: labelOf(k), amount: points, isRemove: true, backIn });
-          delete held[k];
         }
       }
       const m = target.masteryId ?? 0;
-      if (m > 0 && m !== b.mastery) {
-        masteryChange = { from: b.mastery ?? 0, to: m };
-        mastery = m;
-      }
+      if (m > 0 && m !== b.mastery) masteryChange = { from: b.mastery ?? 0, to: m };
     }
 
-    const next = {
-      ...b,
-      currentPhase: to,
-      held: forward ? held : b.held,
-      mastery,
-      phases: phases.map((p, i) => (i === to ? { ...p, tracks } : p)),
-    };
     const hasNews = unspecNeeded.length || keptSkills.length || masteryChange;
+    const transition = hasNews ? { toPhase: to, fromName, toName: target.name, forward, unspecNeeded, keptSkills, masteryChange } : null;
     return {
-      build: next,
-      transition: hasNews ? { fromName, toName: target.name, forward, unspecNeeded, keptSkills, masteryChange } : null,
+      build: { ...b, currentPhase: to, phases: phases.map((p, i) => (i === to ? { ...p, tracks } : p)) },
+      transition,
     };
   }
 
-  /** Switch the build to phase `to` (see enterPhase). */
+  /**
+   * Switch the build to phase `to` (see enterPhase). Forward: the new instructions
+   * replace any pending ones (they're recomputed from the same character state, so
+   * nothing still to do is lost). Backward: pending instructions are kept — a
+   * misclick back and forth never hides them.
+   */
   function switchPhase(build, to) {
     const b = ensureHeld(build);
     const from = b.currentPhase ?? 0;
-    return enterPhase(b, b.phases, to, { forward: to > from, fromName: b.phases[from]?.name ?? null });
+    const forward = to > from;
+    const r = enterPhase(b, b.phases, to, { forward, fromName: b.phases[from]?.name ?? null, takenFrom: b.phases[from] });
+    const pending = forward ? r.transition : (b.pending ?? null);
+    return { build: { ...r.build, pending }, transition: pending };
+  }
+
+  /**
+   * The player did what `build.pending` asked in game: take the unspecced points
+   * off, drop despecialized skills, set the mastery. Never takes off points the
+   * current phase counts as allocated (in case the player moved on meanwhile).
+   */
+  function applyPending(build) {
+    const p = build?.pending;
+    if (!p) return build;
+    const held = { ...build.held };
+    const phase = build.phases[build.currentPhase ?? 0];
+    const floor = (key) => {
+      const t = phase?.tracks.find(x => trackKey(x) === key);
+      return t ? countPoints(t.history, t.currentStep) : {};
+    };
+    for (const u of p.unspecNeeded ?? []) {
+      const key = u.type === 'passive' ? 'passive' : u.skillKey;
+      if (u.isRemove) {
+        if (!phase?.tracks.some(x => trackKey(x) === key)) delete held[key];
+        continue;
+      }
+      const tree = { ...(held[key] ?? {}) };
+      const min = floor(key);
+      for (const n of u.nodes ?? []) {
+        const next = Math.max(min[n.nodeId] ?? 0, (tree[n.nodeId] ?? 0) - n.remove);
+        if (next > 0) tree[n.nodeId] = next; else delete tree[n.nodeId];
+      }
+      held[key] = tree;
+    }
+    return { ...build, held, mastery: p.masteryChange ? p.masteryChange.to : build.mastery, pending: null };
   }
 
   // ─── Guide updates (same build, newer version of the guide) ─────────────────
@@ -418,9 +467,10 @@
     const cur = Math.min(b.currentPhase ?? 0, newBuild.phases.length - 1);
     const phases = newBuild.phases.map(p => ({ ...p, tracks: p.tracks.map(({ guide, ...t }) => ({ ...t, currentStep: 0 })) }));
     const { build, transition } = enterPhase({ ...newBuild, held: b.held, mastery: b.mastery, currentPhase: cur }, phases, cur, {
-      forward: true, fromName: b.phases[cur]?.name ?? null,
+      forward: true, fromName: b.phases[cur]?.name ?? null, takenFrom: b.phases[cur],
     });
-    return { build, transition: transition && { ...transition, reason: 'update' } };
+    const pending = transition ? { ...transition, reason: 'update' } : (b.pending ?? null);
+    return { build: { ...build, pending }, transition: pending };
   }
 
   return {
@@ -436,6 +486,7 @@
     commonPrefixLength,
     rebaseTrack,
     switchPhase,
+    applyPending,
     slotsAt,
     passiveFit,
     diffLoadout,

@@ -240,6 +240,25 @@ b { font-weight: 600; }
 .banner-group-title { font-size: var(--fs-xs); font-weight: 650; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 2px; }
 .banner-list { margin: 0; padding-left: 18px; color: var(--text-2); }
 .banner-list .is-keep { color: var(--text-3); }
+.banner-body { max-height: 42vh; overflow-y: auto; min-width: 0; }
+.banner-note { color: var(--text-3); font-size: var(--fs-sm); margin: -2px 0 6px; }
+.banner-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.banner-tree { list-style: none; margin-left: -18px; }
+.banner-tree + .banner-tree { margin-top: 6px; }
+/* Nodes to take points off, numbered in the order to do it (last taken first). */
+.unspec-nodes { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 2px; padding: 0; list-style: none; }
+.unspec-node {
+  display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 4px 10px 4px 4px; max-width: 100%;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-md);
+}
+.unspec-order {
+  display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--warn-soft); color: var(--warn); font-size: var(--fs-xs); font-weight: 700;
+}
+.unspec-node .tile { --size: 28px; }
+.unspec-name { color: var(--text); font-weight: 600; font-size: var(--fs-sm); min-width: 0; overflow-wrap: anywhere; }
+.unspec-pts { color: var(--text-3); font-size: var(--fs-xs); white-space: nowrap; }
+.unspec-pts b { color: var(--danger); font-size: var(--fs-sm); }
 .banner-list b { color: var(--text); }
 @keyframes slide-in { from { opacity: 0; transform: translateY(-6px); } }
 

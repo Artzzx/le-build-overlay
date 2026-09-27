@@ -15,7 +15,7 @@ const assert = require('node:assert/strict');
 const {
   indexNodes, makeDb, groupHistory, findCurrentGroup, lookupNode, isTrackUnresolved,
   normalizeBuild, stepTrack, commonPrefixLength, passiveFit,
-  diffLoadout, mergeProgress, rebaseTrack, switchPhase, slotsAt,
+  diffLoadout, mergeProgress, rebaseTrack, switchPhase, applyPending, slotsAt,
 } = require('../shared/tree-utils');
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -311,9 +311,17 @@ describe('switchPhase', () => {
       { name: 'B', masteryId: 1, tracks: [passive([1, 2, 5])] },
     ]));
     const { build, transition } = switchPhase(l, 1);
-    assert.deepEqual(transition.unspecNeeded, [{ type: 'passive', skillKey: undefined, label: 'Passives', amount: 2, isRemove: false }]);
-    assert.deepEqual(build.held.passive, { 1: 1, 2: 1 });
+    assert.deepEqual(transition.unspecNeeded, [{
+      type: 'passive', skillKey: undefined, label: 'Passives', amount: 2, isRemove: false,
+      // Node by node, last taken first: 2 was taken after 1.
+      nodes: [{ nodeId: 2, remove: 1, from: 2, to: 1 }, { nodeId: 1, remove: 1, from: 2, to: 1 }],
+    }]);
     assert.equal(build.phases[1].tracks[0].currentStep, 2);
+    assert.deepEqual(build.held.passive, { 1: 2, 2: 2 }, 'nothing changes until the player confirms');
+    assert.deepEqual(build.pending, transition);
+    const confirmed = applyPending(build);
+    assert.deepEqual(confirmed.held.passive, { 1: 1, 2: 1 });
+    assert.equal(confirmed.pending, null);
   });
 
   test('a skill that skips a phase stays specialized and comes back with its points', () => {
@@ -340,7 +348,8 @@ describe('switchPhase', () => {
     // level 9 = 2 slots, z takes one: x (back in C) keeps the other, y is never used again.
     assert.deepEqual(transition.keptSkills.map(k => k.skillKey), ['x']);
     assert.deepEqual(transition.unspecNeeded.map(u => [u.skillKey, u.isRemove, u.backIn]), [['y', true, null]]);
-    assert.equal('y' in build.held, false);
+    assert.equal('y' in build.held, true);
+    assert.equal('y' in applyPending(build).held, false);
     const tight = { ...l, phases: l.phases.map((p, i) => (i === 1 ? { ...p, level: 5 } : p)) }; // 1 slot, z takes it
     const t2 = switchPhase(tight, 1).transition;
     assert.deepEqual(t2.unspecNeeded.map(u => [u.skillKey, u.backIn]), [['x', 'C'], ['y', null]]);
@@ -354,10 +363,10 @@ describe('switchPhase', () => {
     ]));
     const b = switchPhase(l, 1);
     assert.deepEqual(b.transition.masteryChange, { from: 0, to: 1 });
-    assert.equal(b.build.mastery, 1);
-    const c = switchPhase(b.build, 2);
+    assert.equal(b.build.mastery, 0, 'chosen only once the player confirms');
+    const c = switchPhase(applyPending(b.build), 2);
     assert.deepEqual(c.transition.masteryChange, { from: 1, to: 2 });
-    const back = switchPhase(c.build, 0);
+    const back = switchPhase(applyPending(c.build), 0);
     assert.equal(back.transition, null);
     assert.equal(back.build.mastery, 2);
   });
@@ -367,13 +376,27 @@ describe('switchPhase', () => {
       { name: 'A', masteryId: 1, tracks: [passive([1, 2])] },
       { name: 'B', masteryId: 1, tracks: [passive([1, 2, 3, 3])] },
     ]));
-    const fwd = switchPhase(l, 1).build;
+    const fwd = applyPending(switchPhase(l, 1).build);
     const full = done(fwd);
     const back = switchPhase(full, 0);
     assert.equal(back.transition, null);
     assert.equal(back.build.phases[0].tracks[0].currentStep, 2);
     assert.deepEqual(back.build.held.passive, { 1: 1, 2: 1, 3: 2 });
     assert.equal(switchPhase(back.build, 1).build.phases[1].tracks[0].currentStep, 4);
+  });
+
+  test('misclick forward then back: the instructions stay, and nothing is lost', () => {
+    const l = done(loadout([
+      { name: 'A', masteryId: 0, tracks: [passive([1, 1, 2])] },
+      { name: 'B', masteryId: 0, tracks: [passive([1, 3])] },
+    ]));
+    const fwd = switchPhase(l, 1);
+    assert.equal(fwd.transition.unspecNeeded[0].amount, 2);
+    const back = switchPhase(fwd.build, 0);
+    assert.deepEqual(back.build.pending, fwd.transition, 'still shown after going back');
+    assert.equal(back.build.phases[0].tracks[0].currentStep, 3, 'all 3 points still there');
+    // Confirming while back in A never takes off points A counts as allocated.
+    assert.deepEqual(applyPending(back.build).held.passive, { 1: 2, 2: 1 });
   });
 });
 
@@ -413,7 +436,10 @@ describe('diffLoadout + mergeProgress', () => {
     ]);
     const { build, transition } = mergeProgress(played, next);
     assert.equal(build.phases[0].tracks[0].currentStep, 1);
-    assert.deepEqual(transition.unspecNeeded, [{ label: 'Passives', type: 'passive', skillKey: undefined, amount: 3, isRemove: false }]);
+    assert.deepEqual(transition.unspecNeeded.map(u => [u.label, u.amount, u.isRemove]), [['Passives', 3, false]]);
+    assert.deepEqual(transition.unspecNeeded[0].nodes.map(n => [n.nodeId, n.remove]), [[2, 2], [1, 1]]);
+    assert.equal(transition.reason, 'update');
+    assert.deepEqual(build.pending, transition);
     assert.equal(transition.toName, 'Leveling');
   });
 

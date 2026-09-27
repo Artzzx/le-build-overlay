@@ -7,7 +7,7 @@ A desktop companion for **Last Epoch**. Load your build from a [Maxroll planner]
 - **Read it at a glance.** One lane per tree: its progress, the node to take next (and what comes after), and the whole route as a strip of nodes. Green always means "allocate this next".
 - **Never leave the game.** Press `F1`–`F6` in game to tick a point off in trees 1–6 (`Shift` undoes). A short sound confirms each press, so you don't have to look.
 - **Mini mode.** A small, always-on-top window for a corner of the screen: one line per tree with the next node and its key.
-- **Leveling → Endgame.** A build can have up to 5 phases. When you switch phase, the app keeps your progress where the routes overlap and tells you exactly what to respec, and which mastery to pick.
+- **Leveling → Endgame.** A build can have up to 6 phases. When you switch phase, the app keeps your progress where the routes overlap and tells you exactly what to respec, and which mastery to pick.
 - **Every character.** Your main, your alts and your next-season character each keep their own build and progress.
 - **Guides that change.** When the author edits the Maxroll guide, the app shows you what changed and applies it only if you agree, keeping your progress.
 
@@ -63,11 +63,11 @@ The phase tabs at the top switch between *Leveling*, *Endgame*, and so on (also 
 When you switch, the app compares what your character already has with the new phase:
 
 - **Every point you already hold is kept** when the new route still wants it, even if the guide takes it in a different order.
-- **Respec** lists only the points the new route doesn't use at all.
+- **Respec** lists only the points the new route doesn't use at all, **node by node**, numbered in the order to take them off (the last one you took comes off first, so the game never blocks you).
 - **Skills** the phase doesn't use stay specialized if you have a free slot (slots open at levels 4, 8, 20, 35 and 50) and the skill comes back later, with its points. Otherwise the banner tells you to despecialize it.
 - **Mastery**: when to choose it, or change it.
 
-Going back to an earlier phase asks for nothing and forgets nothing. When every tree in a phase is done, the app offers to move to the next one.
+The banner stays until you close it: **Done** when you've done it in game, or **×** if you switched by mistake (nothing changes then). It stays when you allocate points, change phase or restart the app. Going back to an earlier phase asks for nothing and forgets nothing. When every tree in a phase is done, the app offers to move to the next one.
 
 ### Mini mode
 
