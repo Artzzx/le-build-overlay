@@ -21,7 +21,10 @@ Behaviour
   - .png / .jpg / .jpeg → .webp next to the source (same name, new extension)
   - Images larger than --size (default 128) are downscaled to fit; smaller
     ones are left as is. Transparency is preserved.
-  - Idempotent: a source whose .webp is newer is skipped.
+  - A source always replaces its .webp (a re-export overwrites every icon; unchanged
+    images encode to identical bytes, so git sees no change). With --keep-originals,
+    a source whose .webp is newer is skipped instead.
+  - Icons the game no longer uses are removed by extract.py --prune-icons (npm run data).
   - An original is deleted only after its .webp was written and re-opened
     successfully. Unreadable files are reported and make the exit code 1.
 """
@@ -92,7 +95,9 @@ def main():
     for src in sources:
         dst = src.with_suffix('.webp')
         rel = src.relative_to(args.icons_dir).as_posix()
-        if dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime:
+        # Without --keep-originals every source is new input (converted ones are deleted), so it
+        # always replaces the .webp: never trust mtimes, an exporter may keep the asset's old date.
+        if args.keep_originals and dst.exists() and dst.stat().st_mtime >= src.stat().st_mtime:
             skipped += 1
             if not args.keep_originals and not args.dry_run:
                 src.unlink()  # already converted earlier; finish the cleanup

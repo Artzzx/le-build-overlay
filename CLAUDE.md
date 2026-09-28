@@ -238,7 +238,11 @@ Your exporter writes `extractor/nodes_flat.json` and the node images into `db/da
 pip install -r extractor/requirements.txt       # once (Pillow)
 npm run data -- --label "Season 4 (1.4)"        # convert_icons.py → extract.py (args passed on) → npm test
 ```
-`scripts/update-data.js` runs `convert_icons.py` (PNG/JPG → 128 px WebP, idempotent), then `extract.py` (validates, writes `db/data/*.json` + `version.json`), then the whole test suite, and prints the commit + release commands. Any failure stops it with nothing to release. Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together, then release (see *Packaging and releases*). `extract.py` warns if non-WebP icons are present; **never commit PNG icons** (git keeps every version forever).
+`scripts/update-data.js` runs `convert_icons.py` (PNG/JPG → 128 px WebP), then `extract.py --prune-icons` (validates, writes `db/data/*.json` + `version.json`, deletes icons no node uses any more), then the whole test suite, and prints the commit + release commands. Any failure stops it with nothing to release. Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together, then release (see *Packaging and releases*). `extract.py` warns if non-WebP icons are present; **never commit PNG icons** (git keeps every version forever).
+- **Icons on a re-export**: the exporter overwrites every image, and that's fine.
+  - Any PNG present is new input, so it always replaces its WebP. File dates are never trusted, because an exporter may keep the asset's old date. Only `--keep-originals` falls back to "skip when the WebP is newer".
+  - Unchanged images re-encode to identical bytes (WebP at a fixed quality is deterministic), so git records only real changes.
+  - Icons the game dropped are deleted by `--prune-icons` once the output is valid. It refuses (warns, deletes nothing) when no node resolved an icon or when more than half the files would go (`PRUNE_MAX_SHARE`): that's a broken export, not a patch.
 
 ### `extract.py`
 Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `passives.json`. It drops orphan and placeholder rows, merges duplicates (keeping an icon from either copy), and derives `treeName` from the root node (or from `TREE_NAME_OVERRIDES`).
@@ -346,4 +350,4 @@ python extractor/convert_icons.py && python extractor/extract.py   # regenerate 
 1. **Duplicate nodes in data**: see above; needs an upstream exporter fix.
 2. **Global keys swallow the key for every app** (Windows `RegisterHotKey`). The lane keys therefore default to `F1`–`F6`. Users migrated from older settings stay on digits until they switch. The repeat guard and the sounds are defensive against Windows behaviour that can't be exercised in Linux CI: check them by hand on Windows after changes to `hotkeys.js`.
 3. **Packaging is set up but only verified on Linux here** (unpacked build: data and icons load from the asar, userData stays `le-build-overlay`). The first Windows release, and the install → update → restart cycle, must be checked by hand on Windows (release 0.1.x, then 0.2.0 to see the update land). Remaining ideas are in `docs/ROADMAP.md`.
-4. **Committed `nodes_flat.json` predates `iconFile`**: the 1,027 icons are committed, but the committed export doesn't have `iconFile` yet, so the committed outputs have `icon: null`. Commit the new `nodes_flat.json` together with the regenerated `db/data/*.json`.
+4. **16 committed icon files are unused** (4,583 of 4,598 nodes have an icon). They're probably the art of the stale collided rows. The next `npm run data` deletes them (`--prune-icons`).

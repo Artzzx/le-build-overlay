@@ -8,7 +8,7 @@
 
 'use strict';
 
-const { test, describe, before, after } = require('node:test');
+const { test, describe, before, after, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { spawnSync } = require('child_process');
 const fs = require('fs');
@@ -160,6 +160,39 @@ describe('extract.py', { skip: !PYTHON && 'python3 not installed' }, () => {
 
 // Mirrors the real export: `iconFile: "<spriteId>.png"` against the committed,
 // flat, already-converted db/data/icons/<spriteId>.webp folder.
+describe('extract.py --prune-icons', { skip: !PYTHON && 'python3 not installed' }, () => {
+  let dir;
+  const exists = (rel) => fs.existsSync(path.join(dir, 'icons', rel));
+  beforeEach(() => { dir = fs.mkdtempSync(path.join(os.tmpdir(), 'le-prune-')); });
+  afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+  test('deletes icons no node uses any more (and emptied folders), keeps the rest', () => {
+    for (const f of ['a.webp', 'b.webp', 'c.webp', 'old/gone.webp']) touch(dir, f);
+    const rows = [...PASSIVES, row('es6ai', 0, 'Erasing Strike', { iconFile: 'a.png' }),
+      row('es6ai', 1, 'Void', { iconFile: 'b.png' }), row('es6ai', 2, 'Rift', { iconFile: 'c.png' })];
+    const r = run(dir, rows, ['--prune-icons']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /removed 1 icon files no node uses/);
+    assert.ok(exists('a.webp') && exists('b.webp') && exists('c.webp'));
+    assert.ok(!exists('old/gone.webp') && !exists('old'), 'unused file and its empty folder removed');
+  });
+
+  test('refuses when most icons would go (a broken export, not a patch)', () => {
+    for (const f of ['a.webp', 'b.webp', 'c.webp']) touch(dir, f);
+    const r = run(dir, [...PASSIVES, row('es6ai', 0, 'Erasing Strike')], ['--prune-icons']);
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /NOT removing 3 of 3/);
+    assert.ok(exists('a.webp') && exists('b.webp') && exists('c.webp'));
+  });
+
+  test('without the flag nothing is deleted', () => {
+    for (const f of ['a.webp', 'b.webp', 'c.webp']) touch(dir, f);
+    const rows = [...PASSIVES, row('es6ai', 0, 'Erasing Strike', { iconFile: 'a.png' }), row('es6ai', 1, 'Void', { iconFile: 'b.png' })];
+    run(dir, rows);
+    assert.ok(exists('c.webp'));
+  });
+});
+
 describe('extract.py — real export layout (iconFile + committed icons)', { skip: !PYTHON && 'python3 not installed' }, () => {
   const REAL_ICONS = path.join(__dirname, '..', 'db', 'data', 'icons');
   const realIcons = fs.existsSync(REAL_ICONS) ? fs.readdirSync(REAL_ICONS).filter(f => f.endsWith('.webp')).slice(0, 3) : [];
