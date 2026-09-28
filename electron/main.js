@@ -31,8 +31,9 @@
  *   maxroll:clipboardLink    → { ok, link|null }   (pre-fills the import field; never auto-fetches)
  *   maxroll:open ({ link })  → { ok }              (opens the planner in the browser)
  *   maxroll:checkUpdate ({ manual }) → { ok, status: 'none'|'skipped'|'upToDate'|'dismissed'|'unmapped'|'update',
- *                              update?: { planner, newBuild, diff, missing } }   (the active build's guide)
- *   maxroll:dismissUpdate ({ date }) → { ok }       ("Keep mine": don't offer that version again)
+ *                              update?: { planner, planners, signature, newBuild, diff, missing } }
+ *                              (every guide the active build's phases came from)
+ *   maxroll:dismissUpdate ({ date }) → { ok }       ("Keep mine": date = update.signature; not offered again)
  *   templates:list | templates:save | templates:load | templates:delete
  *
  * main → renderer:
@@ -326,15 +327,10 @@ function profileState() {
  * { maxroll: id, date?, phases?: [{ variant: index, name }] } — the phase map lets
  * the guide-update check line the planner's variants up with this build's phases.
  */
+/** Validate a build's source (per-phase: which planner variant, or codes). null = not from Maxroll. */
 function cleanSource(source, phaseCount) {
-  if (!source || typeof source.maxroll !== 'string' || !MaxrollImport.parseMaxrollLink(source.maxroll)) return null;
-  const out = { maxroll: source.maxroll };
-  if (typeof source.date === 'string' && source.date.length < 40) out.date = source.date;
-  if (Array.isArray(source.phases) && source.phases.length === phaseCount
-    && source.phases.every(p => Number.isInteger(p?.variant) && p.variant >= 0 && typeof p?.name === 'string')) {
-    out.phases = source.phases.map(p => ({ variant: p.variant, name: p.name.slice(0, 80) }));
-  }
-  return out;
+  const g = MaxrollImport.guideSources(source, phaseCount);
+  return MaxrollImport.makeSource(g.phases, g.dates);
 }
 
 // ─── Guide updates ────────────────────────────────────────────────────────────
@@ -350,27 +346,34 @@ const UPDATE_CHECK_EVERY_MS = 24 * 60 * 60 * 1000; // automatic checks: once a d
 async function checkGuideUpdate({ manual = false } = {}) {
   const profile = store.readProfile(profileId);
   const build = profile?.build;
-  const src = build?.source;
-  if (!src?.maxroll || !Array.isArray(build.phases)) return { status: 'none' };
+  if (!Array.isArray(build?.phases)) return { status: 'none' };
+  // A build can mix guides (leveling from one planner, endgame from another) and pasted codes.
+  const guide = MaxrollImport.guideSources(build.source, build.phases.length);
+  if (!guide.planners.length) return { status: 'none' };
   const check = profile.updateCheck ?? {};
   if (!manual && (!settings.updates.checkMaxroll || Date.now() - (check.at ?? 0) < UPDATE_CHECK_EVERY_MS)) return { status: 'skipped' };
 
-  const raw = await maxroll().fetchPlanner(src.maxroll, { fresh: manual });
-  store.updateProfile(profileId, { updateCheck: { ...check, at: Date.now() } });
   const { db } = loadGameData();
-  const planner = MaxrollImport.decodePlanner(raw, db.skills);
-  if (planner.date && planner.date === src.date) return { status: 'upToDate' };
-  if (!manual && planner.date && planner.date === check.dismissed) return { status: 'dismissed' };
+  const planners = {};
+  for (const id of guide.planners) {
+    planners[id] = MaxrollImport.decodePlanner(await maxroll().fetchPlanner(id, { fresh: manual }), db.skills);
+  }
+  store.updateProfile(profileId, { updateCheck: { ...check, at: Date.now() } });
+  const dates = Object.fromEntries(guide.planners.map(id => [id, planners[id].date]));
+  if (guide.planners.every(id => dates[id] && dates[id] === guide.dates[id])) return { status: 'upToDate' };
+  const signature = MaxrollImport.guideSignature(guide.planners, dates);
+  if (!manual && signature === check.dismissed) return { status: 'dismissed' };
 
-  const picks = MaxrollImport.mapPhasesToVariants(src.phases, build.phases, planner.variants);
+  const picks = MaxrollImport.mapGuidePhases(guide.phases, build.phases, planners);
+  const variantOf = (i) => planners[guide.phases[i].maxroll].variants[picks[i]];
   if (picks.every(v => v == null)) return { status: 'unmapped' };
   const { parseLoadout } = require('../parser/maxroll');
   const matched = build.phases
-    .map((p, i) => (picks[i] == null ? null : { i, name: p.name, json: JSON.stringify(planner.variants[picks[i]].build) }))
+    .map((p, i) => (picks[i] == null ? null : { i, name: p.name, json: JSON.stringify(variantOf(i).build) }))
     .filter(Boolean);
   const parsed = parseLoadout(matched.map(({ name, json }) => ({ name, json })), db.skills, db.classes, build.name);
   if (parsed.classId !== build.classId) throw new Error('The guide is now for another class — load it as a new character instead.');
-  // Phases whose variant is gone stay as they are.
+  // Phases pasted as codes, or whose variant is gone, stay as they are.
   const phases = build.phases.map((p, i) => {
     const k = matched.findIndex(m => m.i === i);
     return k >= 0 ? parsed.phases[k] : p;
@@ -379,27 +382,28 @@ async function checkGuideUpdate({ manual = false } = {}) {
     ...build,
     masteryId: Math.max(0, ...phases.map(p => p.masteryId ?? 0)),
     phases,
-    source: {
-      maxroll: src.maxroll,
-      ...(planner.date ? { date: planner.date } : {}),
-      phases: build.phases.map((p, i) => (picks[i] == null
-        ? src.phases?.[i] ?? { variant: -1, name: p.name }
-        : { variant: picks[i], name: planner.variants[picks[i]].name })),
-    },
+    source: MaxrollImport.makeSource(guide.phases.map((e, i) => (picks[i] == null
+      ? e
+      : { maxroll: e.maxroll, variant: picks[i], name: variantOf(i).name })), { ...guide.dates, ...dates }),
   };
   const diff = TreeUtils.diffLoadout(build, newBuild);
   if (!diff.changed) {
-    // Saved again on Maxroll without changing the route: remember the new date quietly.
+    // Saved again on Maxroll without changing the route: remember the new dates quietly.
     store.saveProfileBuild(profileId, { ...build, source: newBuild.source });
     return { status: 'upToDate' };
   }
+  const about = (p) => ({ name: p.name, author: p.author, date: p.date });
+  const edited = guide.planners.filter(id => dates[id] !== guide.dates[id]); // the guides saved since
+  const shown = edited.length ? edited : guide.planners;
   return {
     status: 'update',
     update: {
-      planner: { name: planner.name, author: planner.author, date: planner.date },
+      planner: about(planners[shown[0]]),
+      planners: shown.map(id => about(planners[id])),
+      signature,
       newBuild,
       diff,
-      missing: build.phases.filter((_, i) => picks[i] == null).map(p => p.name),
+      missing: build.phases.filter((_, i) => guide.phases[i] && picks[i] == null).map(p => p.name),
     },
   };
 }

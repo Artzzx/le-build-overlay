@@ -34,7 +34,7 @@ le-build-overlay/
 │   ├── js/mini.js                ← mini mode rows (display.mode 'compact')
 │   ├── js/feedback.js            ← WebAudio sound cues for global hotkey events
 │   ├── js/inspector.js           ← node details + route list
-│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): choose screen (Maxroll link | export codes | templates) → horizontal workspace
+│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): choose screen (Maxroll link | export codes | templates) → Maxroll / phases workspaces (mix guides + codes)
 │   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, mini opacity, sound, lane keys, hotkeys (key recorder, conflict check)
 │   ├── js/help-dialog.js         ← shortcut sheet (?), built from the current key settings
 │   ├── js/profile-menu.js        ← character menu (top bar name): switch / new / rename / delete / check guide
@@ -49,7 +49,8 @@ le-build-overlay/
 │   │                               character state + switchPhase/rebaseTrack/slotsAt, diffLoadout/mergeProgress (guide updates)
 │   ├── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
 │   ├── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
-│   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree, mapPhasesToVariants
+│   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree, mapPhasesToVariants,
+│                                   per-phase sources: guideSources/makeSource/mapGuidePhases/guideSignature (also loaded in the renderer)
 ├── parser/                       ← maxroll.js (paste → loadout), build-schema.js (validators)
 ├── db/
 │   ├── build-db.js               ← loads db/data (main process + tests)
@@ -159,16 +160,24 @@ Proven on the three fixtures (`tests/maxroll-import.test.js`): the old prefix ru
        - A Maxroll link on the clipboard adds a one-click **Fetch this build**.
      - **Maxroll workspace**: variant rail (tick up to 6) plus a pane for the focused variant (stats, skill cards with tree icons, phase name).
        - Load uses the ticked variants' `json` directly.
-       - "Edit as codes" moves them into the codes workspace.
-     - **Codes workspace**: phase rail, codes editor, live preview.
+       - **Add another guide or codes** (rail) / "Edit the chosen variants as codes" (pane) move them into the phases workspace, each phase keeping its **origin** (`{ maxroll, variant, name }`).
+     - **Phases workspace** (`view === 'codes'`): phase rail (guide chip or "codes"), codes editor, live preview.
+       - The editor head has move earlier / later / remove for the selected phase (`Alt+↑/↓`). The rail stays text-only so long variant names stay readable.
+       - **Codes** adds an empty phase. **Maxroll link** opens the Maxroll view in *adding* mode (`mx.adding`): no pre-ticked variants, the tick limit is what's left of the 6 phases, the class must match the phases already there, the footer reads "Add N phases", and Back / `Alt+←` returns to the phases. The chosen variants are appended after the filled phases (empty ones dropped).
+       - Editing a phase's codes clears its origin (it's no longer the guide's variant); other phases keep theirs.
      - **Keys**: `Ctrl+Enter` loads and `Alt+←` goes back. Shortcuts listen on the document while the dialog is open, and re-renders restore focus.
-  4. Loadouts from Maxroll carry `source: { maxroll: id, date, phases: [{ variant, name }] }`: the planner's last-save date and, per phase, the variant it came from (index + name at import). `cleanSource()` in main validates it.
+  4. Loadouts from Maxroll carry `source`, **per phase**: `{ maxroll, date, dates: { [id]: date }, phases: [{ maxroll, variant, name } | null] }`.
+     - Each entry is the planner and variant (index + name at import) that phase came from; `null` = pasted codes. So one build can mix a leveling guide, an endgame guide and codes.
+     - `maxroll` / `date` are the first planner's, so `source.maxroll` still means "from Maxroll".
+     - Older sources (`{ maxroll, date, phases?: [{ variant, name }] }`, one planner) read the same through `MaxrollImport.guideSources()`.
+     - `makeSource()` writes the stored shape; main's `cleanSource()` is `makeSource(guideSources(...))`, so anything invalid reads as codes.
 - Requests happen only on the user's click (a clipboard link is only pre-filled), **except** the guide-update check below: once a day at start, for Maxroll builds, and it can be turned off in Settings. Export paste stays the fallback for every error, and errors can offer **Open in browser**.
 
 ### Guide updates (Maxroll builds)
 Guides get edited every patch; re-importing used to reset progress.
-- **Check** (`maxroll:checkUpdate` → `checkGuideUpdate()` in main): fetches the planner. The same `date` as `source.date` means up to date, with no diffing.
-  - Otherwise `mapPhasesToVariants()` pairs each phase with a variant: stored name first (reordered), then stored index (renamed), then, for builds imported before the map existed, the phase's own name. A phase whose variant is gone stays as is and is listed as `missing`.
+- **Check** (`maxroll:checkUpdate` → `checkGuideUpdate()` in main): fetches **every planner** the phases came from. Every date equal to the stored one means up to date, with no diffing.
+  - Otherwise `mapGuidePhases()` pairs each phase with a variant **in its own planner** (`mapPhasesToVariants`): stored name first (reordered), then stored index (renamed), then, for builds imported before the map existed, the phase's own name. A phase whose variant is gone stays as is and is listed as `missing`. Codes phases are never touched.
+  - The update lists only the planners saved since (`update.planners`). *Keep my version* stores `update.signature` (`guideSignature()`: one planner = its date, as before; several = `id@date …`).
   - The matched variants are parsed, and `diffLoadout()` lists what changed per phase: trees added / removed, routes changed (`common` prefix), mastery. A new date with no real change just updates `source.date` quietly.
 - **Automatic** checks run at start and after a profile switch: at most once a day per character (`profile.updateCheck.at`), off with `settings.updates.checkMaxroll`, and silent unless there's an update (a toast with **Review**). A version dismissed with *Keep my version* (`updateCheck.dismissed`) isn't offered automatically again. The character menu's *Check the guide for updates* always fetches fresh and always answers.
 - **Apply** is renderer-side `mergeProgress(old, new)`: the phase being played is re-entered from the character state (`enterPhase`), so every held point the new routes still want is kept, in any order. What's left becomes the banner ("Guide updated — in …"). It resets the undo stack and offers an Undo toast. Nothing is ever applied without the player's click. `diffLoadout` compares guide routes (`track.guide ?? history`).

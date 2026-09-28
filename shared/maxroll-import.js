@@ -179,5 +179,85 @@
     });
   }
 
-  return { API_BASE, parseMaxrollLink, matchSkillTree, decodePlanner, visibleVariantIndex, mapPhasesToVariants };
+  // ─── Where each phase came from (build.source) ────────────────────────────
+  //
+  // A build can mix guides: e.g. the leveling phases from one planner and the endgame
+  // from another, plus phases pasted as export codes. `source` records, per phase:
+  //   { maxroll: id, variant, name }  a planner variant (index + name at import)
+  //   { maxroll: id }                 a planner, variant unknown (matched by the phase's name)
+  //   null                            pasted codes: never checked for updates
+  // Stored shape: { maxroll, date?, dates: { [id]: date }, phases: [entry…] }. `maxroll` and
+  // `date` are the first planner's, so "was this loaded from Maxroll?" stays source.maxroll.
+  // Builds from before mixing ({ maxroll, date, phases?: [{ variant, name }] }) read the same.
+
+  const DATE_MAX = 40;
+  const NAME_MAX = 80;
+  const validId = (id) => typeof id === 'string' && ID_RE.test(id);
+
+  /**
+   * A stored source → { phases: entry[] (one per phase), dates: { id: date }, planners: [id] }.
+   * Anything invalid reads as null (codes), so a bad file never breaks the app.
+   */
+  function guideSources(source, phaseCount) {
+    const n = Math.max(0, phaseCount | 0);
+    const empty = { phases: Array(n).fill(null), dates: {}, planners: [] };
+    if (!source || typeof source !== 'object') return empty;
+    const main = validId(source.maxroll) ? source.maxroll : null;
+    const stored = Array.isArray(source.phases) && source.phases.length === n ? source.phases : null;
+    if (!stored && !main) return empty;
+    const entry = (e) => {
+      if (!e || typeof e !== 'object') return null;
+      const id = e.maxroll === undefined ? main : e.maxroll; // pre-mixing entries have no id of their own
+      if (!validId(id)) return null;
+      return Number.isInteger(e.variant) && e.variant >= 0 && typeof e.name === 'string'
+        ? { maxroll: id, variant: e.variant, name: e.name.slice(0, NAME_MAX) }
+        : { maxroll: id };
+    };
+    const phases = stored ? stored.map(entry) : Array(n).fill(null).map(() => ({ maxroll: main }));
+    const planners = [...new Set(phases.filter(Boolean).map(e => e.maxroll))];
+    const dates = {};
+    const known = source.dates && typeof source.dates === 'object' ? source.dates : {};
+    for (const id of planners) {
+      const d = known[id] ?? (id === main ? source.date : undefined);
+      if (typeof d === 'string' && d.length < DATE_MAX) dates[id] = d;
+    }
+    return { phases, dates, planners };
+  }
+
+  /** Per-phase entries (+ each planner's date) → the stored source, or null when no phase is from Maxroll. */
+  function makeSource(entries, dates = {}) {
+    const phases = (entries ?? []).map(e => (e && validId(e.maxroll)
+      ? (Number.isInteger(e.variant) && e.variant >= 0 && typeof e.name === 'string'
+        ? { maxroll: e.maxroll, variant: e.variant, name: e.name.slice(0, NAME_MAX) }
+        : { maxroll: e.maxroll })
+      : null));
+    const planners = [...new Set(phases.filter(Boolean).map(e => e.maxroll))];
+    if (!planners.length) return null;
+    const kept = {};
+    for (const id of planners) if (typeof dates[id] === 'string' && dates[id].length < DATE_MAX) kept[id] = dates[id];
+    return { maxroll: planners[0], ...(kept[planners[0]] ? { date: kept[planners[0]] } : {}), dates: kept, phases };
+  }
+
+  /**
+   * Guide update across planners: per phase, the variant index in its planner now,
+   * or null (pasted codes, or its variant is gone). `planners` = { [id]: decoded planner }.
+   */
+  function mapGuidePhases(entries, phases, planners) {
+    return phases.map((phase, i) => {
+      const e = entries[i];
+      const variants = e && planners[e.maxroll]?.variants;
+      if (!variants) return null;
+      return mapPhasesToVariants(e.name != null ? [e] : undefined, [phase], variants)[0];
+    });
+  }
+
+  /** One string per set of planner versions: "Keep my version" remembers it (one planner = its date). */
+  function guideSignature(ids, dates) {
+    return ids.length === 1 ? String(dates[ids[0]] ?? '') : ids.map(id => `${id}@${dates[id] ?? ''}`).join(' ');
+  }
+
+  return {
+    API_BASE, parseMaxrollLink, matchSkillTree, decodePlanner, visibleVariantIndex, mapPhasesToVariants,
+    guideSources, makeSource, mapGuidePhases, guideSignature,
+  };
 }));
