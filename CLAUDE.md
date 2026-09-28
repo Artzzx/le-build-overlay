@@ -57,7 +57,8 @@ le-build-overlay/
 │   └── data/                     ← skill_tree_reconciled.json + passives.json (generated, committed), classes.json,
 │                                    icons/ (node art as WebP, committed, referenced by each row's `icon`)
 ├── extractor/                    ← nodes_flat.json (input) → convert_icons.py + extract.py → db/data/; requirements.txt (Pillow)
-├── scripts/                      ← dev.js (npm run dev), update-data.js (npm run data: convert → extract → test)
+├── scripts/                      ← dev.js (npm run dev), update-data.js (npm run data: convert → extract → test),
+│                                    release-notes.js (npm run notes; release.yml writes each release's notes with it)
 ├── build/                        ← icon.png (app icon, electron-builder buildResources)
 ├── .github/workflows/            ← test.yml (every push, Linux + Windows), release.yml (tag v* → Windows build → GitHub Release)
 ├── config/                       ← build.example.json ("Try the example build"); anything else in config/ is git-ignored
@@ -293,11 +294,16 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
   - *Check now* in Settings answers **inside the dialog** (status line + *Restart now* / *Download*), and update toasts are skipped while Settings is open.
 - **Release flow**: `npm run data` (when there's new game data) → commit → `npm version minor` (bumps and tags `vX.Y.0`) → `git push --follow-tags`. `.github/workflows/release.yml` (windows-latest):
   1. checks that the tag matches `package.json`, then runs `npm ci --ignore-scripts` and `npm test`;
-  2. **creates the release itself, as a draft** (`gh release create --draft --generate-notes`; a re-run reuses its own draft, and a published tag fails);
+  2. writes the **release notes** (`scripts/release-notes.js <tag>`, checkout with `fetch-depth: 0`), then **creates the release itself, as a draft** with them (a re-run reuses its own draft with fresh notes; a published tag fails);
   3. `electron-builder --win --publish always` uploads into that draft (`releaseType: "draft"`);
   4. checks that there's exactly one release for the tag with `latest.yml` + both exes, then publishes it (`--latest`).
   - **Why**: left to itself, electron-builder uploads the NSIS and portable targets in parallel. Both see "no release" and both create one, so v0.1.1–v0.2.0 each have **two releases under one tag**, one holding only the `.blockmap`. `…/releases/download/<tag>/latest.yml` can resolve to that one, which gives a 404 and breaks every update check (`ERR_UPDATER_CHANNEL_FILE_NOT_FOUND`).
   - Publishing only when complete also means no app ever sees a half-uploaded release.
+- **Release notes** are written for players, from the commits since the previous `v*` tag (`scripts/release-notes.js`; preview the next ones with `npm run notes`):
+  - `feat:` → New, `fix:` → Fixes, `perf:` → Improvements.
+  - Everything else is left out: chore/docs/test/ci/build/refactor, version bumps, merges, and internal scopes like `fix(ci)`, `feat(data)` (`INTERNAL_SCOPES`).
+  - **Game data updated** (with the `--label`) is added when `db/data/version.json` changed since the last release. An install footer and a compare link close the notes.
+  - A commit subject is the note, so write it as the player-visible result. When it can't be, put `Release-note: <text for players>` in the commit body, or `Release-note: skip`.
 - **Unsigned**: SmartScreen warns on first run until there's a code-signing certificate.
 
 ## Electron Architecture

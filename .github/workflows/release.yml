@@ -22,6 +22,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # every commit and tag: the release notes list what changed since the last release
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -37,16 +39,23 @@ jobs:
           [ "$v" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} != package.json $v — use npm version"; exit 1; }
       - run: npm ci --ignore-scripts
       - run: npm test
+      - name: Write the release notes
+        shell: bash
+        run: |
+          node scripts/release-notes.js "$GITHUB_REF_NAME" > release-notes.md
+          cat release-notes.md
       - name: Create the draft release
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # A re-run reuses its own draft; a published release is never touched.
+          # A re-run reuses its own draft (with fresh notes); a published release is never touched.
           draft=$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft 2>/dev/null || true)
           if [ "$draft" = "false" ]; then echo "$GITHUB_REF_NAME is already published — bump the version instead."; exit 1; fi
-          if [ "$draft" != "true" ]; then
-            gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "${GITHUB_REF_NAME#v}" --generate-notes
+          if [ "$draft" = "true" ]; then
+            gh release edit "$GITHUB_REF_NAME" --notes-file release-notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "${GITHUB_REF_NAME#v}" --notes-file release-notes.md
           fi
       - name: Build and upload into the draft
         run: npx electron-builder --win --publish always

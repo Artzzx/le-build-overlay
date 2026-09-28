@@ -13,7 +13,8 @@
     "data": "node scripts/update-data.js",
     "dist": "electron-builder --win --publish never",
     "dist:dir": "electron-builder --dir --publish never",
-    "release": "electron-builder --win --publish always"
+    "release": "electron-builder --win --publish always",
+    "notes": "node scripts/release-notes.js"
   },
   "dependencies": {
     "electron-updater": "^6.8.9"

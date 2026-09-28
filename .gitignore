@@ -22,3 +22,4 @@ desktop.ini
 config/*
 !config/*.example.*
 Global Tree Data.json
+release-notes.md
