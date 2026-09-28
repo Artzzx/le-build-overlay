@@ -81,6 +81,17 @@ open(d + '/fl44/16.png', 'wb').write(b'not an image')                           
     assert.match(r.stdout, /converted 0, already up to date 0, failed 1/);
   });
 
+  test('a re-exported PNG replaces its WebP even when its file date is older', () => {
+    const before = fs.readFileSync(file('es6ai/12.webp'));
+    py(`from PIL import Image\nImage.new('RGBA', (128, 128), (255, 0, 0, 255)).save(${JSON.stringify(file('es6ai/12.png'))})`);
+    const old = new Date('2020-01-01');
+    fs.utimesSync(file('es6ai/12.png'), old, old); // exporters may keep the asset's original date
+    const r = run(CONVERT, ['--icons-dir', icons]);
+    assert.match(r.stdout, /converted 1,/);
+    assert.ok(!fs.existsSync(file('es6ai/12.png')));
+    assert.ok(!before.equals(fs.readFileSync(file('es6ai/12.webp'))), 'the new image won');
+  });
+
   test('--keep-originals leaves the source next to the WebP', () => {
     py(`from PIL import Image\nImage.new('RGB', (64, 64)).save(${JSON.stringify(file('fl44/17.png'))})`);
     const r = run(CONVERT, ['--icons-dir', icons, '--keep-originals']);

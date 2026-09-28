@@ -69,6 +69,7 @@ Both outputs are flat arrays with the same row shape:
   python extractor/extract.py
   python extractor/extract.py --input path/to/nodes_flat.json --verbose
   python extractor/extract.py --icons-dir path/to/icons --strict
+  python extractor/extract.py --prune-icons      # also delete icons no node uses (npm run data does this)
 """
 
 import argparse
@@ -450,6 +451,31 @@ def resolve_icons(rows, index):
     return report
 
 
+PRUNE_MAX_SHARE = 0.5
+
+
+def prune_icons(icons_dir, icon_report, total_files):
+    """Delete the icon files no output row references (icons the game dropped), then empty folders.
+
+    Runs only after the output was validated and written. Refuses when no node resolved an
+    icon or when more than half the files would go: that is a broken export (a renamed icon
+    field, a wrong folder), not a patch, and deleting would lose the whole set.
+    """
+    unused = icon_report['unused files']
+    used = icon_report['from value'] + icon_report['from convention']
+    if not unused:
+        return 'no unused icon files to remove'
+    if not used or len(unused) > total_files * PRUNE_MAX_SHARE:
+        return (f'WARNING: NOT removing {len(unused)} of {total_files} unreferenced icon files — '
+                f'that is too many for a patch; check the export (--verbose lists them)')
+    for rel in unused:
+        (icons_dir / rel).unlink(missing_ok=True)
+    for d in sorted((p for p in icons_dir.rglob('*') if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
+        if not any(d.iterdir()):
+            d.rmdir()
+    return f'removed {len(unused)} icon files no node uses any more'
+
+
 # ─── Output contract ──────────────────────────────────────────────────────────
 
 def validate_output(skills, passives, icons_dir):
@@ -503,6 +529,8 @@ def main():
     ap.add_argument('--icons-dir', type=Path, default=DEFAULT_ICONS_DIR, help='folder holding node icon images')
     ap.add_argument('--verbose', action='store_true', help='list every unresolved collision / icon')
     ap.add_argument('--strict', action='store_true', help='fail when any icon value cannot be resolved')
+    ap.add_argument('--prune-icons', action='store_true',
+                    help='delete icon files no node uses any more (after a successful run; npm run data sets it)')
     ap.add_argument('--label', default=None, help='name shown to players for this data, e.g. "Season 4 (1.4)"; kept from the last run if omitted')
     args = ap.parse_args()
 
@@ -539,6 +567,7 @@ def main():
     write_json(args.out_dir / 'skill_tree_reconciled.json', skills)
     write_json(args.out_dir / 'passives.json', passives)
     version = write_version(args.out_dir, skills, passives, args.label)
+    pruned = prune_icons(args.icons_dir, icon_report, len(icon_index)) if args.prune_icons else None
 
     # ─── Report ───────────────────────────────────────────────────────────────
     print(f'Input rows: {len(raw)}')
@@ -586,7 +615,9 @@ def main():
         if icon_index.ambiguous:
             print(f'  WARNING: {len(icon_index.ambiguous)} file names exist in several folders — '
                   f'those only resolve by relative path: {sorted(icon_index.ambiguous)[:5]}')
-        if icon_report['unused files']:
+        if pruned is not None:
+            print(f'  {pruned}')
+        elif icon_report['unused files']:
             print(f'  {len(icon_report["unused files"])} icon files are not referenced by any node'
                   + ('' if args.verbose else ' (use --verbose to list)'))
             if args.verbose:

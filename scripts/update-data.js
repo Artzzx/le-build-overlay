@@ -6,9 +6,11 @@
  * reaches them with the next app update.
  *
  *   Input (from your exporter):  extractor/nodes_flat.json + node images in db/data/icons/
+ *   (the exporter overwrites every image; unchanged ones re-encode to identical files)
  *   1. convert_icons.py  — PNG/JPG → WebP (never commit PNGs)
- *   2. extract.py        — clean + validate → db/data/*.json + version.json (extra args passed on,
- *                          e.g. --label "Season 4", --strict, --verbose)
+ *   2. extract.py        — clean + validate → db/data/*.json + version.json, then delete the icons
+ *                          no node uses any more (--prune-icons). Extra args are passed on,
+ *                          e.g. --label "Season 4", --strict, --verbose
  *   3. npm test          — the whole suite against the new data
  * Then it prints what to commit and how to release.
  */
@@ -48,7 +50,7 @@ if (!fs.existsSync(path.join(ROOT, 'db', 'data', 'icons'))) fail('db/data/icons/
 
 const py = (script, args = []) => [PYTHON[0], [...PYTHON.slice(1), path.join('extractor', script), ...args]];
 step('Converting icons to WebP', ...py('convert_icons.py'));
-step('Extracting and validating game data', ...py('extract.py', extraArgs));
+step('Extracting and validating game data', ...py('extract.py', ['--prune-icons', ...extraArgs]));
 step('Running the test suite', 'npm', ['test']);
 
 const v = JSON.parse(fs.readFileSync(path.join(ROOT, 'db', 'data', 'version.json'), 'utf8'));
