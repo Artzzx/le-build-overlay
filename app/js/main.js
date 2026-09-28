@@ -551,10 +551,15 @@ function showDataNotice(v) {
 // ─── App updates ──────────────────────────────────────────────────────────────
 
 /** Updater state from main. Toasts only on changes; never restarts the app by itself. */
+const appUpdateListeners = new Set();
+
 function onAppUpdate(next) {
   const was = state.appUpdate?.state;
   state.appUpdate = next;
   renderStatusbar();
+  appUpdateListeners.forEach(cb => cb(next));
+  // Settings shows the update state (and Restart now) itself; no toast over it.
+  if (els['dlg-settings'].open) return;
   if (next.state === 'ready' && was !== 'ready') {
     toast(`Version ${next.version} is ready — it installs when you close the app.`, {
       kind: 'success', duration: 15000, action: { label: 'Restart now', run: () => api.installAppUpdate() },
@@ -670,7 +675,14 @@ function showSettings() {
     app: {
       version: state.version,
       canCheck: state.appUpdate?.state !== 'off',
-      check: () => { toast('Checking for updates…', { duration: 1500 }); api.checkAppUpdate(); },
+      check: async () => {
+        onAppUpdate({ ...state.appUpdate, state: 'checking', upToDate: false });
+        const res = await api.checkAppUpdate(); // resolves with the final state (events may already have said it)
+        onAppUpdate(res.ok ? res.appUpdate : { ...state.appUpdate, state: 'error', error: `Couldn’t check for updates: ${res.error}` });
+      },
+      state: () => state.appUpdate,
+      install: () => api.installAppUpdate(),
+      subscribe: (cb) => { appUpdateListeners.add(cb); return () => appUpdateListeners.delete(cb); },
     },
   });
 }

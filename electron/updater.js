@@ -22,6 +22,23 @@ const RELEASES_API = 'https://api.github.com/repos/Artzzx/le-build-overlay/relea
 const FIRST_CHECK_MS = 10 * 1000;
 const CHECK_EVERY_MS = 6 * 60 * 60 * 1000;
 
+const OFFLINE_RE = /ENOTFOUND|EAI_AGAIN|ETIMEDOUT|ECONNREFUSED|ECONNRESET|ENETUNREACH|ERR_INTERNET_DISCONNECTED|ERR_NAME_NOT_RESOLVED|ERR_NETWORK_CHANGED|ERR_CONNECTION|ERR_TIMED_OUT|ERR_PROXY/i;
+
+/**
+ * What a manual check says when it fails: offline, a release the server can't serve
+ * (missing latest.yml, no published version), or the raw reason — never a guess.
+ */
+function describeError(err) {
+  const code = err?.code ?? '';
+  const msg = String(err?.message ?? err ?? '');
+  if (OFFLINE_RE.test(code) || OFFLINE_RE.test(msg)) return 'Couldn’t check for updates — you seem to be offline.';
+  if (/ERR_UPDATER_(CHANNEL_FILE_NOT_FOUND|LATEST_VERSION_NOT_FOUND|NO_PUBLISHED_VERSIONS|INVALID_RELEASE_FEED)/.test(code) || /HTTP (403|404)/.test(msg)) {
+    return 'Couldn’t check for updates: the download page isn’t ready (try again in a few minutes).';
+  }
+  const first = msg.split('\n')[0].slice(0, 140);
+  return `Couldn’t check for updates${first ? `: ${first}` : '.'}`;
+}
+
 /** Compare "1.2.10" with "v1.2.9" → 1 / 0 / -1 (numeric parts only; pre-release tags ignored). */
 function compareVersions(a, b) {
   const parts = (v) => String(v ?? '').replace(/^v/i, '').split('-')[0].split('.').map(n => parseInt(n, 10) || 0);
@@ -66,7 +83,7 @@ function createUpdater({ mode, currentVersion, emit, autoUpdater = null, fetch =
     autoUpdater.on('error', (err) => {
       log.error('[updater]', err?.message ?? err);
       // Background failures stay quiet (offline, GitHub down); a manual check reports them.
-      if (status.state !== 'ready') set(manual ? { state: 'error', error: 'Couldn’t check for updates. Are you offline?' } : { state: 'idle' });
+      if (status.state !== 'ready') set(manual ? { state: 'error', error: describeError(err) } : { state: 'idle' });
       manual = false;
     });
   }
@@ -84,7 +101,7 @@ function createUpdater({ mode, currentVersion, emit, autoUpdater = null, fetch =
       }
     } catch (err) {
       log.error('[updater]', err.message);
-      set(manual ? { state: 'error', error: 'Couldn’t check for updates. Are you offline?' } : { state: 'idle' });
+      set(manual ? { state: 'error', error: describeError(err) } : { state: 'idle' });
     }
     manual = false;
   }
@@ -119,4 +136,4 @@ function createUpdater({ mode, currentVersion, emit, autoUpdater = null, fetch =
   return { start, stop, check, install, getState: () => status };
 }
 
-module.exports = { createUpdater, compareVersions, RELEASES_API, FIRST_CHECK_MS, CHECK_EVERY_MS };
+module.exports = { createUpdater, compareVersions, describeError, RELEASES_API, FIRST_CHECK_MS, CHECK_EVERY_MS };

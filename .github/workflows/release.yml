@@ -1,6 +1,13 @@
 # Release: push a version tag (`npm version minor && git push --follow-tags`).
 # Builds the Windows installer + portable exe and publishes them as a GitHub Release;
 # installed apps pick it up through electron-updater (latest.yml in the release).
+#
+# The release is created HERE, as a draft, before electron-builder runs. Left to itself,
+# electron-builder uploads the installer and the portable exe in parallel, both see "no
+# release yet" and both create one: two releases under one tag (v0.1.1–v0.2.0), and the
+# tag's download URL can point at the one without latest.yml → every update check 404s.
+# The draft is published only once every file is uploaded, so players never see a
+# half-uploaded release.
 name: Release
 
 on:
@@ -30,7 +37,32 @@ jobs:
           [ "$v" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} != package.json $v — use npm version"; exit 1; }
       - run: npm ci --ignore-scripts
       - run: npm test
-      - name: Build and publish
+      - name: Create the draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # A re-run reuses its own draft; a published release is never touched.
+          draft=$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft 2>/dev/null || true)
+          if [ "$draft" = "false" ]; then echo "$GITHUB_REF_NAME is already published — bump the version instead."; exit 1; fi
+          if [ "$draft" != "true" ]; then
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "${GITHUB_REF_NAME#v}" --generate-notes
+          fi
+      - name: Build and upload into the draft
         run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check the files, then publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          count=$(gh release list --limit 100 --json tagName --jq "[.[] | select(.tagName == \"$GITHUB_REF_NAME\")] | length")
+          [ "$count" = "1" ] || { echo "Expected 1 release for $GITHUB_REF_NAME, found $count"; exit 1; }
+          assets=$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name')
+          echo "$assets"
+          v="${GITHUB_REF_NAME#v}"
+          for f in latest.yml "LE-Build-Planner-Setup-$v.exe" "LE-Build-Planner-Portable-$v.exe"; do
+            grep -qxF "$f" <<<"$assets" || { echo "Missing $f — the release stays a draft."; exit 1; }
+          done
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest

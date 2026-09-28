@@ -57,13 +57,40 @@ function select(options, value, onChange, label) {
  * @param {object} o.settings, o.defaults
  * @param {(settings) => Promise<{ok, settings?, failedHotkeys?, error?}>} o.save
  * @param {(paused: boolean) => void} o.pauseHotkeys
- * @param {{ version: string, canCheck: boolean, check: () => void }} [o.app] — app version + "Check now"
+ * @param {{ version: string, canCheck: boolean, check: () => void, state: () => object, subscribe: (cb) => () => void }} [o.app]
+ *        app version + "Check now"; the check's progress and result show next to the button
  */
 export function openSettings({ dialog, settings, defaults, save, pauseHotkeys, app = null }) {
   let draft = structuredClone(settings);
   const recorders = [];
 
   const status = h('div.dialog-status', { role: 'status' });
+
+  // "Check now" answers here, next to the button: a toast would sit under this modal dialog.
+  const appStatus = h('div.app-update-status', { role: 'status', 'aria-live': 'polite' });
+  const checkBtn = app?.canCheck ? h('button.btn.btn-secondary.btn-sm', { type: 'button', onclick: () => app.check() }, 'Check now') : null;
+  const statusText = h('span');
+  const actBtn = h('button.btn.btn-primary.btn-sm', { type: 'button', hidden: true, onclick: () => app.install?.() });
+  function paintAppStatus(u) {
+    if (!app) return;
+    const busy = u?.state === 'checking' || u?.state === 'downloading';
+    if (checkBtn) checkBtn.disabled = busy || u?.state === 'ready';
+    const [text, kind] = u?.state === 'checking' ? ['Checking…', 'info']
+      : u?.state === 'downloading' ? [`Downloading version ${u.version}… ${u.progress ?? 0}%`, 'info']
+        : u?.state === 'ready' ? [`Version ${u.version} is ready — it installs when you close the app.`, 'success']
+          : u?.state === 'available' ? [`Version ${u.version} is available — download it from the release page.`, 'success']
+            : u?.state === 'error' ? [u.error, 'warn']
+              : u?.state === 'idle' && u.upToDate ? [`You have the latest version (${u.current}).`, 'success']
+                : ['', 'info'];
+    appStatus.className = `app-update-status is-${kind}`;
+    statusText.textContent = text;
+    actBtn.hidden = !(u?.state === 'ready' || u?.state === 'available');
+    actBtn.textContent = u?.state === 'ready' ? 'Restart now' : 'Download';
+    appStatus.hidden = !text;
+  }
+  appStatus.append(statusText, actBtn);
+  const unsubscribe = app?.subscribe?.(paintAppStatus) ?? (() => {});
+  paintAppStatus(app?.state?.());
   const setStatus = (msg, kind = 'error') => { status.className = `dialog-status is-${kind}`; status.textContent = msg; };
 
   const rec = (path, { optional = false, single = false } = {}) => {
@@ -130,7 +157,8 @@ export function openSettings({ dialog, settings, defaults, save, pauseHotkeys, a
           : 'Updates are off in this build (development run).',
         h('div.range-wrap',
           toggle(draft.updates.checkApp, (v) => { draft.updates.checkApp = v; }, 'Check for app updates'),
-          app.canCheck ? h('button.btn.btn-secondary.btn-sm', { type: 'button', onclick: app.check }, 'Check now') : null)) : null,
+          checkBtn)) : null,
+        app ? appStatus : null,
         field('Check Maxroll for guide updates', 'At start, once a day, for builds loaded from a Maxroll link. You review every change before anything is applied.',
           toggle(draft.updates.checkMaxroll, (v) => { draft.updates.checkMaxroll = v; }, 'Check Maxroll for guide updates')),
       ),
@@ -199,7 +227,7 @@ export function openSettings({ dialog, settings, defaults, save, pauseHotkeys, a
     ),
   );
 
-  dialog.onclose = () => recorders.forEach(r => r.stop());
+  dialog.onclose = () => { recorders.forEach(r => r.stop()); unsubscribe(); };
   paint();
   dialog.showModal();
 }

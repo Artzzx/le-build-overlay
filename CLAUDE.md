@@ -289,8 +289,15 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
   - **off**: `!app.isPackaged` or `LE_USER_DATA`, so dev runs and tests never touch GitHub.
   - The Settings toggle is `updates.checkApp`.
   - State reaches the renderer through the `app-update` event. The renderer shows a status bar chip and a toast.
-  - Background errors are silent; a manual *Check now* reports them.
-- **Release flow**: `npm run data` (when there's new game data) → commit → `npm version minor` (bumps and tags `vX.Y.0`) → `git push --follow-tags`. `.github/workflows/release.yml` (windows-latest) checks that the tag matches `package.json`, runs `npm ci --ignore-scripts` and `npm test`, then `electron-builder --win --publish always`. It publishes the installer, the portable exe and `latest.yml` (what installed apps read).
+  - Background errors are silent; a manual *Check now* reports them with the real reason (`describeError`: offline / the release can't be served / the raw message), never a guess.
+  - *Check now* in Settings answers **inside the dialog** (status line + *Restart now* / *Download*), and update toasts are skipped while Settings is open.
+- **Release flow**: `npm run data` (when there's new game data) → commit → `npm version minor` (bumps and tags `vX.Y.0`) → `git push --follow-tags`. `.github/workflows/release.yml` (windows-latest):
+  1. checks that the tag matches `package.json`, then runs `npm ci --ignore-scripts` and `npm test`;
+  2. **creates the release itself, as a draft** (`gh release create --draft --generate-notes`; a re-run reuses its own draft, and a published tag fails);
+  3. `electron-builder --win --publish always` uploads into that draft (`releaseType: "draft"`);
+  4. checks that there's exactly one release for the tag with `latest.yml` + both exes, then publishes it (`--latest`).
+  - **Why**: left to itself, electron-builder uploads the NSIS and portable targets in parallel. Both see "no release" and both create one, so v0.1.1–v0.2.0 each have **two releases under one tag**, one holding only the `.blockmap`. `…/releases/download/<tag>/latest.yml` can resolve to that one, which gives a 404 and breaks every update check (`ERR_UPDATER_CHANNEL_FILE_NOT_FOUND`).
+  - Publishing only when complete also means no app ever sees a half-uploaded release.
 - **Unsigned**: SmartScreen warns on first run until there's a code-signing certificate.
 
 ## Electron Architecture
@@ -331,6 +338,8 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - `Esc` unpins the inspector. It never leaves mini mode and never closes the phase instructions.
 - Everything else: `PgUp`/`PgDn` phase, `Ctrl+M` mini mode, `?` shortcut sheet (also `F1` when F-keys aren't the lane keys), `Ctrl+O` load, `Ctrl+,` settings, `Ctrl+=/-/0` UI scale.
 - Toasts: an identical message refreshes the existing toast instead of stacking another. Toasts with an action (Undo, "Go to Endgame") are evicted last.
+  - `#toasts` is a `popover="manual"`, re-shown per toast, so it sits in the top layer **above** open modal dialogs; a z-index can't do that.
+  - A modal makes everything outside it inert, popovers included, so `raise()` moves the container into the topmost open modal (its buttons stay clickable) and back to `<body>` when a dialog closes.
 
 ### Responsive layout
 - ≥1180 px: lanes plus an inspector column.

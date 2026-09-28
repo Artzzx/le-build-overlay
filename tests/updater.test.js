@@ -10,7 +10,7 @@ const { test, describe } = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('events');
 
-const { createUpdater, compareVersions, CHECK_EVERY_MS, FIRST_CHECK_MS } = require('../electron/updater');
+const { createUpdater, compareVersions, describeError, CHECK_EVERY_MS, FIRST_CHECK_MS } = require('../electron/updater');
 
 const quiet = { log() {}, error() {} };
 
@@ -39,6 +39,18 @@ describe('compareVersions', () => {
     assert.equal(compareVersions('0.1.9', 'v0.2.0'), -1);
     assert.equal(compareVersions('1.0', '1.0.0'), 0);
     assert.equal(compareVersions('1.1.0-beta.1', '1.0.9'), 1);
+  });
+});
+
+describe('describeError: a manual check says why it failed', () => {
+  test('offline, a release GitHub can’t serve, or the raw reason', () => {
+    assert.match(describeError(Object.assign(new Error('getaddrinfo ENOTFOUND github.com'), { code: 'ENOTFOUND' })), /offline/);
+    assert.match(describeError(new Error('net::ERR_INTERNET_DISCONNECTED')), /offline/);
+    // v0.2.0: two releases under one tag, latest.yml in the other one → 404
+    const missing = Object.assign(new Error('Cannot find latest.yml in the latest release artifacts (…/v0.2.0/latest.yml): HttpError: 404'), { code: 'ERR_UPDATER_CHANNEL_FILE_NOT_FOUND' });
+    assert.match(describeError(missing), /download page isn’t ready/);
+    assert.doesNotMatch(describeError(missing), /offline/);
+    assert.equal(describeError(new Error('Something odd\nstack…')), 'Couldn’t check for updates: Something odd');
   });
 });
 

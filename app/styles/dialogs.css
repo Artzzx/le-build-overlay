@@ -41,6 +41,11 @@
 .dialog-status.is-warn { color: var(--warn); }
 .dialog-status.is-success { color: var(--now); }
 .dialog-status.is-info { color: var(--text-3); }
+.app-update-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); min-height: 18px; margin-top: -4px; }
+.app-update-status[hidden] { display: none; }
+.app-update-status.is-info { color: var(--text-3); }
+.app-update-status.is-warn { color: var(--warn); }
+.app-update-status.is-success { color: var(--now); }
 
 .dialog-section { display: flex; flex-direction: column; gap: 2px; }
 .dialog-section + .dialog-section { border-top: 1px solid var(--line); padding-top: 14px; }
