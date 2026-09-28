@@ -7,7 +7,15 @@
  *             (+ saved templates, + re-import the current Maxroll build)
  *   maxroll — link bar · left rail: planner variants (tick up to 6) ·
  *             right pane: the focused variant (class, level, skills with icons)
- *   codes   — left rail: phases · middle: codes editor · right: live preview
+ *   codes   — the phases workspace. Left rail: phases (+ add from export codes or another
+ *             Maxroll planner) · middle: phase name (move / remove) + codes · right: preview
+ *
+ * Mixing guides (e.g. a leveling guide + an endgame guide): Maxroll → "Add another guide
+ * or codes" moves the ticked variants into the phases workspace, where "Maxroll
+ * link" opens the Maxroll view in *adding* mode to append another planner's variants.
+ * Each phase keeps its origin ({ maxroll, variant, name } or null = pasted codes) until its
+ * codes are edited, so every guide the build came from is checked for updates later
+ * (build.source, see MaxrollImport.makeSource).
  *
  * Both workspaces load through api.loadLoadout(phases, name, source), so
  * validation, templates and the rest of the app are the same as before.
@@ -18,6 +26,7 @@ import { h, mount } from './dom.js';
 import { ui, treeArt } from './icons.js';
 
 const MAX_PHASES = 6;
+const { makeSource } = window.MaxrollImport;
 const PREVIEW_DELAY_MS = 250;
 
 const HELP = [
@@ -46,18 +55,19 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
   let templates = [];
   let clipboardLink = null;
 
-  // Paste-codes workspace
-  const codes = { name: '', phases: [], active: 0, source: null };
-  const newPhase = (n) => ({ name: '', json: '', preview: null, error: null, pending: false, placeholder: n === 1 ? 'Leveling' : n === 2 ? 'Endgame' : `Phase ${n}` });
+  // Phases workspace (pasted codes and/or planner variants). `dates` = each planner's last-save date.
+  const codes = { name: '', phases: [], active: 0, dates: {} };
+  const newPhase = (n) => ({ name: '', json: '', preview: null, error: null, pending: false, origin: null, placeholder: n === 1 ? 'Leveling' : n === 2 ? 'Endgame' : `Phase ${n}` });
   codes.phases.push(newPhase(1));
 
   // Maxroll workspace
-  const mx = { link: '', busy: false, error: null, canOpen: false, planner: null, selected: new Set(), focus: 0, name: '', names: new Map() };
+  // adding = picking variants to append to the phases workspace (another guide).
+  const mx = { link: '', busy: false, error: null, canOpen: false, planner: null, selected: new Set(), focus: 0, name: '', names: new Map(), adding: false };
 
   const body = h('div.ld-body');
   const status = h('div.dialog-status', { role: 'status' });
   const crumb = h('div.ld-crumb');
-  const backBtn = h('button.btn.btn-ghost.btn-sm.ld-back', { type: 'button', onclick: () => go('choose'), title: 'Back (Alt+←)' }, ui('chevronLeft', { size: 15 }), 'Back');
+  const backBtn = h('button.btn.btn-ghost.btn-sm.ld-back', { type: 'button', onclick: () => back(), title: 'Back (Alt+←)' }, ui('chevronLeft', { size: 15 }), 'Back');
   const loadBtn = h('button.btn.btn-primary', { type: 'button', onclick: onLoad, title: 'Load (Ctrl+Enter)' });
   const targetSlot = h('div.ld-target');
   const saveTplBtn = h('button.btn.btn-secondary', { type: 'button', onclick: onSaveTemplate }, ui('save', { size: 15 }), 'Save as template');
@@ -95,7 +105,8 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
 
   /** Class of the build about to be loaded, once known. */
   function incomingClassId() {
-    if (view === 'maxroll') return chosenVariants().find(v => v.summary)?.summary.classId ?? null;
+    if (mx.adding) return codes.phases.find(p => p.preview)?.preview.classId ?? null;
+    if (view === 'maxroll' && !mx.adding) return chosenVariants().find(v => v.summary)?.summary.classId ?? null;
     if (view === 'codes') return codes.phases.find(p => p.preview)?.preview.classId ?? null;
     return null;
   }
@@ -107,7 +118,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
   }
 
   function paintTarget() {
-    targetSlot.hidden = view === 'choose';
+    targetSlot.hidden = view === 'choose' || isAdding();
     const t = effectiveTarget();
     const seg = (key, label, title) => h('button.seg', {
       type: 'button', role: 'radio', 'aria-checked': String(t === key), class: t === key ? 'is-active' : '', title,
@@ -140,22 +151,28 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
     }, PREVIEW_DELAY_MS));
   }
 
-  const chosenVariants = () => (mx.planner?.variants ?? []).filter(v => mx.selected.has(v.index)).slice(0, MAX_PHASES);
+  const isAdding = () => view === 'maxroll' && mx.adding;
+  const filledPhases = () => codes.phases.filter(p => p.json.trim());
+  /** How many variants can be ticked: all 6, or what's left next to the phases already there. */
+  const variantLimit = () => (mx.adding ? Math.max(0, MAX_PHASES - filledPhases().length) : MAX_PHASES);
+  const chosenVariants = () => (mx.planner?.variants ?? []).filter(v => mx.selected.has(v.index)).slice(0, variantLimit());
   const variantName = (v) => (mx.names.get(v.index) ?? v.name).trim() || v.name;
-  // Where the build came from, phase by phase — lets the app check the guide for updates later.
-  const maxrollSource = () => ({
-    maxroll: mx.planner.id,
-    ...(mx.planner.date ? { date: mx.planner.date } : {}),
-    phases: chosenVariants().map(v => ({ variant: v.index, name: v.name })),
-  });
+  // Where a phase came from: lets the app check that guide for updates later. `guide` is for display.
+  const originOf = (v) => ({ maxroll: mx.planner.id, variant: v.index, name: v.name, guide: mx.planner.name });
+  const plannerDates = () => (mx.planner?.date ? { [mx.planner.id]: mx.planner.date } : {});
+  const maxrollSource = () => makeSource(chosenVariants().map(originOf), plannerDates());
 
   function problems() {
     const out = [];
     if (view === 'maxroll') {
       if (!mx.planner) return ['Fetch a planner first.'];
       const chosen = chosenVariants();
-      if (!chosen.length) out.push('Tick at least one variant.');
-      const classes = new Set(chosen.map(v => v.summary?.className).filter(Boolean));
+      if (mx.adding && !variantLimit()) return [`There are already ${MAX_PHASES} phases — remove one first.`];
+      if (!chosen.length) out.push(mx.adding ? 'Tick the variants to add.' : 'Tick at least one variant.');
+      const classes = new Set([
+        ...(mx.adding ? filledPhases().map(p => p.preview?.className) : []),
+        ...chosen.map(v => v.summary?.className),
+      ].filter(Boolean));
       if (classes.size > 1) out.push(`All phases must be the same class (found ${[...classes].join(' and ')})`);
       return out;
     }
@@ -179,20 +196,26 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
   function paintFooter() {
     const n = view === 'maxroll' ? chosenVariants().length : codes.phases.length;
     const hasPhases = view === 'codes' || (view === 'maxroll' && mx.planner);
-    mount(loadBtn, ui('upload', { size: 16 }), hasPhases ? `Load ${n} phase${n !== 1 ? 's' : ''}` : 'Load build');
+    const s = n !== 1 ? 's' : '';
+    if (isAdding()) mount(loadBtn, ui('plus', { size: 16 }), `Add ${n} phase${s}`);
+    else mount(loadBtn, ui('upload', { size: 16 }), hasPhases ? `Load ${n} phase${s}` : 'Load build');
+    loadBtn.title = isAdding() ? 'Add to the phases (Ctrl+Enter)' : 'Load (Ctrl+Enter)';
     loadBtn.disabled = busy || !ready();
-    saveTplBtn.hidden = view === 'choose';
+    saveTplBtn.hidden = view === 'choose' || isAdding();
     loadBtn.hidden = view === 'choose'; // nothing to load until a source is picked
     saveTplBtn.disabled = busy || (view === 'maxroll' ? !chosenVariants().length : codes.phases.every(p => !p.json.trim()));
     backBtn.hidden = view === 'choose';
     mount(crumb, view === 'choose'
       ? h('span', 'Where does your build come from?')
-      : [h('span', 'Load build'), ui('chevronRight', { size: 14 }), h('b', view === 'maxroll' ? 'From Maxroll' : 'Export codes')]);
+      : isAdding()
+        ? [h('span', 'Phases'), ui('chevronRight', { size: 14 }), h('b', 'Add from Maxroll')]
+        : [h('span', 'Load build'), ui('chevronRight', { size: 14 }), h('b', view === 'maxroll' ? 'From Maxroll' : 'Phases')]);
 
     paintTarget();
     const issues = view === 'choose' ? [] : problems();
     const started = view === 'maxroll' ? !!mx.planner : codes.phases.some(p => p.json.trim());
     if (issues.length && started) setStatus(issues[0], codes.phases.some(p => p.error) && view === 'codes' ? 'error' : 'info');
+    else if (isAdding()) setStatus(mx.planner ? `Adds after your ${filledPhases().length} phase${filledPhases().length !== 1 ? 's' : ''} — reorder them next.` : 'Fetch the other guide’s planner.', 'info');
     else if (ready() && effectiveTarget() === 'new') setStatus(`Adds a new character. ${profileName} is kept as it is.`, 'info');
     else if (hasProgress && ready()) setStatus(`Replaces ${profileName}’s build and resets its progress.`, 'warn');
     else setStatus('');
@@ -268,8 +291,10 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
       h('div.ld-bar-row', h('span.ld-bar-icon', ui('arrowRight', { size: 16 })), input, fetchBtn),
       mx.planner
         ? h('div.ld-bar-row.ld-bar-meta',
-          h('label.ld-name', h('span.ld-name-label', 'Build name'),
-            h('input.input', { type: 'text', maxlength: 60, value: mx.name, oninput: (e) => { mx.name = e.target.value; } })),
+          mx.adding
+            ? h('span', h('b', mx.planner.name))
+            : h('label.ld-name', h('span.ld-name-label', 'Build name'),
+              h('input.input', { type: 'text', maxlength: 60, value: mx.name, oninput: (e) => { mx.name = e.target.value; } })),
           h('span.muted', mx.planner.author ? `by ${mx.planner.author}` : ''))
         : null);
 
@@ -281,7 +306,9 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
         mx.canOpen ? h('button.btn.btn-secondary.btn-sm', { type: 'button', onclick: () => api.openMaxroll(mx.link) }, 'Open in browser') : null,
         h('button.btn.btn-ghost.btn-sm', { type: 'button', onclick: () => go('codes') }, 'Paste codes instead'));
     } else if (!mx.planner) {
-      content = placeholder('arrowRight', 'Paste a Maxroll planner link', 'maxroll.gg/last-epoch/planner/… — add #2 to take only the 2nd variant.');
+      content = mx.adding
+        ? placeholder('plus', 'Add phases from another guide', 'Paste that guide’s Maxroll planner link, fetch it, and tick the variants to add.')
+        : placeholder('arrowRight', 'Paste a Maxroll planner link', 'maxroll.gg/last-epoch/planner/… — add #2 to take only the 2nd variant.');
     } else {
       content = h('div.ld-split', variantRail(), variantPane());
     }
@@ -289,12 +316,13 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
   }
 
   function variantRail() {
-    const count = mx.selected.size;
+    const limit = variantLimit();
+    const count = Math.min(mx.selected.size, limit);
     return h('aside.ld-rail',
-      h('div.ld-rail-head', h('span', 'Variants'), h('span.ld-count', { class: count >= MAX_PHASES ? 'is-full' : '' }, `${count} of ${MAX_PHASES} phases`)),
+      h('div.ld-rail-head', h('span', 'Variants'), h('span.ld-count', { class: count >= limit ? 'is-full' : '' }, mx.adding ? `${count} of ${limit} free` : `${count} of ${MAX_PHASES} phases`)),
       h('div.ld-rail-list', mx.planner.variants.map(v => {
         const on = mx.selected.has(v.index);
-        const full = !on && count >= MAX_PHASES;
+        const full = !on && count >= limit;
         const mastery = v.summary?.classLabel.split(' — ')[1] ?? v.summary?.classLabel ?? '';
         return h('div.ld-rail-item', {
           class: [v.index === mx.focus ? 'is-focus' : '', on ? 'is-on' : '', v.hidden ? 'is-hidden' : '', v.error ? 'is-error' : ''].join(' '),
@@ -312,6 +340,10 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
             v.hidden ? h('span.muted', 'hidden') : null,
             v.error ? h('span.ld-err', 'can’t read') : null)));
       })),
+      mx.adding ? null : h('button.ld-add', {
+        type: 'button', disabled: !chosenVariants().length, onclick: editAsCodes,
+        title: 'Combine these variants with another guide’s, or with export codes',
+      }, ui('plus', { size: 14 }), 'Add another guide or codes'),
     );
   }
 
@@ -330,7 +362,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
         : summaryCard(v.summary, { level: v.level }),
       ...(v.unmatched?.length ? [h('div.preview-warn', ui('alert', { size: 13 }), `Not found in the game data: ${v.unmatched.join(', ')}`)] : []),
       ...(v.warnings ?? []).map(w => h('div.preview-warn', ui('alert', { size: 13 }), w)),
-      h('div.ld-pane-foot',
+      mx.adding ? null : h('div.ld-pane-foot',
         h('button.ld-link', { type: 'button', onclick: editAsCodes, disabled: !chosenVariants().length }, ui('keyboard', { size: 14 }), 'Edit the chosen variants as codes')),
     );
   }
@@ -339,9 +371,44 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
 
   let codesPreviewSlot = null;
   let codesRailSlot = null;
+  let originSlot = null;
 
-  // Phases added or removed by hand no longer line up with the planner's variants.
-  const forgetPhaseMap = () => { if (codes.source) codes.source = { maxroll: codes.source.maxroll, date: codes.source.date }; };
+  function originNote(p) {
+    return p.origin
+      ? h('div.ld-origin-note', ui('info', { size: 13 }),
+        h('span', 'From ', h('b', p.origin.guide ?? 'Maxroll'), ` · ${p.origin.name}. Checked for guide updates — editing the codes unlinks it.`))
+      : null;
+  }
+  const paintOrigin = () => { if (originSlot) mount(originSlot, originNote(codes.phases[codes.active])); };
+
+  function removePhase(i) {
+    codes.phases.splice(i, 1);
+    codes.active = Math.min(codes.active, codes.phases.length - 1);
+    paint();
+  }
+
+  /** Move / remove the selected phase (next to its name, so the rail stays readable). */
+  function phaseTools(i) {
+    if (codes.phases.length < 2) return null;
+    const label = codes.phases[i].name || codes.phases[i].placeholder;
+    return h('div.ld-phase-tools',
+      h('button.btn-icon.btn-sm', { type: 'button', disabled: i === 0, 'aria-label': `Move ${label} earlier`, title: 'Earlier phase (Alt+↑)', onclick: () => movePhase(i, -1) }, ui('chevronUp', { size: 16 })),
+      h('button.btn-icon.btn-sm', { type: 'button', disabled: i === codes.phases.length - 1, 'aria-label': `Move ${label} later`, title: 'Later phase (Alt+↓)', onclick: () => movePhase(i, 1) }, ui('chevronDown', { size: 16 })),
+      h('button.btn-icon.btn-sm', { type: 'button', 'aria-label': `Remove ${label}`, title: 'Remove this phase', onclick: () => removePhase(i) }, ui('trash', { size: 15 })));
+  }
+
+  function movePhase(i, d) {
+    const j = i + d;
+    if (j < 0 || j >= codes.phases.length) return;
+    [codes.phases[i], codes.phases[j]] = [codes.phases[j], codes.phases[i]];
+    codes.active = j;
+    paint();
+  }
+
+  /** Where a phase came from, for the rail: the guide's name, or "codes". */
+  const originChip = (p) => (p.origin
+    ? h('span.ld-chip.ld-origin', { title: `From the Maxroll planner “${p.origin.guide ?? p.origin.maxroll}” — checked for guide updates` }, p.origin.guide ?? 'Maxroll')
+    : p.json.trim() ? h('span.ld-chip.ld-origin.is-codes', { title: 'Pasted codes — not checked for guide updates' }, 'codes') : null);
 
   function phaseDot(p) {
     if (p.pending) return h('span.dot.is-pending', { title: 'Checking…' });
@@ -352,21 +419,23 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
 
   function phaseRail() {
     return h('aside.ld-rail',
-      h('div.ld-rail-head', h('span', 'Phases'), h('span.ld-count', `${codes.phases.length} of ${MAX_PHASES}`)),
+      h('div.ld-rail-head', h('span', 'Phases'), h('span.ld-count', { class: codes.phases.length >= MAX_PHASES ? 'is-full' : '' }, `${codes.phases.length} of ${MAX_PHASES}`)),
       h('div.ld-rail-list', codes.phases.map((p, i) => h('div.ld-rail-item', {
         class: i === codes.active ? 'is-focus' : '',
-        onclick: (e) => { if (!e.target.closest('.ld-rail-x')) { codes.active = i; paint(); } },
+        onclick: () => { codes.active = i; paint(); },
       },
       phaseDot(p),
       h('div.ld-rail-text',
         h('div.ld-rail-name', p.name || p.placeholder),
-        h('div.ld-rail-meta', p.preview ? `${p.preview.passivePoints} pts · ${p.preview.skills.length} skill${p.preview.skills.length !== 1 ? 's' : ''}` : p.error ? h('span.ld-err', 'has a problem') : p.pending ? 'checking…' : 'empty')),
-      codes.phases.length > 1 ? h('button.btn-icon.btn-xs.ld-rail-x', {
-        type: 'button', 'aria-label': `Remove ${p.name || p.placeholder}`, title: 'Remove phase',
-        onclick: () => { codes.phases.splice(i, 1); forgetPhaseMap(); codes.active = Math.min(codes.active, codes.phases.length - 1); paint(); },
-      }, ui('x', { size: 13 })) : null))),
+        h('div.ld-rail-meta',
+          p.preview ? `${p.preview.passivePoints} pts · ${p.preview.skills.length} skill${p.preview.skills.length !== 1 ? 's' : ''}` : p.error ? h('span.ld-err', 'has a problem') : p.pending ? 'checking…' : 'empty',
+          originChip(p)))))),
       codes.phases.length < MAX_PHASES
-        ? h('button.ld-add', { type: 'button', onclick: () => { codes.phases.push(newPhase(codes.phases.length + 1)); forgetPhaseMap(); codes.active = codes.phases.length - 1; paint(); } }, ui('plus', { size: 14 }), 'Add phase')
+        ? h('div.ld-add-row',
+          h('button.ld-add', { type: 'button', title: 'Add a phase and paste its export codes', onclick: () => { codes.phases.push(newPhase(codes.phases.length + 1)); codes.active = codes.phases.length - 1; paint(); } },
+            ui('keyboard', { size: 14 }), 'Codes'),
+          h('button.ld-add', { type: 'button', title: 'Add phases from another Maxroll planner (e.g. a leveling guide)', onclick: startAdding },
+            ui('plus', { size: 14 }), 'Maxroll link'))
         : null,
     );
   }
@@ -384,10 +453,12 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
       spellcheck: 'false',
       'aria-label': 'Export codes',
       placeholder: '{"passives":{"history":[…]},"class":2,"mastery":1}\n{"skillTrees":{"es6ai":{"history":[…]}}}\n…',
-      oninput: (e) => { p.json = e.target.value; codes.source = null; schedulePreview(p); paintCodesLive(); },
+      // Edited codes are no longer the guide's variant: this phase stops being checked for updates.
+      oninput: (e) => { p.json = e.target.value; if (p.origin) { p.origin = null; paintOrigin(); } schedulePreview(p); paintCodesLive(); },
     });
     textarea.value = p.json;
     codesRailSlot = h('div.ld-rail-slot', phaseRail());
+    originSlot = h('div.ld-origin-slot', originNote(p));
     codesPreviewSlot = h('div.ld-preview-slot', codesPreview(p));
 
     return h('div.ld-codes',
@@ -398,8 +469,11 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
       h('div.ld-split.ld-split-3',
         codesRailSlot,
         h('section.ld-editor',
-          h('label.ld-name', h('span.ld-name-label', 'Phase name'),
-            h('input.input', { type: 'text', maxlength: 40, placeholder: p.placeholder, value: p.name, oninput: (e) => { p.name = e.target.value; mount(codesRailSlot, phaseRail()); } })),
+          h('div.ld-editor-head',
+            h('label.ld-name', h('span.ld-name-label', 'Phase name'),
+              h('input.input', { type: 'text', maxlength: 40, placeholder: p.placeholder, value: p.name, oninput: (e) => { p.name = e.target.value; mount(codesRailSlot, phaseRail()); } })),
+            phaseTools(codes.active)),
+          originSlot,
           h('label.ld-code-wrap', h('span.ld-name-label', 'Export codes'), textarea)),
         h('section.ld-pane.ld-pane-preview',
           codesPreviewSlot,
@@ -439,7 +513,13 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
     }
   }
 
+  /** Back: out of "add from Maxroll" to the phases, else to the choose screen. */
+  function back() {
+    if (isAdding()) { mx.adding = false; go('codes'); } else go('choose');
+  }
+
   function go(next) {
+    if (next !== 'maxroll') mx.adding = false;
     view = next;
     paint();
     requestAnimationFrame(() => {
@@ -467,20 +547,44 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
       mx.planner = p;
       mx.name = p.name;
       const usable = p.variants.filter(v => !v.hidden && !v.error);
-      mx.selected = new Set(p.pick != null ? [p.pick] : usable.slice(0, MAX_PHASES).map(v => v.index));
+      mx.selected = new Set(p.pick != null ? [p.pick] : mx.adding ? [] : usable.slice(0, MAX_PHASES).map(v => v.index));
       mx.focus = p.pick ?? usable[0]?.index ?? p.variants[0].index;
     }
     paint();
   }
 
-  /** Move the ticked variants into the codes editor (for manual tweaks). */
+  const variantPhase = (v, n) => ({ ...newPhase(n), name: variantName(v).slice(0, 40), json: v.json, preview: v.summary, origin: originOf(v) });
+
+  /** Move the ticked variants into the phases workspace: to tweak their codes or add more phases. */
   function editAsCodes() {
     const chosen = chosenVariants();
     if (!chosen.length) return;
     codes.name = mx.name.trim() || mx.planner.name;
-    codes.phases = chosen.map((v, i) => ({ ...newPhase(i + 1), name: variantName(v).slice(0, 40), json: v.json, preview: v.summary }));
+    codes.phases = chosen.map((v, i) => variantPhase(v, i + 1));
     codes.active = 0;
-    codes.source = maxrollSource();
+    codes.dates = plannerDates();
+    go('codes');
+  }
+
+  /** From the phases: fetch another planner and pick variants to append. */
+  function startAdding() {
+    mx.adding = true;
+    Object.assign(mx, { link: '', error: null, canOpen: false, planner: null, selected: new Set(), names: new Map() });
+    view = 'maxroll';
+    paint();
+    requestAnimationFrame(() => body.querySelector('.ld-link-input')?.focus());
+  }
+
+  /** Append the ticked variants after the phases already there (empty ones are dropped). */
+  function addFromMaxroll() {
+    const chosen = chosenVariants();
+    if (!chosen.length) return;
+    const kept = filledPhases();
+    codes.phases = [...kept, ...chosen.map((v, i) => variantPhase(v, kept.length + i + 1))];
+    codes.dates = { ...codes.dates, ...plannerDates() };
+    if (!codes.name.trim()) codes.name = mx.planner.name;
+    codes.active = kept.length;
+    mx.adding = false;
     go('codes');
   }
 
@@ -496,7 +600,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
     return {
       name: codes.name.trim(),
       phases: codes.phases.map(p => ({ name: p.name || p.placeholder, json: p.json })),
-      source: codes.source,
+      source: makeSource(codes.phases.map(p => p.origin), codes.dates),
     };
   }
 
@@ -512,7 +616,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
     codes.phases = (res.template.phases ?? []).slice(0, MAX_PHASES).map((tp, i) => ({ ...newPhase(i + 1), name: tp.name ?? '', json: tp.json ?? '' }));
     if (!codes.phases.length) codes.phases = [newPhase(1)];
     codes.active = 0;
-    codes.source = null;
+    codes.dates = {};
     codes.phases.forEach(schedulePreview);
     go('codes');
   }
@@ -535,6 +639,7 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
 
   async function onLoad() {
     if (!ready() || busy) return;
+    if (isAdding()) return addFromMaxroll();
     busy = true;
     paintFooter();
     const l = currentLoadout();
@@ -547,7 +652,8 @@ export function openLoadout({ dialog, api, trees = {}, currentSource = null, has
 
   function onKeyDown(e) {
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); onLoad(); return; }
-    if (e.key === 'ArrowLeft' && e.altKey && view !== 'choose') { e.preventDefault(); go('choose'); return; }
+    if (e.key === 'ArrowLeft' && e.altKey && view !== 'choose') { e.preventDefault(); back(); return; }
+    if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && e.altKey && view === 'codes') { e.preventDefault(); movePhase(codes.active, e.key === 'ArrowUp' ? -1 : 1); return; }
     if (view === 'choose' && !e.ctrlKey && !e.altKey && !e.metaKey && !e.repeat && !(e.target instanceof HTMLInputElement)) {
       if (e.key === '1') { e.preventDefault(); go('maxroll'); }
       if (e.key === '2') { e.preventDefault(); go('codes'); }

@@ -627,7 +627,7 @@ function showUpdate(update) {
     currentPhase: merged.build.currentPhase,
     treeName: transitionLabel,
     masteryName: mName,
-    onKeep: () => { api.dismissGuideUpdate(update.planner.date ?? ''); },
+    onKeep: () => { api.dismissGuideUpdate(update.signature ?? update.planner.date ?? ''); },
     onApply: () => {
       if (state.build !== before) return toast('The build changed meanwhile — check for the update again.', { kind: 'warn' });
       state.pinned = null;

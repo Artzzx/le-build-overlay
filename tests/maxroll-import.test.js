@@ -173,6 +173,48 @@ describe('guide updates: planner date + mapPhasesToVariants', () => {
   });
 });
 
+describe('mixed guides: per-phase sources', () => {
+  const v = (index, name) => ({ index, name });
+
+  test('a pre-mixing source reads as one planner for every phase', () => {
+    const g = M.guideSources({ maxroll: 'sb62zd0e', date: 'd1', phases: [{ variant: 0, name: 'Lvl' }, { variant: 2, name: 'End' }] }, 2);
+    assert.deepEqual(g.phases, [{ maxroll: 'sb62zd0e', variant: 0, name: 'Lvl' }, { maxroll: 'sb62zd0e', variant: 2, name: 'End' }]);
+    assert.deepEqual(g.dates, { sb62zd0e: 'd1' });
+    assert.deepEqual(g.planners, ['sb62zd0e']);
+    // Oldest builds: no phase map at all → every phase matched by its name in that planner.
+    assert.deepEqual(M.guideSources({ maxroll: 'sb62zd0e' }, 2).phases, [{ maxroll: 'sb62zd0e' }, { maxroll: 'sb62zd0e' }]);
+  });
+
+  test('two planners and a codes phase round-trip; the first planner is the build’s "maxroll"', () => {
+    const entries = [{ maxroll: 'gh3b90il', variant: 1, name: 'Leveling' }, null, { maxroll: 'sb62zd0e', variant: 3, name: 'Endgame' }];
+    const src = M.makeSource(entries, { gh3b90il: 'a', sb62zd0e: 'b', other0: 'x' });
+    assert.deepEqual(src, { maxroll: 'gh3b90il', date: 'a', dates: { gh3b90il: 'a', sb62zd0e: 'b' }, phases: entries });
+    const g = M.guideSources(src, 3);
+    assert.deepEqual(g.phases, entries);
+    assert.deepEqual(g.planners, ['gh3b90il', 'sb62zd0e']);
+    assert.deepEqual(g.dates, { gh3b90il: 'a', sb62zd0e: 'b' });
+  });
+
+  test('only codes → no source; bad data reads as codes instead of breaking', () => {
+    assert.equal(M.makeSource([null, null]), null);
+    assert.deepEqual(M.guideSources({ maxroll: '../../x', phases: [{ maxroll: 'bad id!', variant: 0, name: 'x' }] }, 1).phases, [null]);
+    assert.deepEqual(M.guideSources({ maxroll: 'sb62zd0e', phases: [{}] }, 2).phases, [{ maxroll: 'sb62zd0e' }, { maxroll: 'sb62zd0e' }], 'a map of the wrong length is ignored');
+    assert.deepEqual(M.guideSources(null, 2).phases, [null, null]);
+  });
+
+  test('mapGuidePhases looks each phase up in its own planner; codes phases are skipped', () => {
+    const planners = { aaaaaa1: { variants: [v(0, 'Leveling'), v(1, 'Midgame')] }, bbbbbb2: { variants: [v(0, 'Intro'), v(1, 'Endgame')] } };
+    const entries = [{ maxroll: 'aaaaaa1', variant: 0, name: 'Leveling' }, null, { maxroll: 'bbbbbb2', variant: 5, name: 'Endgame' }, { maxroll: 'bbbbbb2' }];
+    const phases = [{ name: 'Leveling' }, { name: 'Custom' }, { name: 'x' }, { name: 'intro' }];
+    assert.deepEqual(M.mapGuidePhases(entries, phases, planners), [0, null, 1, 0]);
+  });
+
+  test('the "Keep my version" signature: one planner = its date (as before), several = every version', () => {
+    assert.equal(M.guideSignature(['aaaaaa1'], { aaaaaa1: '2026-01-01' }), '2026-01-01');
+    assert.equal(M.guideSignature(['aaaaaa1', 'bbbbbb2'], { aaaaaa1: 'x', bbbbbb2: 'y' }), 'aaaaaa1@x bbbbbb2@y');
+  });
+});
+
 describe('phase switching on the real planners (character state)', () => {
   const TU = require('../shared/tree-utils');
   const load = (file) => {

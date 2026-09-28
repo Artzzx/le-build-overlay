@@ -99,6 +99,17 @@ For builds loaded from a Maxroll link, the app checks once a day, when it starts
 
 To check right now, open the characters menu and choose **Check the guide for updates**. To turn the daily check off, go to **Settings › Guide updates**.
 
+### Two guides in one build
+
+Following one guide for leveling and another for endgame? Put both in the same build:
+
+1. Fetch one guide's link and tick the variants you want from it.
+2. Click **Add another guide or codes** (under the variants).
+3. In the phase list, click **Maxroll link**, paste the other guide's link, fetch it, tick its variants and click **Add**. **Codes** adds a phase from export codes instead.
+4. Put the phases in order: select one and use the arrows next to its name (or `Alt`+`↑`/`↓`). Then **Load**.
+
+Each phase shows which guide it came from, and the app checks **every** guide for updates. A phase pasted as codes, or one whose codes you edited, is never checked. All phases must be the same class. You can have up to 6 phases in total.
+
 ### Without a Maxroll link
 
 In **Load build**, choose **Paste export codes**. You can paste codes from Maxroll's *Export* dialog, or the in-game export: the passives code, then one line per skill. Add a phase per stage of the guide.

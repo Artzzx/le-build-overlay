@@ -15,7 +15,8 @@ const pts = (n) => `${n} point${n === 1 ? '' : 's'}`;
 /**
  * @param {object} o
  * @param {HTMLDialogElement} o.dialog
- * @param {object} o.update       — { planner: { name, author, date }, diff, missing }
+ * @param {object} o.update       — { planner, planners: [{ name, author, date }], diff, missing }
+ *                                  (planners: every guide the build's phases came from)
  * @param {object|null} o.transition — mergeProgress().transition for the played phase
  * @param {number} o.currentPhase
  * @param {(t) => string} o.treeName  — display name for a diff entry
@@ -24,7 +25,9 @@ const pts = (n) => `${n} point${n === 1 ? '' : 's'}`;
  * @param {() => void} o.onKeep
  */
 export function openUpdate({ dialog, update, transition, currentPhase, treeName, masteryName, onApply, onKeep }) {
-  const { planner, diff, missing } = update;
+  const { diff, missing } = update;
+  const planners = update.planners ?? [update.planner];
+  const about = (p) => `“${p.name}”${p.author ? ` by ${p.author}` : ''}${p.date ? ` · saved ${p.date.slice(0, 10)}` : ''}`;
   const close = () => dialog.close();
 
   function changeLine(c) {
@@ -60,7 +63,7 @@ export function openUpdate({ dialog, update, transition, currentPhase, treeName,
       h('header.dialog-head',
         h('div',
           h('h2', 'Guide updated'),
-          h('div.muted', `“${planner.name}”${planner.author ? ` by ${planner.author}` : ''}${planner.date ? ` · saved ${planner.date.slice(0, 10)}` : ''}`)),
+          planners.map(p => h('div.muted', about(p)))),
         h('button.btn-icon', { type: 'button', 'aria-label': 'Close', onclick: close }, ui('x', { size: 18 }))),
       h('div.dialog-body',
         impact,

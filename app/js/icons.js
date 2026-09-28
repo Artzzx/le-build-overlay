@@ -79,6 +79,7 @@ const UI = {
   chevronLeft: ['M15 18l-6-6 6-6'],
   chevronRight: ['M9 18l6-6-6-6'],
   chevronDown: ['M6 9l6 6 6-6'],
+  chevronUp: ['M18 15l-6-6-6 6'],
   refresh: ['M21 12a9 9 0 0 1-15.5 6.2L3 16', 'M3 21v-5h5', 'M3 12a9 9 0 0 1 15.5-6.2L21 8', 'M21 3v5h-5'],
   edit: ['M12 20h9', 'M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z'],
   arrowRight: ['M5 12h14', 'M13 6l6 6-6 6'],
