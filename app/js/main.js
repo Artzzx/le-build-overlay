@@ -28,6 +28,7 @@ import { openHelp } from './help-dialog.js';
 import { createToaster } from './toast.js';
 import { openProfileMenu } from './profile-menu.js';
 import { openUpdate } from './update-dialog.js';
+import { openChanges } from './changes-dialog.js';
 
 const { laneKeyLabel, laneKey, laneFromCode, prettyAccelerator, LANE_KEYSET_LABELS } = window.HotkeyScheme;
 let toast = () => {}; // set in boot() once the container exists
@@ -46,6 +47,8 @@ const state = {
   profiles: [],        // [{ id, name, buildName, classId, masteryId }] — every character
   appUpdate: null,     // { state, version?, progress?, url?, current } — electron/updater.js
   version: '',
+  updatedFrom: null,   // first start after an app update: the version it replaced (What's new highlights)
+  changesSeen: true,   // false until What's new is opened after an update (status bar dot)
   activeProfile: null, // id of the character whose build is shown
   view: null,          // ViewModel.buildView(build, db)
   settings: null,
@@ -68,7 +71,7 @@ const els = {};
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 
 async function boot() {
-  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help', 'dlg-update', 'dlg-notice']) {
+  for (const id of ['topbar', 'banner', 'workspace', 'lanes', 'inspector', 'statusbar', 'toasts', 'dlg-loadout', 'dlg-settings', 'dlg-help', 'dlg-update', 'dlg-notice', 'dlg-changes']) {
     els[id] = $(id);
   }
   toast = createToaster(els.toasts);
@@ -85,6 +88,8 @@ async function boot() {
   state.profiles = res.profiles ?? [];
   state.appUpdate = res.appUpdate ?? null;
   state.version = res.version ?? '';
+  state.updatedFrom = res.updatedFrom ?? null;
+  state.changesSeen = !state.updatedFrom;
   state.activeProfile = res.activeProfile ?? null;
   state.settings = res.settings;
   state.defaults = res.defaultSettings;
@@ -107,6 +112,10 @@ async function boot() {
   document.body.classList.add('is-ready');
   // First start with new game data (an app update after a patch): say what that means, once.
   if (res.dataUpdate) showDataNotice(res.dataUpdate);
+  // First start after an app update: say so once, quietly (the player may be mid-game).
+  if (state.updatedFrom) {
+    toast(`Updated to version ${state.version}.`, { kind: 'success', duration: 12000, action: { label: 'What’s new', run: showChanges } });
+  }
   // Has the guide changed since it was loaded? (Maxroll builds only; main limits it to once a day.)
   else setTimeout(() => checkGuideUpdate(), 1500);
 }
@@ -1115,6 +1124,10 @@ function renderStatusbar() {
   }
   const upd = appUpdateNote();
   if (upd) notes.push(upd);
+  notes.push(h('button.note.note-help.note-changes', {
+    type: 'button', onclick: showChanges, class: state.changesSeen ? '' : 'is-new',
+    title: state.changesSeen ? 'What changed in each version' : `Updated to ${state.version} — see what’s new`, 'aria-label': 'What’s new',
+  }, ui('sparkles', { size: 14 }), h('span.note-help-text', 'What’s new')));
   notes.push(h('button.note.note-help', { type: 'button', onclick: showHelp, title: 'Keyboard shortcuts (?)', 'aria-label': 'Keyboard shortcuts' }, ui('keyboard', { size: 14 }), h('span.note-help-text', 'Shortcuts')));
 
   mount(els.statusbar,
@@ -1137,6 +1150,14 @@ function lastActionChip() {
       a.complete ? h('span.last-done', ' ✓') : null),
     canUndo ? h('button.last-undo', { type: 'button', onclick: undoLast, title: 'Undo the last change (Ctrl+Z)' }, ui('undo', { size: 13 }), h('span', 'Undo')) : null,
   );
+}
+
+async function showChanges() {
+  if (els['dlg-changes'].open) return;
+  const res = await api.changelog();
+  if (!res.ok) return toast(`Couldn’t open the change history: ${res.error}`, { kind: 'error' });
+  openChanges({ dialog: els['dlg-changes'], changelog: res.changelog, version: state.version, updatedFrom: state.updatedFrom });
+  if (!state.changesSeen) { state.changesSeen = true; renderStatusbar(); }
 }
 
 function showHelp() {

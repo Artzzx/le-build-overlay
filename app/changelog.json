@@ -1,0 +1,54 @@
+{
+  "releases": [
+    {
+      "version": "0.1.1",
+      "date": "2026-09-27",
+      "title": "First public version",
+      "changes": [
+        { "area": "view", "text": "Every tree on one screen — your class passives and up to five skills — with the next node to take shown big and green, and the whole route after it." },
+        { "area": "loading", "text": "Load a build straight from a Maxroll planner link, or paste export codes. Save codes as templates to reuse them." },
+        { "area": "phases", "text": "Up to 6 phases (Leveling → Endgame). Switching phase keeps every point you already hold and lists exactly which nodes to respec, which skills to despecialize and which mastery to pick." },
+        { "area": "phases", "text": "Clear all progress in every phase at once (Ctrl+Shift+Delete), with Undo." },
+        { "area": "characters", "text": "Each character keeps its own build and progress: your main, your alts, your next-season character." },
+        { "area": "guides", "text": "The app checks your Maxroll guide once a day. When the author changes it, you review what changed and apply it without losing progress." },
+        { "area": "hotkeys", "text": "F1–F6 tick points off while the game has focus (Shift to undo), with a sound for each press. Holding a key never burns points, and every key can be changed." },
+        { "area": "mini", "text": "Mini mode (Ctrl+M): a small always-on-top window with one line per tree." },
+        { "area": "data", "text": "Game data for the current season, with node icons. After a patch, a short card tells you what to check." },
+        { "area": "updates", "text": "A Windows installer that updates itself in the background, or a portable version." }
+      ]
+    },
+    {
+      "version": "0.1.2",
+      "date": "2026-09-27",
+      "title": "Maintenance",
+      "changes": [
+        { "area": "updates", "text": "A check of the release process — nothing changed in the app." }
+      ]
+    },
+    {
+      "version": "0.2.0",
+      "date": "2026-09-28",
+      "title": "Two guides in one build",
+      "changes": [
+        { "area": "loading", "text": "Combine phases from two Maxroll guides (say, one for leveling and one for endgame) and from pasted codes, in the order you choose." },
+        { "area": "guides", "text": "Every guide in a build is checked for updates, and only the phases from the guide that changed are updated." }
+      ]
+    },
+    {
+      "version": "0.2.1",
+      "date": "2026-09-28",
+      "title": "App updates fixed",
+      "changes": [
+        { "area": "updates", "text": "Checking for updates works again. Settings › Updates › Check now answers right there, with the real reason when a check fails." },
+        { "area": "view", "text": "Pop-up messages no longer hide behind open windows such as Settings or Load build." }
+      ]
+    },
+    {
+      "version": "0.3.0",
+      "title": "What's new, in the app",
+      "changes": [
+        { "area": "view", "text": "See what changed in every version — by version or by feature — from What's new in the status bar. After an update, the app offers to show you." }
+      ]
+    }
+  ]
+}

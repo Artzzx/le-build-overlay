@@ -290,6 +290,20 @@ function seenDataVersion() {
   return isUpdate ? v : null;
 }
 
+/**
+ * First start of a new app version? Returns the version it replaced ('earlier' when that
+ * install predates this setting), or null (same version, or a fresh install). Always
+ * records the running version, like seenDataVersion.
+ */
+function seenAppVersion() {
+  const v = app.getVersion();
+  if (settings.lastAppVersion === v) return null;
+  // No record but the app has run before (it recorded a data version): an update from ≤ 0.2.x.
+  const from = settings.lastAppVersion ?? (settings.lastDataVersion != null ? 'earlier' : null);
+  settings = store.saveSettings({ ...settings, lastAppVersion: v });
+  return from;
+}
+
 // ─── App updates ──────────────────────────────────────────────────────────────
 
 /**
@@ -425,6 +439,7 @@ function handle(channel, fn) {
 function registerIpc() {
   handle('app:init', () => {
     const { db, missing } = loadGameData({ fresh: true });
+    const updatedFrom = seenAppVersion(); // before seenDataVersion, which records the data version
     const dataUpdate = seenDataVersion();
     return {
       db: { trees: db.skills, classes: db.classes },
@@ -436,8 +451,12 @@ function registerIpc() {
       version: app.getVersion(),
       appUpdate: updater.getState(),
       dataUpdate,
+      updatedFrom,
     };
   });
+
+  // The in-app "What's new" (app/changelog.json, hand-written; see shared/changelog.js).
+  handle('app:changelog', () => ({ changelog: JSON.parse(fs.readFileSync(path.join(ROOT, 'app', 'changelog.json'), 'utf8')) }));
 
   handle('build:save', (build) => {
     if (!build || !Array.isArray(build.phases)) throw new Error('Refusing to save an invalid loadout');
@@ -524,6 +543,7 @@ function registerIpc() {
       ...next,
       activeProfile: profileId,
       lastDataVersion: settings.lastDataVersion,
+      lastAppVersion: settings.lastAppVersion,
       window: settings.window,
       compactWindow: settings.compactWindow,
       display: { ...next?.display, mode: settings.display.mode },

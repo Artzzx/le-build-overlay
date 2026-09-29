@@ -13,6 +13,9 @@
  *   A line `Release-note: <text>` in a commit body replaces the subject in the notes;
  *   `Release-note: skip` leaves the commit out.
  *
+ * The version's entry in app/changelog.json (the in-app "What's new", hand-written, short)
+ * opens the notes as its highlights; the commit list follows as the details.
+ *
  * The pure part (parseCommit, buildNotes) is tested in tests/release-notes.test.js; the git
  * calls only run when this file is executed.
  */
@@ -46,11 +49,19 @@ function parseCommit(subject, body = '') {
  * @param {{ subject: string, body: string }[]} o.commits  — newest first (git log order)
  * @param {object|null} o.data        — db/data/version.json now
  * @param {object|null} o.prevData    — …at the previous release
+ * @param {{ title?, changes: {area, text}[] }|null} [o.highlight] — this version's app/changelog.json entry
  * @returns {string} markdown
  */
-function buildNotes({ version, prevTag = null, toRef = `v${version}`, commits = [], data = null, prevData = null }) {
+function buildNotes({ version, prevTag = null, toRef = `v${version}`, commits = [], data = null, prevData = null, highlight = null }) {
   const entries = commits.map(c => parseCommit(c.subject, c.body)).filter(Boolean).reverse(); // oldest first reads like a story
   const out = [];
+
+  if (highlight?.changes?.length) {
+    const { AREAS } = require('../shared/changelog');
+    if (highlight.title) out.push(`## ${highlight.title}`);
+    for (const c of highlight.changes) out.push(`- **${AREAS[c.area] ?? c.area}** — ${c.text}`);
+    out.push('');
+  }
 
   if (data?.version && data.version !== prevData?.version) {
     out.push('### Game data updated');
@@ -89,7 +100,11 @@ function main() {
 
   const tag = process.argv[2] ?? null;               // null = preview HEAD
   const ref = tag ?? 'HEAD';
-  const version = tag ? tag.replace(/^v/, '') : require('../package.json').version;
+  // Preview: the version being prepared = the newest changelog entry ahead of package.json, if any.
+  const pkg = require('../package.json').version;
+  const { compare } = require('../shared/changelog');
+  const ahead = (() => { try { return require('../app/changelog.json').releases.map(r => r.version).filter(v => /^\d+\.\d+\.\d+$/.test(v) && compare(v, pkg) > 0).sort(compare).pop(); } catch { return null; } })();
+  const version = tag ? tag.replace(/^v/, '') : ahead ?? pkg;
   // The previous release: the newest v* tag reachable from before this one.
   const prevTag = (tryGit('tag', '--merged', tag ? `${ref}^` : ref, '--list', 'v[0-9]*', '--sort=-v:refname') ?? '')
     .split('\n').map(s => s.trim()).find(t => t && t !== tag) ?? null;
@@ -103,7 +118,13 @@ function main() {
   const readData = (r) => { const s = tryGit('show', `${r}:db/data/version.json`); try { return s ? JSON.parse(s) : null; } catch { return null; } };
 
   if (!tag) process.stderr.write(`Preview: the notes for the next release (commits since ${prevTag ?? 'the start'}). Nothing is published.\n\n`);
-  process.stdout.write(buildNotes({ version, prevTag, toRef: tag ?? 'main', commits, data: readData(ref), prevData: prevTag ? readData(prevTag) : null }));
+  let highlight = null;
+  try {
+    // A tag reads the changelog it was tagged with; the preview reads the working copy.
+    const raw = tag ? JSON.parse(tryGit('show', `${ref}:app/changelog.json`) ?? '{}') : require('../app/changelog.json');
+    highlight = raw.releases?.find(r => r.version === version) ?? null;
+  } catch { /* no changelog there */ }
+  process.stdout.write(buildNotes({ version, prevTag, toRef: tag ?? 'main', commits, data: readData(ref), prevData: prevTag ? readData(prevTag) : null, highlight }));
 }
 
 if (require.main === module) main();

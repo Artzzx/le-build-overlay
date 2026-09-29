@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('api', {
   renameProfile: (id, name) => invoke('profiles:rename', { id, name }),
   deleteProfile: (id) => invoke('profiles:delete', { id }),
 
+  changelog: () => invoke('app:changelog'),
   checkAppUpdate: () => invoke('appUpdate:check'),
   installAppUpdate: () => invoke('appUpdate:install'),
   /** App update state: { state: 'off'|'idle'|'checking'|'downloading'|'ready'|'available'|'error', version?, progress?, current } */

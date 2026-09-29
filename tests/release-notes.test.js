@@ -56,6 +56,11 @@ describe('buildNotes', () => {
     assert.match(md, /Small fixes and maintenance|### Install/);
   });
 
+  test('the version’s What’s new entry opens the notes as highlights', () => {
+    const md = buildNotes({ version: '0.3.0', prevTag: 'v0.2.1', commits, highlight: { title: 'What’s new, in the app', changes: [{ area: 'view', text: 'See what changed.' }] } });
+    assert.match(md, /^## What’s new, in the app\n- \*\*Main view\*\* — See what changed\.\n\n### New/);
+  });
+
   test('nothing player-facing → a plain line, never an empty release; first release has no compare link', () => {
     const md = buildNotes({ version: '0.1.0', prevTag: null, commits: [{ subject: 'chore: x', body: '' }], data, prevData: data });
     assert.match(md, /^Small fixes and maintenance under the hood\./);

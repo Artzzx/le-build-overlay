@@ -39,6 +39,8 @@ le-build-overlay/
 │   ├── js/help-dialog.js         ← shortcut sheet (?), built from the current key settings
 │   ├── js/profile-menu.js        ← character menu (top bar name): switch / new / rename / delete / check guide
 │   ├── js/update-dialog.js       ← "Guide updated" review: diff per phase, Apply (keeps progress) / Keep mine
+│   ├── js/changes-dialog.js      ← "What's new": app/changelog.json by version (minor/patch badge) or by feature
+│   ├── changelog.json            ← the player-facing change history, hand-written per release (see Release notes)
 │   ├── js/toast.js               ← createToaster(): dedupe identical messages, max 3, action toasts evicted last
 │   ├── js/icons.js               ← node/tree artwork from db/data/icons, glyph fallback, UI svg icons
 │   ├── js/keys.js                ← KeyboardEvent → Electron accelerator, keyRecorder()
@@ -49,6 +51,7 @@ le-build-overlay/
 │   │                               character state + switchPhase/rebaseTrack/slotsAt, diffLoadout/mergeProgress (guide updates)
 │   ├── view-model.js             ← buildLane/buildView/colorSlots: what the UI renders
 │   ├── hotkey-scheme.js          ← lane key sets, trackAccelerators, labels, hotkeyConflicts, laneFromCode
+│   ├── changelog.js              ← AREAS (features), validate, releases (update type from versions), byArea
 │   └── maxroll-import.js         ← parseMaxrollLink, decodePlanner (variants → Export-shaped builds), matchSkillTree, mapPhasesToVariants,
 │                                   per-phase sources: guideSources/makeSource/mapGuidePhases/guideSignature (also loaded in the renderer)
 ├── parser/                       ← maxroll.js (paste → loadout), build-schema.js (validators)
@@ -58,7 +61,8 @@ le-build-overlay/
 │                                    icons/ (node art as WebP, committed, referenced by each row's `icon`)
 ├── extractor/                    ← nodes_flat.json (input) → convert_icons.py + extract.py → db/data/; requirements.txt (Pillow)
 ├── scripts/                      ← dev.js (npm run dev), update-data.js (npm run data: convert → extract → test),
-│                                    release-notes.js (npm run notes; release.yml writes each release's notes with it)
+│                                    release-notes.js (npm run notes; release.yml writes each release's notes with it),
+│                                    changelog.js (release check: an app/changelog.json entry for the tag + dates)
 ├── build/                        ← icon.png (app icon, electron-builder buildResources)
 ├── .github/workflows/            ← test.yml (every push, Linux + Windows), release.yml (tag v* → Windows build → GitHub Release)
 ├── config/                       ← build.example.json ("Try the example build"); anything else in config/ is git-ignored
@@ -208,7 +212,7 @@ One JSON object per line (passives/class/mastery line + one line per skill); `me
 Also stored: `held` / `mastery` (the character state, see *Phases*), optional `phase.level`, and `track.guide` (the guide's order when entering the phase reordered `history`). Legacy single-phase `{ name, classId, masteryId, tracks }` is wrapped by `normalizeBuild()`, which also backfills a missing `phase.masteryId` from `loadout.masteryId` and derives the character state. `label` is baked at import time; the UI prefers live DB names (view-model titles).
 
 ### <userData>/settings.json
-`{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey}, updates:{checkMaxroll,checkApp}, activeProfile, lastDataVersion }`. `activeProfile` and `lastDataVersion` are owned by main. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
+`{ window:{x,y,width,height,maximized}, compactWindow:{x,y,width,height}, display:{uiScale,alwaysOnTop,mode,opacity,sound,volume}, hotkeys:{enabled,hotkeyMode,laneKeys,latchKey,advanceModifier,undoModifier,toggle,phaseNextKey,phasePrevKey}, updates:{checkMaxroll,checkApp}, activeProfile, lastDataVersion, lastAppVersion }`. `activeProfile`, `lastDataVersion` and `lastAppVersion` are owned by main. It's always read through `mergeSettings()` (defaults + validation; unknown keys dropped).
 - `display.mode` is `'full'` or `'compact'` (mini mode). Only main changes it, via `window:setMode`.
 - `opacity` applies to mini mode only.
 - `laneKeys` is `'fkeys'`, `'digits'` or `'numpad'`. A saved `hotkeys` block without `laneKeys` predates the setting and becomes `'digits'` (its old `F1` toggle would clash with lane 1). Fresh installs get `'fkeys'`.
@@ -299,6 +303,13 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
   4. checks that there's exactly one release for the tag with `latest.yml` + both exes, then publishes it (`--latest`).
   - **Why**: left to itself, electron-builder uploads the NSIS and portable targets in parallel. Both see "no release" and both create one, so v0.1.1–v0.2.0 each have **two releases under one tag**, one holding only the `.blockmap`. `…/releases/download/<tag>/latest.yml` can resolve to that one, which gives a 404 and breaks every update check (`ERR_UPDATER_CHANNEL_FILE_NOT_FOUND`).
   - Publishing only when complete also means no app ever sees a half-uploaded release.
+- **What's new** (`app/changelog.json`, the in-app history): **write the entry before `npm version`**. The release fails without one (`scripts/changelog.js release <tag>` runs right after the tag check).
+  - An entry is `{ version, title, changes: [{ area, text }] }`, a few lines about what a player notices. `area` is one of `shared/changelog.js` → `AREAS` (the "By feature" view).
+  - The update type (first / major / minor / patch) comes from the version numbers.
+  - Leave `date` out: the release step fills in missing dates from the tags (today for the one being released) in the packaged copy. Nothing is committed.
+  - Entries newer than the running app are hidden, so you can write the next one ahead of time. The version in `package.json` must have an entry (test).
+  - The same entry opens the GitHub notes as their highlights.
+  - In the app: a **What's new** button in the status bar (`showChanges` → `api.changelog()`). The first start of a new version (`settings.lastAppVersion`, owned by main; an install from ≤ 0.2.x counts via `lastDataVersion`) shows an "Updated to …" toast with *What's new* and a green dot until it's opened; `init` returns `updatedFrom`.
 - **Release notes** are written for players, from the commits since the previous `v*` tag (`scripts/release-notes.js`; preview the next ones with `npm run notes`):
   - `feat:` → New, `fix:` → Fixes, `perf:` → Improvements.
   - Everything else is left out: chore/docs/test/ci/build/refactor, version bumps, merges, and internal scopes like `fix(ci)`, `feat(data)` (`INTERNAL_SCOPES`).
@@ -334,7 +345,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - The Settings dialog refuses to save when `hotkeyConflicts()` finds a clash.
 
 ### IPC (`window.api` → main, all `invoke`)
-`init` (also returns `appUpdate`, `dataUpdate`, `version`), `saveBuild` (active profile), `previewPhase(json)`, `loadLoadout(phases, name, source?, target?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `checkGuideUpdate(manual)`, `dismissGuideUpdate(date)`, `createProfile(name?)`, `switchProfile(id)`, `renameProfile(id, name)`, `deleteProfile(id)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`, `checkAppUpdate`, `installAppUpdate` (installer: restart into the update; portable: open the release page). Main → renderer: `hotkey` events via `onHotkey(cb)`, `app-update` via `onAppUpdate(cb)`.
+`init` (also returns `appUpdate`, `dataUpdate`, `updatedFrom`, `version`), `changelog`, `saveBuild` (active profile), `previewPhase(json)`, `loadLoadout(phases, name, source?, target?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `checkGuideUpdate(manual)`, `dismissGuideUpdate(date)`, `createProfile(name?)`, `switchProfile(id)`, `renameProfile(id, name)`, `deleteProfile(id)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`, `checkAppUpdate`, `installAppUpdate` (installer: restart into the update; portable: open the release page). Main → renderer: `hotkey` events via `onHotkey(cb)`, `app-update` via `onAppUpdate(cb)`.
 
 ### In-app keyboard (renderer, ignored while typing or a dialog is open)
 - Lanes: `1`–`6` and the configured lane keys (`F1`–`F6` / numpad), `Shift` = undo. `Ctrl`+`1`–`6` / `Ctrl+Enter` fill the step.

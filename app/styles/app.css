@@ -375,6 +375,9 @@ b { font-weight: 600; }
 .note-error { color: var(--danger); border-color: rgba(255, 107, 107, 0.4); }
 button.note:hover { background: var(--surface-2); }
 .note-help { color: var(--text-3); }
+/* What's new: highlighted (green + dot) after an update until it's opened */
+.note-changes.is-new { position: relative; color: var(--now); border-color: var(--now-line); }
+.note-changes.is-new::after { content: ""; position: absolute; top: -3px; right: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--now); box-shadow: 0 0 0 2px var(--bg, #0b0d10); }
 
 /* Last action: confirms at a glance what the last key press did (global presses too). */
 .last-action {

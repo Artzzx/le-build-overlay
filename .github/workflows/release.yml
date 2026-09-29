@@ -37,6 +37,10 @@ jobs:
         run: |
           v="v$(node -p "require('./package.json').version")"
           [ "$v" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} != package.json $v — use npm version"; exit 1; }
+      - name: What's new has an entry for this version
+        # Fails with instructions when app/changelog.json has no entry for the tag. Also dates the
+        # entries from their tags in the copy that gets packaged (nothing is committed).
+        run: node scripts/changelog.js release ${{ github.ref_name }}
       - run: npm ci --ignore-scripts
       - run: npm test
       - name: Write the release notes

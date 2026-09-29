@@ -33,6 +33,8 @@ New versions (fixes, and new game data after each patch or season) download **in
 
 The app never restarts on its own. You can turn automatic updates off, or check right now, in **Settings › Updates**.
 
+**What's new** (bottom right of the window) lists what changed in every version: **by version**, marked *minor update* (new features) or *patch* (fixes), or **by feature**, to follow one part of the app over time. After an update, it lights up until you've had a look.
+
 ### First start
 
 1. **Copy your build's Maxroll link**, e.g. `https://maxroll.gg/last-epoch/planner/sb62zd0e`.

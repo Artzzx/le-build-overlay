@@ -53,6 +53,7 @@ const DEFAULT_SETTINGS = Object.freeze({
     checkApp: true,           // new app versions (GitHub Releases): downloaded in the background, installed on quit
   },
   lastDataVersion: null,      // owned by main: the game-data version the player last saw (db/data/version.json)
+  lastAppVersion: null,       // owned by main: the app version that last ran ("What's new" after an update)
   activeProfile: null,        // owned by main (profiles:switch) — see createStore().profiles
 });
 
@@ -128,6 +129,7 @@ function mergeSettings(raw) {
       checkApp: raw?.updates?.checkApp !== false,
     },
     lastDataVersion: typeof raw?.lastDataVersion === 'string' && raw.lastDataVersion.length < 100 ? raw.lastDataVersion : null,
+    lastAppVersion: /^\d+\.\d+\.\d+$/.test(raw?.lastAppVersion ?? '') ? raw.lastAppVersion : null,
     activeProfile: PROFILE_ID_RE.test(raw?.activeProfile ?? '') ? raw.activeProfile : null,
   };
 }
