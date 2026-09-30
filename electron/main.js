@@ -28,13 +28,16 @@
  *   window:setMode ({ mode }) → { ok, settings }   ('full' | 'compact')
  *   maxroll:fetch ({ link }) → { ok, planner: { id, name, author, pick, variants: [{ …, summary, json }] } }
  *                              | { ok:false, error, canOpen }
- *   maxroll:clipboardLink    → { ok, link|null }   (pre-fills the import field; never auto-fetches)
+ *   maxroll:clipboardLink    → { ok, link|null, code|null }  (a planner link / share code on the clipboard; never auto-fetches)
+ *   share:copy               → { ok, code }        (the active build's share code, copied to the clipboard)
+ *   share:preview ({ code }) → { ok, name, classId, phases: [{ name, json, summary, origin, from, note? }], dates }
+ *                              (guides fetched fresh; the shared route when Maxroll or the variant is gone)
  *   maxroll:open ({ link })  → { ok }              (opens the planner in the browser)
  *   maxroll:checkUpdate ({ manual }) → { ok, status: 'none'|'skipped'|'upToDate'|'dismissed'|'unmapped'|'update',
  *                              update?: { planner, planners, signature, newBuild, diff, missing } }
  *                              (every guide the active build's phases came from)
  *   maxroll:dismissUpdate ({ date }) → { ok }       ("Keep mine": date = update.signature; not offered again)
- *   templates:list | templates:save | templates:load | templates:delete
+ *   templates:list | templates:load | templates:delete   (templates saved before 0.4; no new ones since share codes)
  *
  * main → renderer:
  *   hotkey  { action: 'advance'|'undo'|'phase'|'latch', trackIndex?, direction?, active? }
@@ -51,6 +54,7 @@ const { createHotkeys } = require('./hotkeys');
 const { createMaxrollClient, hiddenWindowLoader } = require('./maxroll');
 const { createUpdater } = require('./updater');
 const MaxrollImport = require('../shared/maxroll-import');
+const ShareCode = require('./share-code');
 const TreeUtils = require('../shared/tree-utils');
 
 const ROOT = path.join(__dirname, '..');
@@ -347,6 +351,56 @@ function cleanSource(source, phaseCount) {
   return MaxrollImport.makeSource(g.phases, g.dates);
 }
 
+// ─── Share codes ──────────────────────────────────────────────────────────────
+
+/**
+ * A share code → the phases to load, like a Maxroll import: each guide phase is fetched
+ * fresh from its planner (the importer gets the guide's current version, and guide updates
+ * keep working); the route in the code is the fallback when Maxroll can't be reached
+ * (origin kept: later guide checks sync it) or the author deleted the variant (origin dropped).
+ */
+async function previewShareCode(code) {
+  const shared = ShareCode.decodeShareCode(code);
+  const { db } = loadGameData();
+  const planners = {};
+  for (const id of new Set(shared.phases.map(p => p.ref?.maxroll).filter(Boolean))) {
+    try {
+      planners[id] = MaxrollImport.decodePlanner(await maxroll().fetchPlanner(id), db.skills);
+    } catch (err) {
+      planners[id] = { error: err.message };
+    }
+  }
+  const phases = shared.phases.map((p) => {
+    const planner = p.ref && planners[p.ref.maxroll];
+    let json = JSON.stringify(p.build);
+    let origin = null;
+    let from = 'shared';
+    let note = null;
+    if (planner && !planner.error) {
+      const idx = MaxrollImport.mapPhasesToVariants([p.ref], [{ name: p.name }], planner.variants)[0];
+      if (idx != null) {
+        const v = planner.variants[idx];
+        json = JSON.stringify(v.build);
+        origin = { maxroll: p.ref.maxroll, variant: idx, name: v.name, guide: planner.name };
+        from = 'guide';
+      } else {
+        note = `“${p.ref.name}” is no longer in the guide — using the route as it was shared.`;
+      }
+    } else if (planner?.error) {
+      origin = { ...p.ref, guide: null };
+      note = 'Maxroll couldn’t be reached — using the route as it was shared. It syncs with the guide at the next update check.';
+    }
+    let summary = null;
+    let error = null;
+    try { summary = summarizeBuild(json); } catch (err) { error = err.message; }
+    return { name: p.name, json, summary, error, origin, from, note };
+  });
+  const classes = new Set(phases.map(p => p.summary?.classId).filter(c => c != null));
+  if (classes.size > 1) throw new Error('This share code mixes classes — it can’t be loaded as one build.');
+  const dates = Object.fromEntries(Object.entries(planners).filter(([, p]) => p.date).map(([id, p]) => [id, p.date]));
+  return { name: shared.name, classId: shared.classId, phases, dates };
+}
+
 // ─── Guide updates ────────────────────────────────────────────────────────────
 
 const UPDATE_CHECK_EVERY_MS = 24 * 60 * 60 * 1000; // automatic checks: once a day per character
@@ -484,8 +538,19 @@ function registerIpc() {
 
   handle('maxroll:clipboardLink', async () => {
     const text = String(await clipboard.readText()).trim(); // a Promise since Electron 44 (W3C-style clipboard)
-    return { link: text.length < 300 && /maxroll\.gg\/last-epoch\/planner\//i.test(text) && MaxrollImport.parseMaxrollLink(text) ? text : null };
+    return {
+      link: text.length < 300 && /maxroll\.gg\/last-epoch\/planner\//i.test(text) && MaxrollImport.parseMaxrollLink(text) ? text : null,
+      code: text.length < ShareCode.SHARE_LIMITS.code + 2000 ? ShareCode.findShareCode(text) : null,
+    };
   });
+
+  handle('share:copy', () => {
+    const code = ShareCode.encodeShareCode(store.readProfile(profileId)?.build);
+    clipboard.writeText(code);
+    return { code };
+  });
+
+  handle('share:preview', ({ code }) => previewShareCode(code));
 
   handle('maxroll:open', ({ link }) => {
     const parsed = MaxrollImport.parseMaxrollLink(link);
@@ -584,7 +649,6 @@ function registerIpc() {
   });
 
   handle('templates:list', () => ({ list: store.listTemplates() }));
-  handle('templates:save', (t) => ({ filename: store.saveTemplate(t) }));
   handle('templates:load', ({ filename }) => ({ template: store.loadTemplate(filename) }));
   handle('templates:delete', ({ filename }) => { store.deleteTemplate(filename); return {}; });
 }

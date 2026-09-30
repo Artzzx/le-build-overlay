@@ -10,8 +10,9 @@
  *      in a hidden, sandboxed window — the way a browser gets it — and read the text.
  *
  * The endpoint is undocumented. Requests are only made when the player asks,
- * with an identifying User-Agent and a short cache. Pasting Export codes stays
- * the fallback for every failure.
+ * with an identifying User-Agent and a short cache. There is no pasted-codes fallback
+ * any more (retired in 0.4); a share code still loads from its own routes when Maxroll
+ * can't be reached (see electron/share-code.js).
  *
  * Test hook: env LE_MAXROLL_FIXTURES=<dir> serves <dir>/<id>.json (or
  * maxroll-profile-le.json for any id) instead of the network.
@@ -82,7 +83,7 @@ function createMaxrollClient({ fetch, loadInWindow = null, fixturesDir = null, n
     }
     if (!res) {
       throw new MaxrollError(lastErr?.name === 'AbortError'
-        ? 'Maxroll did not answer in time. Try again, or use the Export codes.'
+        ? 'Maxroll did not answer in time. Try again in a moment.'
         : 'Could not reach Maxroll — are you offline?', { canOpen: true });
     }
     if (res.status === 404) throw new MaxrollError('No Maxroll planner with that link. Check the link, or that the planner is public.', { canOpen: true });
@@ -99,7 +100,7 @@ function createMaxrollClient({ fetch, loadInWindow = null, fixturesDir = null, n
     }
     // `public: false` only means "not listed in Maxroll's build database": a shared link still has the data.
     if (typeof json.data !== 'string' && typeof json.data !== 'object') {
-      throw new MaxrollError('This planner has no readable data — it may be private. Make it public on Maxroll, or use the Export codes.', { canOpen: true });
+      throw new MaxrollError('This planner has no readable data — it may be private. Make it public (or unlisted) on Maxroll, then try again.', { canOpen: true });
     }
     cache.set(id, { at: now(), json });
     return json;

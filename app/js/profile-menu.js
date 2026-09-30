@@ -25,6 +25,8 @@ import { ui } from './icons.js';
  * @param {(id, name) => void} o.onRename
  * @param {(id) => void} o.onDelete
  * @param {() => void} o.onCheckUpdate
+ * @param {boolean} o.canShare            — the active character has a build
+ * @param {() => void} o.onShare          — copy its share code
  * @param {boolean} o.canClear            — the active build has progress to clear
  * @param {() => void} o.onClear          — full clear (asks for confirmation itself)
  */
@@ -56,6 +58,8 @@ export function openProfileMenu(o) {
       })),
       h('div.menu-sep'),
       h('button.menu-item.menu-action', { type: 'button', onclick: run(o.onCreate) }, ui('plus', { size: 15 }), 'New character'),
+      h('button.menu-item.menu-action', { type: 'button', onclick: run(o.onShare), disabled: !o.canShare, title: 'Copy a code that anyone can paste in Load build › From a share code' },
+        ui('share', { size: 15 }), 'Share this build'),
       o.canCheckUpdate
         ? h('button.menu-item.menu-action', { type: 'button', onclick: run(o.onCheckUpdate) }, ui('refresh', { size: 15 }), 'Check the guide for updates')
         : null,

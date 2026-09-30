@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('api', {
   loadLoadout: (phases, loadoutName, source, target) => invoke('build:load', { phases, loadoutName, source, target }),
   fetchMaxroll: (link) => invoke('maxroll:fetch', { link }),
   maxrollClipboardLink: () => invoke('maxroll:clipboardLink'),
+  copyShareCode: () => invoke('share:copy'),
+  previewShareCode: (code) => invoke('share:preview', { code }),
   openMaxroll: (link) => invoke('maxroll:open', { link }),
   checkGuideUpdate: (manual) => invoke('maxroll:checkUpdate', { manual }),
   dismissGuideUpdate: (date) => invoke('maxroll:dismissUpdate', { date }),
@@ -45,7 +47,6 @@ contextBridge.exposeInMainWorld('api', {
   setWindowMode: (mode) => invoke('window:setMode', { mode }),
 
   listTemplates: () => invoke('templates:list'),
-  saveTemplate: (loadoutName, phases) => invoke('templates:save', { loadoutName, phases }),
   loadTemplate: (filename) => invoke('templates:load', { filename }),
   deleteTemplate: (filename) => invoke('templates:delete', { filename }),
 

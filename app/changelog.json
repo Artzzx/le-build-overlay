@@ -49,6 +49,15 @@
       "changes": [
         { "area": "view", "text": "See what changed in every version — by version or by feature — from What's new in the status bar. After an update, the app offers to show you." }
       ]
+    },
+    {
+      "version": "0.4.0",
+      "title": "Share codes",
+      "changes": [
+        { "area": "loading", "text": "Share a build with one short code (characters menu › Share this build). Whoever pastes it in Load build › From a share code gets every phase in your order, synced with its guides — never your progress." },
+        { "area": "loading", "text": "Pasting export codes one phase at a time is retired: load from a Maxroll link or a share code. Templates you saved before still open." },
+        { "area": "guides", "text": "A shared build keeps getting its guides' updates. If Maxroll is down when you load one, it uses the routes as they were shared and syncs later." }
+      ]
     }
   ]
 }

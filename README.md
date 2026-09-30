@@ -106,17 +106,22 @@ To check right now, open the characters menu and choose **Check the guide for up
 Following one guide for leveling and another for endgame? Put both in the same build:
 
 1. Fetch one guide's link and tick the variants you want from it.
-2. Click **Add another guide or codes** (under the variants).
-3. In the phase list, click **Maxroll link**, paste the other guide's link, fetch it, tick its variants and click **Add**. **Codes** adds a phase from export codes instead.
+2. Click **Add another guide** (under the variants).
+3. In the phase list, click **Add another guide** again, paste the other guide's link, fetch it, tick its variants and click **Add**.
 4. Put the phases in order: select one and use the arrows next to its name (or `Alt`+`↑`/`↓`). Then **Load**.
 
-Each phase shows which guide it came from, and the app checks **every** guide for updates. A phase pasted as codes, or one whose codes you edited, is never checked. All phases must be the same class. You can have up to 6 phases in total.
+Each phase shows which guide it came from, and the app checks **every** guide for updates. All phases must be the same class. You can have up to 6 phases in total.
 
-### Without a Maxroll link
+### Share a build
 
-In **Load build**, choose **Paste export codes**. You can paste codes from Maxroll's *Export* dialog, or the in-game export: the passives code, then one line per skill. Add a phase per stage of the guide.
+Set up a build you like, two guides and all? Share it:
 
-Click **Save as template** to reuse a set of codes later.
+- **Share**: open the characters menu and choose **Share this build**. A short code (`LEBP1.…`) is copied. Paste it anywhere: Discord, Reddit, a message.
+- **Load one**: **Load build › From a share code**, paste it, check the phases, then **Load** (into a new character if you like). If the code is on your clipboard, the app offers it right away.
+
+A share code holds the plan, never anyone's progress. Its guides are fetched fresh from Maxroll, so you get their latest version, and their updates later. If Maxroll can't be reached, or the author has since deleted a variant, the app uses the route as it was shared.
+
+*Paste export codes* was retired in 0.4: builds come from Maxroll links or share codes. Templates you saved before still open from **Load build**.
 
 ---
 
@@ -184,7 +189,7 @@ Your characters, settings and templates are stored on your computer, in `%APPDAT
 
 **Mini mode isn't see-through.** Opacity only works on Windows and macOS.
 
-**"Couldn't import this planner".** Check that the link opens in your browser. If Maxroll is down or blocks the request, use **Paste export codes** instead.
+**"Couldn't import this planner".** Check that the link opens in your browser, and that the planner is public or unlisted. If Maxroll is down, try again later; a friend's share code still loads (from its shared routes) while Maxroll is unreachable.
 
 **A tree says "No tree data".** That skill isn't in the app's game data yet. It's usually new in a patch: see [After a major game patch](#after-a-major-game-patch).
 

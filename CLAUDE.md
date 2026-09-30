@@ -26,6 +26,7 @@ le-build-overlay/
 │   ├── store.js       ← <userData>/profiles/<id>.json, settings.json, saves/ (atomic writes, build.json → profile migration)
 │   ├── hotkeys.js     ← global shortcuts: direct / latch ("arm first"), suspend while focused, pause
 │   ├── maxroll.js     ← fetch a Maxroll planner by id (net.fetch → hidden-window fallback; LE_MAXROLL_FIXTURES for tests)
+│   ├── share-code.js  ← a build plan ↔ "LEBP1.…" (deflate + base64url): routes + guide references, never progress
 │   └── preload.js     ← window.api — the ONLY renderer bridge (contextIsolation + sandbox)
 ├── app/                          ← renderer: vanilla JS ES modules, no framework, no bundler
 │   ├── index.html                ← strict CSP; loads shared/*.js (classic) then js/main.js (module)
@@ -34,10 +35,10 @@ le-build-overlay/
 │   ├── js/mini.js                ← mini mode rows (display.mode 'compact')
 │   ├── js/feedback.js            ← WebAudio sound cues for global hotkey events
 │   ├── js/inspector.js           ← node details + route list
-│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): choose screen (Maxroll link | export codes | templates) → Maxroll / phases workspaces (mix guides + codes)
+│   ├── js/loadout-dialog.js      ← Load build (Ctrl+O): choose (Maxroll link | share code | old templates) → Maxroll / share / phases (mix guides) views
 │   ├── js/settings-dialog.js     ← Settings (Ctrl+,): UI scale, keep on top, mini opacity, sound, lane keys, hotkeys (key recorder, conflict check)
 │   ├── js/help-dialog.js         ← shortcut sheet (?), built from the current key settings
-│   ├── js/profile-menu.js        ← character menu (top bar name): switch / new / rename / delete / check guide
+│   ├── js/profile-menu.js        ← character menu (top bar name): switch / new / share / check guide / clear / rename / delete
 │   ├── js/update-dialog.js       ← "Guide updated" review: diff per phase, Apply (keeps progress) / Keep mine
 │   ├── js/changes-dialog.js      ← "What's new": app/changelog.json by version (minor/patch badge) or by feature
 │   ├── changelog.json            ← the player-facing change history, hand-written per release (see Release notes)
@@ -161,15 +162,16 @@ Proven on the three fixtures (`tests/maxroll-import.test.js`): the old prefix ru
      - `public:false` still imports, since it only means unlisted.
   2. Each variant is summarized with `summarizeBuild()`, the same helper as `build:preview`.
   3. **The Load build dialog** (`loadout-dialog.js`, one wide fixed-size modal, three views that keep their state while it's open):
-     - **Choose**: two cards (`1` Maxroll link, `2` export codes), saved templates, and "re-import the current build".
-       - A Maxroll link on the clipboard adds a one-click **Fetch this build**.
+     - **Choose**: two cards (`1` Maxroll link, `2` share code), templates saved before 0.4 (open read-only in the phases view, "no guide"), and "re-import the current build".
+       - A Maxroll link on the clipboard adds a one-click **Fetch this build**; a share code on it, **Use this code**.
      - **Maxroll workspace**: variant rail (tick up to 6) plus a pane for the focused variant (stats, skill cards with tree icons, phase name).
        - Load uses the ticked variants' `json` directly.
-       - **Add another guide or codes** (rail) / "Edit the chosen variants as codes" (pane) move them into the phases workspace, each phase keeping its **origin** (`{ maxroll, variant, name }`).
-     - **Phases workspace** (`view === 'codes'`): phase rail (guide chip or "codes"), codes editor, live preview.
+       - **Add another guide** (rail) moves them into the phases workspace, each phase keeping its **origin** (`{ maxroll, variant, name }`).
+     - **Share view**: paste a code → `api.previewShareCode` (see *Share codes*) → its phases open in the phases workspace for review.
+     - **Phases workspace** (`view === 'phases'`, state `plan`): phase rail (guide chip or "no guide"), the selected phase's name + where it comes from, its summary. **No codes editor**: pasting export codes was retired in 0.4 (the parser still reads that shape; Maxroll variants and share codes go through it).
        - The editor head has move earlier / later / remove for the selected phase (`Alt+↑/↓`). The rail stays text-only so long variant names stay readable.
-       - **Codes** adds an empty phase. **Maxroll link** opens the Maxroll view in *adding* mode (`mx.adding`): no pre-ticked variants, the tick limit is what's left of the 6 phases, the class must match the phases already there, the footer reads "Add N phases", and Back / `Alt+←` returns to the phases. The chosen variants are appended after the filled phases (empty ones dropped).
-       - Editing a phase's codes clears its origin (it's no longer the guide's variant); other phases keep theirs.
+       - **Add another guide** opens the Maxroll view in *adding* mode (`mx.adding`): no pre-ticked variants, the tick limit is what's left of the 6 phases, the class must match the phases already there, the footer reads "Add N phases", and Back / `Alt+←` returns to the phases. The chosen variants are appended after the existing phases.
+       - No new templates: *Save as template* is gone (share codes replace it). Old ones still open and can be deleted.
      - **Keys**: `Ctrl+Enter` loads and `Alt+←` goes back. Shortcuts listen on the document while the dialog is open, and re-renders restore focus.
   4. Loadouts from Maxroll carry `source`, **per phase**: `{ maxroll, date, dates: { [id]: date }, phases: [{ maxroll, variant, name } | null] }`.
      - Each entry is the planner and variant (index + name at import) that phase came from; `null` = pasted codes. So one build can mix a leveling guide, an endgame guide and codes.
@@ -177,6 +179,18 @@ Proven on the three fixtures (`tests/maxroll-import.test.js`): the old prefix ru
      - Older sources (`{ maxroll, date, phases?: [{ variant, name }] }`, one planner) read the same through `MaxrollImport.guideSources()`.
      - `makeSource()` writes the stored shape; main's `cleanSource()` is `makeSource(guideSources(...))`, so anything invalid reads as codes.
 - Requests happen only on the user's click (a clipboard link is only pre-filled), **except** the guide-update check below: once a day at start, for Maxroll builds, and it can be turned off in Settings. Export paste stays the fallback for every error, and errors can offer **Open in browser**.
+
+### Share codes (`electron/share-code.js`)
+A build **plan** as one text code, `LEBP1.` + base64url(deflate-raw(JSON)); a real 4-phase build is ~350–650 characters, fine for a Discord message. The character menu's **Share this build** → `share:copy` (encodes the active build, copies it).
+- **Payload v1** (short keys): `{ n, c: classId, g: [plannerId…], p: [{ n, m: masteryId, l?: level, t: [[skillKey|'', runs…]…], r?: [plannerIndex, variant, variantName] }] }`. `runs` is run-length (`6,6,6,4,4` → `6,3,4,2`).
+- It holds **the route of every phase** (guide order: `track.guide ?? history`) **plus its guide reference** when it has one. It never holds progress or character state.
+- **Import** (`share:preview` → `previewShareCode()` in main): each referenced planner is fetched fresh, and each phase is matched in its own planner (`mapPhasesToVariants`). The importer gets the guide's **current** version, with the origin kept for guide updates.
+  - **Fallbacks, per phase** (`from: 'shared'` + `note`, shown in the phases view):
+    - Maxroll unreachable: the shared route, **origin kept** (the next guide check syncs it).
+    - The variant has been deleted: the shared route, origin dropped.
+  - Codes that mix classes are refused.
+- **Validation**: `decodeShareCode` refuses a bad prefix or base64, anything too long (`SHARE_LIMITS`), guide ids that aren't planner ids, skill keys outside `[a-z0-9]`, and bad runs, with a readable "damaged" error. Decoded routes still go through `parseBuild`, like any import.
+- `maxroll:clipboardLink` also returns `code` (a share code found on the clipboard) for the choose screen's **Use this code**.
 
 ### Guide updates (Maxroll builds)
 Guides get edited every patch; re-importing used to reset progress.
@@ -345,7 +359,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
 - The Settings dialog refuses to save when `hotkeyConflicts()` finds a clash.
 
 ### IPC (`window.api` → main, all `invoke`)
-`init` (also returns `appUpdate`, `dataUpdate`, `updatedFrom`, `version`), `changelog`, `saveBuild` (active profile), `previewPhase(json)`, `loadLoadout(phases, name, source?, target?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `checkGuideUpdate(manual)`, `dismissGuideUpdate(date)`, `createProfile(name?)`, `switchProfile(id)`, `renameProfile(id, name)`, `deleteProfile(id)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `saveTemplate`, `loadTemplate`, `deleteTemplate`, `checkAppUpdate`, `installAppUpdate` (installer: restart into the update; portable: open the release page). Main → renderer: `hotkey` events via `onHotkey(cb)`, `app-update` via `onAppUpdate(cb)`.
+`init` (also returns `appUpdate`, `dataUpdate`, `updatedFrom`, `version`), `changelog`, `copyShareCode`, `previewShareCode(code)`, `saveBuild` (active profile), `previewPhase(json)`, `loadLoadout(phases, name, source?, target?)`, `fetchMaxroll(link)`, `maxrollClipboardLink`, `openMaxroll(link)`, `checkGuideUpdate(manual)`, `dismissGuideUpdate(date)`, `createProfile(name?)`, `switchProfile(id)`, `renameProfile(id, name)`, `deleteProfile(id)`, `loadExample`, `saveSettings`, `pauseHotkeys(bool)`, `listTemplates`, `loadTemplate`, `deleteTemplate` (pre-0.4 templates; no saving), `checkAppUpdate`, `installAppUpdate` (installer: restart into the update; portable: open the release page). Main → renderer: `hotkey` events via `onHotkey(cb)`, `app-update` via `onAppUpdate(cb)`.
 
 ### In-app keyboard (renderer, ignored while typing or a dialog is open)
 - Lanes: `1`–`6` and the configured lane keys (`F1`–`F6` / numpad), `Shift` = undo. `Ctrl`+`1`–`6` / `Ctrl+Enter` fill the step.

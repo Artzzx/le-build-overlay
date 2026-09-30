@@ -286,6 +286,17 @@
 .ld-origin-note { display: flex; align-items: flex-start; gap: 6px; color: var(--text-3); font-size: var(--fs-xs); line-height: 1.4; }
 .ld-origin-note svg { flex: none; margin-top: 2px; color: var(--info); }
 .ld-add-row { display: flex; gap: 6px; margin: 6px; flex: none; }
+/* Share code view */
+.ld-share { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 16px; max-width: 760px; width: 100%; margin: 0 auto; padding-top: 8px; }
+.ld-share-box { display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg-raised); }
+.ld-share-input { min-height: 96px; resize: vertical; font-family: var(--font-mono); font-size: 12.5px; word-break: break-all; }
+.ld-share-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.ld-share-actions .muted { font-size: var(--fs-xs); flex: 1; min-width: 220px; }
+.ld-origin-slot { display: flex; flex-direction: column; gap: 8px; }
+/* Phases workspace: the phase name gets the whole column (label above the field) */
+.ld-codes .ld-editor-head { align-items: flex-end; }
+.ld-codes .ld-editor-head .ld-name { flex-direction: column; align-items: stretch; gap: 6px; }
+.ld-codes .ld-editor-head .ld-name .input { flex: none; }
 .ld-add-row .ld-add { flex: 1; margin: 0; }
 .ld-add:disabled { opacity: 0.5; cursor: default; }
 .ld-add { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 6px; height: 34px; border-radius: var(--r-md); border: 1px dashed var(--line-2); background: none; color: var(--text-2); font-weight: 600; font-size: var(--fs-sm); flex: none; }
@@ -321,8 +332,6 @@
 .ld-editor { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .ld-editor .ld-name { flex: none; }
 .ld-editor .ld-name .input { max-width: none; }
-.ld-code-wrap { display: flex; flex-direction: column; gap: 6px; flex: 1; min-height: 0; }
-.ld-code { flex: 1; min-height: 120px; max-height: none; resize: none; white-space: pre-wrap; word-break: break-all; }
 
 .ld-placeholder { flex: 1; display: grid; place-content: center; justify-items: center; gap: 8px; padding: 24px; text-align: center; color: var(--text-3); border-radius: var(--r-lg); border: 1px dashed var(--line-2); }
 .ld-placeholder-title { font: 650 var(--fs-lg) var(--font-display); color: var(--text-2); }
@@ -337,8 +346,6 @@
   .ld-split, .ld-split-3 { display: flex; flex-direction: column; flex: none; }
   .ld-rail-slot, .ld-rail { flex: none; width: 100%; }
   .ld-rail-list { max-height: 200px; }
-  .ld-code { flex: none; height: 180px; }
-  .ld-code-wrap { flex: none; }
   .ld-pane { overflow: visible; }
   .ld-choices { max-height: none; }
 }

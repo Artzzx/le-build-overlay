@@ -522,6 +522,8 @@ function showProfileMenu(anchor) {
       toast(`Deleted “${gone}”. Now playing ${activeProfile()?.name}.`);
     },
     onCheckUpdate: () => checkGuideUpdate({ manual: true }),
+    canShare: !!state.build,
+    onShare: shareBuild,
     canClear: hasProgress(state.build),
     onClear: clearAllProgress,
   });
@@ -1152,6 +1154,13 @@ function lastActionChip() {
   );
 }
 
+/** Copy the active build's share code (the plan with its guides, never progress). */
+async function shareBuild() {
+  const res = await api.copyShareCode();
+  if (!res.ok) return toast(`Couldn’t make a share code: ${res.error}`, { kind: 'error' });
+  toast(`Share code copied (${res.code.length} characters). Paste it anywhere — others load it with Load build › From a share code.`, { kind: 'success', duration: 6000 });
+}
+
 async function showChanges() {
   if (els['dlg-changes'].open) return;
   const res = await api.changelog();
@@ -1171,7 +1180,7 @@ function emptyState() {
       h('h1', 'Load your build'),
       h('p.empty-lead', 'See every tree at a glance — what to allocate now, what comes next — and tick points off as you level.'),
       h('ol.empty-steps',
-        h('li', h('b', 'Copy'), ' your Maxroll planner link (or its export codes, or the in-game export).'),
+        h('li', h('b', 'Copy'), ' your Maxroll planner link, or a share code someone posted.'),
         h('li', h('b', 'Paste'), ' it into ', h('i', 'Load build'), ' — each planner variant becomes a phase.'),
         h('li', h('b', 'Allocate'), ' in game, then press the lane’s key (', h('b', state.settings?.hotkeys.enabled ? LANE_KEYSET_LABELS[state.settings.hotkeys.laneKeys] : '1–6'), ') — even while the game has focus.')),
       h('div.empty-actions',
