@@ -70,3 +70,31 @@ test('settings: lastAppVersion is kept only when it is a version', () => {
   assert.equal(mergeSettings({ lastAppVersion: '../x' }).lastAppVersion, null);
   assert.equal(mergeSettings({}).lastAppVersion, null);
 });
+
+describe('addDataEntry (npm run data) and format', () => {
+  const base = { releases: [{ version: '0.4.1', date: '2026-09-30', title: 'Fixes', changes: [{ area: 'view', text: 'x' }] }] };
+
+  test('no release written ahead → a new minor version with the game-data line', () => {
+    const r = C.addDataEntry(base, { current: '0.4.1', label: 'Season 4' });
+    assert.equal(r.version, '0.5.0');
+    assert.equal(r.changed, true);
+    assert.deepEqual(r.raw.releases.at(-1), { version: '0.5.0', title: 'Season 4', changes: [{ area: 'data', text: 'Game data for Season 4: the latest skills, passives and node icons.' }] });
+    assert.deepEqual(C.validate(r.raw), []);
+    assert.equal(base.releases.length, 1, 'input untouched');
+  });
+
+  test('a release written ahead gets the line; re-running changes nothing', () => {
+    const ahead = { releases: [...base.releases, { version: '0.6.0', title: 'Big one', changes: [{ area: 'view', text: 'New view' }] }] };
+    const r = C.addDataEntry(ahead, { current: '0.4.1', label: null });
+    assert.equal(r.version, '0.6.0');
+    assert.deepEqual(r.raw.releases.at(-1).changes.map(c => c.area), ['view', 'data']);
+    const again = C.addDataEntry(r.raw, { current: '0.4.1', label: 'Season 5' });
+    assert.equal(again.changed, false);
+    assert.equal(again.raw, r.raw);
+  });
+
+  test('format() writes the real file back byte for byte (clean diffs)', () => {
+    const text = require('fs').readFileSync(require('path').join(__dirname, '..', 'app', 'changelog.json'), 'utf8');
+    assert.equal(C.format(JSON.parse(text)), text);
+  });
+});

@@ -58,6 +58,13 @@
         { "area": "loading", "text": "Pasting export codes one phase at a time is retired: load from a Maxroll link or a share code. Templates you saved before still open." },
         { "area": "guides", "text": "A shared build keeps getting its guides' updates. If Maxroll is down when you load one, it uses the routes as they were shared and syncs later." }
       ]
+    },
+    {
+      "version": "0.4.1",
+      "title": "Maintenance",
+      "changes": [
+        { "area": "data", "text": "Behind-the-scenes fix to how new game data is prepared — nothing changes in the app." }
+      ]
     }
   ]
 }

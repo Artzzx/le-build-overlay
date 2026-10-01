@@ -12,6 +12,9 @@
  *                          no node uses any more (--prune-icons). The label (see parseArgs)
  *                          and flags like --strict, --verbose are passed on
  *   3. npm test          — the whole suite against the new data
+ *   4. app/changelog.json — the next release's What's new gets its "Game data for <label>"
+ *                          line (Changelog.addDataEntry); the release refuses a version without
+ *                          an entry, so this step can't be forgotten
  * Then it prints what to commit and how to release.
  */
 
@@ -81,19 +84,22 @@ function main() {
   step('Running the test suite', 'npm', ['test']);
 
   const v = JSON.parse(fs.readFileSync(path.join(ROOT, 'db', 'data', 'version.json'), 'utf8'));
-  const [major, minor] = require('../package.json').version.split('.').map(Number);
-  const nextMinor = `${major}.${minor + 1}.0`;
+
+  // What's new: the next release says "Game data for <label>" (written once; re-runs change nothing).
+  const Changelog = require('../shared/changelog');
+  const file = path.join(ROOT, 'app', 'changelog.json');
+  const { raw, version, changed } = Changelog.addDataEntry(JSON.parse(fs.readFileSync(file, 'utf8')), {
+    current: require('../package.json').version, label: v.label,
+  });
+  if (changed) fs.writeFileSync(file, Changelog.format(raw));
   console.log(`
   ✔ Game data ${v.version}${v.label ? ` (${v.label})` : ''}: ${v.trees} trees, ${v.nodes} nodes — all tests pass.
+  ✔ What's new for ${version}: ${changed ? 'game data line added' : 'already mentions the game data'} (app/changelog.json — edit the text if you like).
 
   Next:
-    1. Add the next version's entry to app/changelog.json (What's new), e.g.
-         { "version": "${nextMinor}", "title": "${v.label ?? 'New game data'}",
-           "changes": [ { "area": "data", "text": "Game data for ${v.label ?? 'the new patch'}: new and reworked skills and passives." } ] }
-       The release refuses a version without one.
-    2. git add extractor/nodes_flat.json db/data app/changelog.json
+    1. git add extractor/nodes_flat.json db/data app/changelog.json
        git commit -m "feat(data): ${v.label ?? 'new game data'}"
-    3. npm version minor          # bumps the app version to ${nextMinor} and tags it
+    2. npm version ${version}          # bumps the app version and tags v${version}
        git push --follow-tags     # GitHub builds the installer and publishes the release
 
   Players get it automatically: the app downloads the update in the background,

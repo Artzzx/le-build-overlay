@@ -105,5 +105,46 @@
       .filter(g => g.changes.length);
   }
 
-  return { AREAS, updateType, validate, releases, byArea, compare };
+  const nextMinor = (v) => { const [a, b] = parts(v); return `${a}.${b + 1}.0`; };
+
+  /**
+   * New game data (npm run data): make sure the next release says so. The next release is
+   * the lowest entry ahead of `current` (one written ahead of time) — it gets a "data" line
+   * if it has none — or a new minor version. Re-running changes nothing.
+   * @returns {{ raw, version: string, changed: boolean }}
+   */
+  function addDataEntry(raw, { current, label = null }) {
+    const list = Array.isArray(raw?.releases) ? raw.releases : [];
+    const text = label
+      ? `Game data for ${label}: the latest skills, passives and node icons.`
+      : 'Updated game data: the latest skills, passives and node icons.';
+    const ahead = list.filter(r => VERSION_RE.test(r?.version ?? '') && compare(r.version, current) > 0)
+      .sort((a, b) => compare(a.version, b.version))[0];
+    if (ahead) {
+      if (ahead.changes.some(c => c.area === 'data')) return { raw, version: ahead.version, changed: false };
+      const next = { ...raw, releases: list.map(r => (r === ahead ? { ...r, changes: [...r.changes, { area: 'data', text }] } : r)) };
+      return { raw: next, version: ahead.version, changed: true };
+    }
+    const version = nextMinor(current);
+    const entry = { version, title: label || 'New game data', changes: [{ area: 'data', text }] };
+    return { raw: { ...raw, releases: [...list, entry] }, version, changed: true };
+  }
+
+  /** app/changelog.json as it's written by hand: one line per change, so diffs stay readable. */
+  function format(raw) {
+    const s = JSON.stringify;
+    const release = (r) => [
+      '    {',
+      `      "version": ${s(r.version)},`,
+      ...(r.date ? [`      "date": ${s(r.date)},`] : []),
+      ...(r.title != null ? [`      "title": ${s(r.title)},`] : []),
+      '      "changes": [',
+      r.changes.map(c => `        { "area": ${s(c.area)}, "text": ${s(c.text)} }`).join(',\n'),
+      '      ]',
+      '    }',
+    ].join('\n');
+    return `{\n  "releases": [\n${raw.releases.map(release).join(',\n')}\n  ]\n}\n`;
+  }
+
+  return { AREAS, updateType, validate, releases, byArea, compare, nextMinor, addDataEntry, format };
 }));

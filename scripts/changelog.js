@@ -38,7 +38,7 @@ if (cmd === 'check') {
     fail(`app/changelog.json has no entry for ${version}. Add what players will notice (a few lines, each with an "area"), commit it, then tag again:\n` +
       `  git tag -d ${tag} && git push origin :refs/tags/${tag}\n  (add the entry, commit)\n  git tag ${tag} && git push origin ${tag}`);
   }
-  const tagDate = (v) => { try { return execFileSync('git', ['log', '-1', '--format=%cs', `v${v}`], { encoding: 'utf8' }).trim() || null; } catch { return null; } };
+  const tagDate = (v) => { try { return execFileSync('git', ['log', '-1', '--format=%cs', `v${v}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null; } catch { return null; } };
   let stamped = 0;
   for (const r of raw.releases) {
     if (r.date) continue;
