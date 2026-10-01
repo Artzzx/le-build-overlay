@@ -93,8 +93,12 @@ describe('addDataEntry (npm run data) and format', () => {
     assert.equal(again.raw, r.raw);
   });
 
-  test('format() writes the real file back byte for byte (clean diffs)', () => {
+  test('format() writes the real file back byte for byte, in its own line endings (clean diffs)', () => {
     const text = require('fs').readFileSync(require('path').join(__dirname, '..', 'app', 'changelog.json'), 'utf8');
-    assert.equal(C.format(JSON.parse(text)), text);
+    const eol = text.includes('\r\n') ? '\r\n' : '\n'; // Git for Windows checks out with \r\n
+    assert.equal(C.format(JSON.parse(text), { eol }), text);
+    const lf = text.replace(/\r\n/g, '\n');
+    assert.equal(C.format(JSON.parse(lf)), lf);
+    assert.equal(C.format(JSON.parse(lf), { eol: '\r\n' }), lf.replace(/\n/g, '\r\n'));
   });
 });

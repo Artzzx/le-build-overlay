@@ -130,8 +130,11 @@
     return { raw: { ...raw, releases: [...list, entry] }, version, changed: true };
   }
 
-  /** app/changelog.json as it's written by hand: one line per change, so diffs stay readable. */
-  function format(raw) {
+  /**
+   * app/changelog.json as it's written by hand: one line per change, so diffs stay readable.
+   * `eol`: keep the file's own line endings (Git for Windows checks it out with \r\n).
+   */
+  function format(raw, { eol = '\n' } = {}) {
     const s = JSON.stringify;
     const release = (r) => [
       '    {',
@@ -143,7 +146,8 @@
       '      ]',
       '    }',
     ].join('\n');
-    return `{\n  "releases": [\n${raw.releases.map(release).join(',\n')}\n  ]\n}\n`;
+    const text = `{\n  "releases": [\n${raw.releases.map(release).join(',\n')}\n  ]\n}\n`;
+    return eol === '\n' ? text : text.replace(/\n/g, eol);
   }
 
   return { AREAS, updateType, validate, releases, byArea, compare, nextMinor, addDataEntry, format };

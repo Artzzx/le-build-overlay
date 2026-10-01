@@ -88,10 +88,11 @@ function main() {
   // What's new: the next release says "Game data for <label>" (written once; re-runs change nothing).
   const Changelog = require('../shared/changelog');
   const file = path.join(ROOT, 'app', 'changelog.json');
-  const { raw, version, changed } = Changelog.addDataEntry(JSON.parse(fs.readFileSync(file, 'utf8')), {
+  const original = fs.readFileSync(file, 'utf8');
+  const { raw, version, changed } = Changelog.addDataEntry(JSON.parse(original), {
     current: require('../package.json').version, label: v.label,
   });
-  if (changed) fs.writeFileSync(file, Changelog.format(raw));
+  if (changed) fs.writeFileSync(file, Changelog.format(raw, { eol: original.includes('\r\n') ? '\r\n' : '\n' }));
   console.log(`
   ✔ Game data ${v.version}${v.label ? ` (${v.label})` : ''}: ${v.trees} trees, ${v.nodes} nodes — all tests pass.
   ✔ What's new for ${version}: ${changed ? 'game data line added' : 'already mentions the game data'} (app/changelog.json — edit the text if you like).
