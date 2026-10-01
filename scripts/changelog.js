@@ -15,7 +15,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { validate } = require('../shared/changelog');
+const { validate, format } = require('../shared/changelog');
 
 const FILE = path.join(__dirname, '..', 'app', 'changelog.json');
 
@@ -25,7 +25,8 @@ function fail(msg) {
 }
 
 const [cmd, tag] = process.argv.slice(2);
-const raw = JSON.parse(fs.readFileSync(FILE, 'utf8'));
+const text = fs.readFileSync(FILE, 'utf8');
+const raw = JSON.parse(text);
 const problems = validate(raw);
 if (problems.length) fail(`app/changelog.json:\n  ${problems.join('\n  ')}`);
 
@@ -45,7 +46,8 @@ if (cmd === 'check') {
     r.date = r.version === version ? new Date().toISOString().slice(0, 10) : tagDate(r.version);
     if (r.date) stamped++; else delete r.date;
   }
-  fs.writeFileSync(FILE, JSON.stringify(raw, null, 2) + '\n');
+  // Same layout and line endings as the file had: `npm test` runs after this step in release.yml.
+  fs.writeFileSync(FILE, format(raw, { eol: text.includes('\r\n') ? '\r\n' : '\n' }));
   console.log(`✔ ${version}: "${entry.title ?? ''}" (${entry.changes.length} change${entry.changes.length !== 1 ? 's' : ''}); ${stamped} date${stamped !== 1 ? 's' : ''} filled in`);
 } else {
   fail('usage: node scripts/changelog.js check | release vX.Y.Z');

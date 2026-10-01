@@ -1,5 +1,12 @@
 # Tests on every push and pull request, on Linux and Windows: the release is built on Windows,
-# and Windows-only breakage (console encoding, paths) must show up here, not at release time.
+# and Windows-only breakage (console encoding, paths, CRLF checkouts) must show up here, not at
+# release time.
+#
+# The Windows job is a REHEARSAL of release.yml: the same steps before the build, in the same
+# order (the What's new step rewrites app/changelog.json BEFORE npm test there — v0.4.1 failed
+# three times on differences between "Tests" and "Release"). On main and pull requests it also
+# packages the app (no publishing), so a green main means the tag will build.
+# Linux runs the plain suite on the untouched files.
 name: Tests
 
 on:
@@ -25,4 +32,15 @@ jobs:
       - run: pip install -r extractor/requirements.txt
       # No install scripts needed: Electron (42+) downloads itself on first run, and tests don't run it.
       - run: npm ci --ignore-scripts
+      - name: "Rehearsal: What's new step, as release.yml runs it (before the tests)"
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: node scripts/changelog.js release "v$(node -p "require('./package.json').version")"
       - run: npm test
+      - name: "Rehearsal: release notes"
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: node scripts/release-notes.js > /dev/null
+      - name: "Rehearsal: package the app (no publishing)"
+        if: matrix.os == 'windows-latest' && (github.ref == 'refs/heads/main' || github.event_name == 'pull_request')
+        run: npx electron-builder --win --dir --publish never

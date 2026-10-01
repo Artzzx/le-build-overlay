@@ -65,7 +65,7 @@ le-build-overlay/
 │                                    release-notes.js (npm run notes; release.yml writes each release's notes with it),
 │                                    changelog.js (release check: an app/changelog.json entry for the tag + dates)
 ├── build/                        ← icon.png (app icon, electron-builder buildResources)
-├── .github/workflows/            ← test.yml (every push, Linux + Windows), release.yml (tag v* → Windows build → GitHub Release)
+├── .github/workflows/            ← test.yml (every push: Linux + a Windows rehearsal of release.yml), release.yml (tag v* → Windows build → GitHub Release)
 ├── config/                       ← build.example.json ("Try the example build"); anything else in config/ is git-ignored
 ├── docs/                         ← screenshot.webp (README), ROADMAP.md (planned work, not built yet)
 └── tests/                        ← node:test — db, parser, tree-utils, view-model, main-process (store/hotkeys),
@@ -317,6 +317,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
   4. checks that there's exactly one release for the tag with `latest.yml` + both exes, then publishes it (`--latest`).
   - **Why**: left to itself, electron-builder uploads the NSIS and portable targets in parallel. Both see "no release" and both create one, so v0.1.1–v0.2.0 each have **two releases under one tag**, one holding only the `.blockmap`. `…/releases/download/<tag>/latest.yml` can resolve to that one, which gives a 404 and breaks every update check (`ERR_UPDATER_CHANNEL_FILE_NOT_FOUND`).
   - Publishing only when complete also means no app ever sees a half-uploaded release.
+  - **test.yml rehearses it on Windows**: the What's new step *before* `npm test` (it rewrites `app/changelog.json`), the release notes, and, on main and PRs, `electron-builder --win --dir`. **Tag only when Tests on main is green.** v0.4.1 failed three times on gaps between the two workflows (a missing entry, a CRLF checkout, the What's new step reformatting the file before the tests). The step now writes with `Changelog.format()` in the file's own line endings.
 - **What's new** (`app/changelog.json`, the in-app history): **every released version needs an entry before `npm version`**. The release fails without one (`scripts/changelog.js release <tag>` runs right after the tag check; v0.4.1's first run failed exactly that way). `npm run data` writes the game-data entry itself; for code releases, write it by hand.
   - An entry is `{ version, title, changes: [{ area, text }] }`, a few lines about what a player notices. `area` is one of `shared/changelog.js` → `AREAS` (the "By feature" view).
   - The update type (first / major / minor / patch) comes from the version numbers.
