@@ -264,9 +264,9 @@ Both files are committed (regenerate + commit after each patch). They're written
 Your exporter writes `extractor/nodes_flat.json` and the node images into `db/data/icons/`. Then:
 ```bash
 pip install -r extractor/requirements.txt       # once (Pillow)
-npm run data -- --label "Season 4 (1.4)"        # convert_icons.py → extract.py (args passed on) → npm test
+npm run data "Season 4 (1.4)"                   # convert_icons.py → extract.py → npm test (works in PowerShell too)
 ```
-`scripts/update-data.js` runs `convert_icons.py` (PNG/JPG → 128 px WebP), then `extract.py --prune-icons` (validates, writes `db/data/*.json` + `version.json`, deletes icons no node uses any more), then the whole test suite, and prints the commit + release commands. Any failure stops it with nothing to release. Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together, then release (see *Packaging and releases*). `extract.py` warns if non-WebP icons are present; **never commit PNG icons** (git keeps every version forever).
+Not `npm run data -- --label …` in PowerShell: it strips the `--`, so npm takes `--label` as its own setting. `parseArgs()` copes anyway: plain words become the label, and `--label X`, `--label=X` and npm's `npm_config_label` also work. `scripts/update-data.js` runs `convert_icons.py` (PNG/JPG → 128 px WebP), then `extract.py --prune-icons` (validates, writes `db/data/*.json` + `version.json`, deletes icons no node uses any more), then the whole test suite, and prints the commit + release commands. Any failure stops it with nothing to release. Commit `nodes_flat.json`, `db/data/*.json` and `db/data/icons/` together, then release (see *Packaging and releases*). `extract.py` warns if non-WebP icons are present; **never commit PNG icons** (git keeps every version forever).
 - **Icons on a re-export**: the exporter overwrites every image, and that's fine.
   - Any PNG present is new input, so it always replaces its WebP. File dates are never trusted, because an exporter may keep the asset's old date. Only `--keep-originals` falls back to "skip when the WebP is newer".
   - Unchanged images re-encode to identical bytes (WebP at a fixed quality is deterministic), so git records only real changes.
@@ -310,7 +310,7 @@ Cleans `extractor/nodes_flat.json` → `db/data/skill_tree_reconciled.json` + `p
   - State reaches the renderer through the `app-update` event. The renderer shows a status bar chip and a toast.
   - Background errors are silent; a manual *Check now* reports them with the real reason (`describeError`: offline / the release can't be served / the raw message), never a guess.
   - *Check now* in Settings answers **inside the dialog** (status line + *Restart now* / *Download*), and update toasts are skipped while Settings is open.
-- **Release flow**: `npm run data` (when there's new game data) → commit → `npm version minor` (bumps and tags `vX.Y.0`) → `git push --follow-tags`. `.github/workflows/release.yml` (windows-latest):
+- **Release flow**: `npm run data "Season X"` (when there's new game data) → commit → `npm version minor` (bumps and tags `vX.Y.0`) → `git push --follow-tags`. `.github/workflows/release.yml` (windows-latest):
   1. checks that the tag matches `package.json`, then runs `npm ci --ignore-scripts` and `npm test`;
   2. writes the **release notes** (`scripts/release-notes.js <tag>`, checkout with `fetch-depth: 0`), then **creates the release itself, as a draft** with them (a re-run reuses its own draft with fresh notes; a published tag fails);
   3. `electron-builder --win --publish always` uploads into that draft (`releaseType: "draft"`);
