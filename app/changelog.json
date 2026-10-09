@@ -65,6 +65,13 @@
       "changes": [
         { "area": "data", "text": "Behind-the-scenes fix to how new game data is prepared — nothing changes in the app." }
       ]
+    },
+    {
+      "version": "0.5.0",
+      "title": "Season 5",
+      "changes": [
+        { "area": "data", "text": "Game data for Season 5: the latest skills, passives and node icons." }
+      ]
     }
   ]
 }
